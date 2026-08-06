@@ -139,6 +139,18 @@ python3 scripts/init_gzh_login.py
 生成的 `nas-n8n/shared_files/gzh_cookies.json` 对应 NAS 容器路径 `/data/shared/gzh_cookies.json`；
 若本地与 NAS 不是同一台机器，请手动把该文件同步到 NAS 的 `shared_files/` 目录。
 
+### 4.4 公众号官方草稿箱 API（推荐，稳定）
+浏览器自动化受微信新版编辑器限制时，改用官方 `draft/add` 接口存草稿：
+```bash
+python3 scripts/gzh_draft_api.py \
+  --title "标题" \
+  --content-file outputs/<job>/公众号/<排版>.html \
+  --cover outputs/<job>/小红书/封面.png \
+  --author "小吴聊" \
+  --job-id <job_id>
+```
+凭据从 `nas-n8n/.env` 读取 `GZH_APP_ID` / `GZH_APP_SECRET`；调用机器 IP 需加入公众号「IP 白名单」。
+
 ### 4.3 飞书多维表格与 n8n 工作流导入
 - **飞书结构规范**：详见 [FEISHU_TABLE_SCHEMA.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/FEISHU_TABLE_SCHEMA.md)。
 - **一键导入工作流**：
