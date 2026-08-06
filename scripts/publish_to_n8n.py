@@ -49,7 +49,7 @@ if not NAS_USER or not NAS_PASS:
     print("❌ 缺少 NAS 凭据：请在 nas-n8n/.env 配置 NAS_USER 与 NAS_PASS（参考 .env.example），或注入同名环境变量。")
     sys.exit(2)
 
-def write_publish_log(job_id, title, success):
+def write_publish_log(job_id, title, success, platform="小红书"):
     """发布动作落盘 jobs/<job_id>/publish_log.json。
     与 scripts/collect_post_stats.py 同文件兼容(顶层 records 数组由数据回收追加)。
     """
@@ -66,10 +66,10 @@ def write_publish_log(job_id, title, success):
     data["published_at"] = data.get("published_at") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data["title"] = title
     plats = set(data.setdefault("platforms", []))
-    plats.add("小红书")
+    plats.add(platform)
     data["platforms"] = sorted(plats)
     data["publish"].append({
-        "platform": "小红书",
+        "platform": platform,
         "status": "success" if success else "failed",
         "at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     })
@@ -132,7 +132,7 @@ def copy_images_to_nas(local_image_paths):
 
     return container_image_paths
 
-def send_payload_to_n8n(title, xhs_content, gzh_html, container_images, tags):
+def send_payload_to_n8n(title, xhs_content, gzh_html, container_images, tags, draft=False):
     """
     发送统一 Payload 到 NAS 端发布服务。
     【主链路】直连 xhs_publisher 发布微服务（实战验证的稳定链路）
@@ -154,6 +154,30 @@ def send_payload_to_n8n(title, xhs_content, gzh_html, container_images, tags):
     }
 
     data_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+
+    # 草稿箱模式（P2）：公众号 HTML 进草稿，由手机端人工终审发布
+    if draft:
+        gzh_draft_url = f"http://{NAS_IP}:{XHS_PUBLISHER_PORT}/publish/gzh"
+        draft_payload = {
+            "title": title,
+            "content": gzh_html or xhs_content,
+            "images": [],
+            "tags": [],
+            "cookies_json_path": "/data/shared/gzh_cookies.json",
+        }
+        req_draft = urllib.request.Request(
+            gzh_draft_url, data=json.dumps(draft_payload, ensure_ascii=False).encode("utf-8"),
+            headers=headers, method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req_draft, timeout=120) as response:
+                res_body = response.read().decode("utf-8")
+                print(f"\n🎉 公众号草稿箱同步成功！响应状态: {response.status}")
+                print(f"详细返回信息: {res_body}")
+                return True
+        except Exception as err:
+            print(f"\n❌ 公众号草稿箱同步失败: {err}")
+            return False
 
     # 尝试 1（主链路）: 直连 xhs_publisher 自动化发布微服务
     direct_url = f"http://{NAS_IP}:{XHS_PUBLISHER_PORT}/publish"
@@ -188,6 +212,8 @@ def main():
     parser.add_argument("--gzh-html", default="", help="公众号排版 HTML (可选)")
     parser.add_argument("--images", nargs="*", default=[], help="本地配图卡片文件路径列表")
     parser.add_argument("--tags", nargs="*", default=[], help="标签列表")
+    parser.add_argument("--draft", action="store_true",
+                        help="草稿箱模式：公众号 HTML 进草稿，人工手机端终审发布（不直发小红书）")
 
     args = parser.parse_args()
 
@@ -197,19 +223,22 @@ def main():
     container_image_paths = copy_images_to_nas(args.images)
 
     # 2. 触发 n8n 发布工作流
+    platform = "公众号" if args.draft else "小红书"
     success = send_payload_to_n8n(
         title=args.title,
         xhs_content=args.content,
         gzh_html=args.gzh_html,
         container_images=container_image_paths,
-        tags=args.tags
+        tags=args.tags,
+        draft=args.draft,
     )
 
     if args.job_id:
-        write_publish_log(args.job_id, args.title, success)
+        write_publish_log(args.job_id, args.title, success, platform=platform)
 
     if success:
-        print("\n✨ [完成] 已成功分发至 NAS n8n 并调起小红书/公众号自动发布队列！")
+        mode = "公众号草稿箱" if args.draft else "小红书自动发布队列"
+        print(f"\n✨ [完成] 已成功分发至 NAS 并调起{mode}！")
     else:
         sys.exit(1)
 

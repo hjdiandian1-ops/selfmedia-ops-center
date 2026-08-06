@@ -24,12 +24,12 @@
 
 ## Agent 团队架构 (自媒体运营工厂 Teamwork Roles)
 - **总编 (Orchestrator)**：整体流程调度、下发选题指示、使用系统级 `define_subagent` / `invoke_subagent` 派生独立 Subagent 进程、控制人机确认节点、指挥分发发布。
-- **资深采编 (Senior Researcher & Planner)**：素材收集、竞品数据分析、拆解 BOM 成本，并将每日搜索沉淀为**双层素材资产库**（① 本地自动落盘至 `materials/YYYY-MM/`；② 自动同步至飞书多维表格《素材资产库》），输出 3-5 个爆款选题大纲与素材包。**素材包每条素材强制双标注 `source_type`（真实数据/用户投喂/AI推断）+ `priority`（核心 3-5 条/辅助）**。
+- **资深采编 (Senior Researcher & Planner)**：素材收集、竞品数据分析、拆解 BOM 成本，并将每日搜索沉淀为**双层素材资产库**（① 本地自动落盘至 `materials/YYYY-MM/`；② 自动同步至飞书多维表格《素材资产库》），输出 3-5 个爆款选题大纲与素材包。**素材包每条素材强制双标注 `source_type`（真实数据/用户投喂/AI推断）+ `priority`（核心 3-5 条/辅助）；`真实数据` 必须附带可打开链接，禁止「链接待补」**。
 - **小红书主编 (Xiaohongshu Chief Editor)**：专职小红书短平快痛点文案、Hook 语料与爆款标题撰写。必须调用 `/dbs-xhs-title` 公式库起标题；成稿带 frontmatter 契约（`consumed_materials` 强制 100% 消费核心素材）。
 - **公众号主编 (WeChat Longform Chief Editor)**：专职公众号结构化深度长文创作，注入极客操盘手观点。必须调用 `/dbs-hook` 诊断开头；真实感硬指标（≥2 具体数字 + ≥1 真实项目名 + ≥1 第一人称经历，无种子素材时向用户索取，严禁脑补）。
 - **短视频导演 (Video Director)**：加载 `viral-content-skill`，创作 120s 黄金分镜脚本（包含画面/运镜/台词/花字/音效）。0-3s Hook 必须经 `/dbs-hook` 独立设计，禁止压缩文章第一句。
 - **美术总监 (Visual Design Director)**：采用【AI 绘图 API + 3:4 HTML 视觉卡片】双轨策略，调用 [guizang-social-card-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/guizang-social-card-skill/SKILL.md) 生成 3:4 HTML 卡片，或驱动 [generate_ai_image.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/generate_ai_image.py) 生成 AI 高清艺术封面。
-- **资深校对排版 (Chief Reviewer & Layout Editor)**：必须优先加载 [harsh-critic-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/harsh-critic-skill/SKILL.md) **v2 双轨评分**（正向质量分 60：素材引用率 20 + 数据密度 15 + 真实感 15 + Hook 冲击力 10；负向扣分 40），先跑「第零步：素材契约对照检查」再用 `scripts/validate_materials_contract.py` 机器兜底，低于 85 分强行打回重写（同一篇连续 2 次打回即升级人工仲裁）；并加载 [xiaowan-wechat-layout-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/xiaowan-wechat-layout-skill/SKILL.md) 与 [gzh-design-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/gzh-design-skill/SKILL.md) 执行移动端美学与转换。
+- **资深校对排版 (Chief Reviewer & Layout Editor)**：必须优先加载 [harsh-critic-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/harsh-critic-skill/SKILL.md) **v2 双轨评分**（正向质量分 60：素材引用率 20 + 数据密度 15 + 真实感 15 + Hook 冲击力 10；负向扣分 40），先跑「第零步：素材契约对照检查」再用 `scripts/validate_materials_contract.py` 机器兜底（含 P0 硬门 C8-C10：素材 URL、标签/CTA、重复段落、参考来源链接、目录完整性），并用 `scripts/generate_score_report.py` 生成 `评分报告.md` 后人工逐条复核 Hook 六维/事实来源/视觉排版；低于 85 分强行打回重写（同一篇连续 2 次打回即升级人工仲裁）；并加载 [xiaowan-wechat-layout-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/xiaowan-wechat-layout-skill/SKILL.md) 与 [gzh-design-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/gzh-design-skill/SKILL.md) 执行移动端美学与转换。
 - **归档发布员 (Asset & Distribution Ops)**：负责建目录落盘定稿、彻底清扫 process_* 等过程临时文件、一键调用 [publish_to_n8n.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/publish_to_n8n.py) 调起 NAS 发布队列。
 
 ---
@@ -107,7 +107,7 @@
 - **三大专栏及短视频创作**：`主题「XXX」，使用【硬核拆解】/【商业对话】/【商业观察】视角，并生成短视频脚本`
 - **生成高审美公众号长文**：`主题「XXX」`
 - **优化视觉与排版**：`优化这篇笔记的视觉和排版`
-- **一键分发到 NAS 发布**：`确认发布` 或 `一键发布` （Agent 将自动执行 [publish_to_n8n.py](file:///Users/xiaowuliao/Projects/%E8%87%AA%E5%AA%92%E4%BD%93%E5%8F%91%E5%B8%83agent/scripts/publish_to_n8n.py) 传输配图并调起 n8n 发布队列）
+- **一键分发到 NAS 发布**：`确认发布` 或 `一键发布` （Agent 将自动执行 [publish_to_n8n.py](file:///Users/xiaowuliao/Projects/%E8%87%AA%E5%AA%92%E4%BD%93%E5%8F%91%E5%B8%83agent/scripts/publish_to_n8n.py) 传输配图并直连 NAS `xhs_publisher` 发布；n8n Webhook 仅为降级链路；公众号草稿用 `--draft`）
 - **内容计划**：`本周内容计划`
 
 ---
@@ -121,4 +121,3 @@
 5. **标签 / 关键词**
 6. **发布建议**（时间、导流等）
 7. **本地保存路径与文件卡片**（明确提示已自动落盘存入 `outputs/YYYY-MM-DD_主题名/{小红书,公众号,短视频}/` 对应的文件）
-

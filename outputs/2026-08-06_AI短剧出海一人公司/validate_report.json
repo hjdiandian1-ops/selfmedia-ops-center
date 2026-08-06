@@ -1,10 +1,10 @@
 {
   "output_dir": "outputs/2026-08-06_AI短剧出海一人公司/",
   "materials": "materials/2026-08/2026-08-06_AI短剧出海一人公司素材包.md",
-  "validated_at": "2026-08-07 01:36:07",
+  "validated_at": "2026-08-07 01:43:14",
   "verdict": "CONDITIONAL",
   "fails": 0,
-  "warns": 2,
+  "warns": 1,
   "results": [
     {
       "level": "PASS",
@@ -80,11 +80,6 @@
       "level": "WARN",
       "code": "C9-gzh-ref-missing",
       "message": "[公众号] 缺少文末『参考来源』区块（产出标准要求）"
-    },
-    {
-      "level": "WARN",
-      "code": "C10-score-report",
-      "message": "缺少 评分报告.md（质检链会自动生成；strict 模式下视为 FAIL）"
     }
   ]
 }

@@ -1,10 +1,10 @@
 {
   "output_dir": "outputs/2026-08-06_有效token与模型调度/",
   "materials": "materials/2026-08/2026-08-06_有效token与模型调度素材包.md",
-  "validated_at": "2026-08-07 01:36:07",
+  "validated_at": "2026-08-07 01:43:10",
   "verdict": "REJECTED",
   "fails": 13,
-  "warns": 1,
+  "warns": 0,
   "results": [
     {
       "level": "PASS",
@@ -120,11 +120,6 @@
       "level": "FAIL",
       "code": "C9-gzh-ref-placeholder",
       "message": "[公众号] 参考来源含『链接/来源待补』占位，禁止交付"
-    },
-    {
-      "level": "WARN",
-      "code": "C10-score-report",
-      "message": "缺少 评分报告.md（质检链会自动生成；strict 模式下视为 FAIL）"
     }
   ]
 }

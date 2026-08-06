@@ -156,7 +156,7 @@ graph TD
 2. **专职创作**：小红书主编、公众号主编与短视频导演并发创作各自平台的正文与脚本。
 3. **视觉生成**：美术总监渲染 3:4 视觉卡片 HTML 或使用 AI 接口生图。
 4. **校对与归档清扫**：资深校对排版完成移动端孤行打磨；归档发布员存盘定稿，**并强制清扫彻底删除 process_* 等中间过程临时文件夹**。
-5. **人工审核与一键发布**：你在对话框中预览并检查，确认无误后回复 `确认发布`，Agent 执行 `publish_to_n8n.py` 将配图同步传输至 NAS 并唤醒发布队列。
+5. **人工审核与一键发布**：你在对话框中预览并检查，确认无误后回复 `确认发布`，Agent 执行 `publish_to_n8n.py` 将配图同步传输至 NAS 并唤醒发布队列。**主链路为直连 NAS `xhs_publisher`（5800 端口），n8n Webhook 降级为备用**；公众号草稿用 `publish_to_n8n.py --draft --gzh-html <文件>`，发布后自动落盘 `publish_log.json`。
 
 ### 5.2 常用自然语言指令速查表
 | 需求描述 | 对话指令示例 |
@@ -191,7 +191,13 @@ outputs/YYYY-MM-DD_主题名/
 
 ## 6. 运维脚本与命令行速查
 
-所有的核心工具脚本均收录在 [scripts/](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts) 目录。
+所有的核心工具脚本均收录在 [scripts/](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts) 目录；历史一次性修复脚本（24 个 `fix_*` 等）已归档至 `scripts/_archive/`，日常使用请勿调用。
+
+### 6.1 版本管理（P1 起）
+
+- 项目已初始化 Git（基线提交 `b11c08c`）；每个 Job 归档后提交一次。
+- `.env`、`nas-n8n/shared_files/*.json`（Cookie）、图片/视频产物已加入 [.gitignore](file:///Users/xiaowuliao/Projects/自媒体发布agent/.gitignore)，禁止入库。
+- 发布/部署凭据统一从 `nas-n8n/.env` 或环境变量读取（见 [nas_config.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/nas_config.py)），代码中不保存任何明文密码。
 
 ---
 
@@ -234,4 +240,3 @@ POST /api/qa                  # 跑质检链（需 output_dir）
 POST /api/pipeline/run        # 触发流水线（action: topics|recycle|weekly|qa）
 POST /api/publish             # 一键发布到 NAS
 ```
-

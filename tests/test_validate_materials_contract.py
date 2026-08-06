@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """素材契约校验器纯逻辑单测。仅依赖标准库，不触网、不连 NAS。"""
 import os
+import subprocess
+import sys
 
 import validate_materials_contract as VMC
 
@@ -22,6 +24,11 @@ def test_parse_frontmatter_basic():
 
 def test_parse_frontmatter_none_when_missing():
     assert VMC.parse_frontmatter("没有 frontmatter 的正文") is None
+
+
+def test_parse_frontmatter_supports_a_ids():
+    fm = VMC.parse_frontmatter("---\nconsumed_materials: [A2, A3, M1]\n---\n正文")
+    assert fm["consumed_materials"] == ["A2", "A3", "M1"]
 
 
 SCHEMA_PACK = """\
@@ -68,3 +75,79 @@ def test_parse_materials_real_legacy_pack_no_crash():
     assert complete is False
     for it in items:
         assert "kw" in it
+
+
+def _write_job(tmp_path, platforms_text, pack_text):
+    out = tmp_path / "2026-08-07_测试Job"
+    for plat, text in platforms_text.items():
+        d = out / plat
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "文案.md").write_text(text, encoding="utf-8")
+    pack = out / "素材包.md"
+    pack.write_text(pack_text, encoding="utf-8")
+    return out, pack
+
+
+def _run_validator(out, pack):
+    r = subprocess.run(
+        [sys.executable, os.path.join(ROOT, "scripts", "validate_materials_contract.py"),
+         str(out), "--materials", str(pack)],
+        capture_output=True, text=True,
+    )
+    return r
+
+
+def test_validator_rejects_real_data_without_url(tmp_path):
+    out, pack = _write_job(
+        tmp_path,
+        {
+            "小红书": "# 标题\n\n正文 30%。\n\n#标签1 #标签2 #标签3 #标签4 #标签5\n\n评论区聊聊👇",
+        },
+        "真实数据｜核心：某公司增长 30%（source_type: 真实数据 | priority: 核心）",
+    )
+    r = _run_validator(out, pack)
+    assert r.returncode == 1
+    assert "C8-url-required" in r.stdout
+
+
+def test_validator_rejects_url_placeholder(tmp_path):
+    out, pack = _write_job(
+        tmp_path,
+        {"小红书": "# 标题\n\n正文 30%。\n\n#标签1 #标签2 #标签3 #标签4 #标签5\n\n评论区聊聊👇"},
+        "真实数据｜核心：某公司增长 30%（source_type: 真实数据 | priority: 核心）链接待补",
+    )
+    r = _run_validator(out, pack)
+    assert "C8-url-placeholder" in r.stdout
+
+
+def test_validator_rejects_xhs_without_tags(tmp_path):
+    out, pack = _write_job(
+        tmp_path,
+        {
+            "小红书": "# 标题\n\n正文 30%，具体数字两个：50 倍和 1 元。\n\n评论区聊聊👇",
+            "公众号": "# 标题\n\n正文 30%。\n\n## 参考来源\n- 来源：https://example.com/x",
+        },
+        "真实数据｜核心：某公司增长 30%（source_type: 真实数据 | priority: 核心 | source: https://example.com/x）",
+    )
+    r = _run_validator(out, pack)
+    assert "C9-xhs-tags" in r.stdout
+
+
+def test_validator_rejects_gzh_duplicate_paragraph(tmp_path):
+    dup = "API 价格进入上行周期，企业注意力会从哪个模型最强转向单位调用成本最低。"
+    out, pack = _write_job(
+        tmp_path,
+        {
+            "小红书": "# 标题\n\n正文 30%。\n\n#标签1 #标签2 #标签3 #标签4 #标签5\n\n评论区聊聊👇",
+            "公众号": f"# 标题\n\n{dup}\n\n其他内容。\n\n{dup}\n\n## 参考来源\n- 来源：https://example.com/x",
+        },
+        "真实数据｜核心：某公司增长 30%（source_type: 真实数据 | priority: 核心 | source: https://example.com/x）",
+    )
+    r = _run_validator(out, pack)
+    assert "C9-gzh-dup" in r.stdout
+
+
+def test_platform_completeness_missing_dir(tmp_path):
+    issues = VMC.platform_completeness(str(tmp_path))
+    assert any(code == "C10-dir-missing" for _, code, _ in issues)
+    assert any(code == "C10-score-report" for _, code, _ in issues)
