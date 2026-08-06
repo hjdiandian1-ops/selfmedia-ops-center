@@ -1,5 +1,6 @@
 import os
 import time
+import re
 os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/data/shared/ms-playwright"
 os.environ["PLAYWRIGHT_DOWNLOAD_HOST"] = "https://npmmirror.com/mirrors/playwright"
 import asyncio
@@ -244,40 +245,170 @@ async def publish_gzh_draft(payload: PublishPayload):
                 raise HTTPException(status_code=401,
                                     detail="公众号登录态失效，请重新扫码登录（写入 gzh_cookies.json）")
 
-            # 进入新建图文草稿页
+            # 提取真实会话 token（用 0 打不开编辑器）
+            token = ""
+            m = re.search(r"[?&]token=(\d+)", page.url)
+            if m:
+                token = m.group(1)
+            if not token:
+                try:
+                    await page.wait_for_url(re.compile(r"token=\d+"), timeout=10000)
+                    m = re.search(r"[?&]token=(\d+)", page.url)
+                    if m:
+                        token = m.group(1)
+                except Exception:
+                    pass
+            try:
+                window_token = await page.evaluate("window.token || ''")
+                if window_token:
+                    token = str(window_token)
+            except Exception:
+                pass
+            if not token:
+                html = await page.content()
+                m = re.search(r"token[=:]['\"]?(\d+)", html)
+                if m:
+                    token = m.group(1)
+            if not token:
+                link = await page.query_selector("a[href*='token=']")
+                if link:
+                    href = await link.get_attribute("href") or ""
+                    m = re.search(r"token=(\d+)", href)
+                    if m:
+                        token = m.group(1)
+            print("公众号 token:", token or "（未取到，回退 0）")
+
+            # 进入新建图文草稿页（携带真实 token）
             await page.goto(
                 "https://mp.weixin.qq.com/cgi-bin/appmsg?t=media/appmsg_edit_v2&action=edit"
-                "&isNew=1&type=10&token=0&lang=zh_CN",
+                f"&isNew=1&type=10&token={token}&lang=zh_CN",
                 wait_until="domcontentloaded",
             )
-            await page.wait_for_timeout(4000)
+            await page.wait_for_timeout(6000)
+            print("公众号编辑页 URL:", page.url)
 
-            # 填写标题
-            try:
-                title_input = await page.wait_for_selector(
-                    'input[placeholder*="标题"], #title', timeout=8000)
-                if title_input:
-                    await title_input.fill(payload.title)
-            except Exception as e:
-                print("公众号填写标题提示:", e)
+            # 填写标题：按可见元素/占位符定位（新版编辑器 #title 是隐藏的）
+            title_set = False
+            for sel in ['input[placeholder*="标题"]:visible',
+                        'textarea[placeholder*="标题"]:visible',
+                        'div[placeholder*="标题"]:visible',
+                        'div[data-placeholder*="标题"]:visible',
+                        '#title:visible']:
+                try:
+                    el = page.locator(sel).first
+                    if await el.count():
+                        await el.click()
+                        tag = (await el.evaluate("e => e.tagName")).upper()
+                        if tag in ("DIV", "SPAN") or await el.get_attribute("contenteditable") == "true":
+                            await el.evaluate(
+                                "(e, t) => { e.textContent = t; "
+                                "e.dispatchEvent(new Event('input', {bubbles:true})); }",
+                                payload.title)
+                        else:
+                            await el.fill(payload.title)
+                        title_set = True
+                        break
+                except Exception as e:
+                    print("公众号标题提示:", e)
+            if not title_set:
+                try:
+                    tag = await page.evaluate("""(arg) => {
+                        const all = [...document.querySelectorAll(
+                            'input, textarea, div, span, [contenteditable="true"]')];
+                        const el = all.find(e => {
+                          const ph = e.getAttribute ? (e.getAttribute('placeholder') ||
+                            e.getAttribute('data-placeholder') || '') : '';
+                          return ph.includes('标题') && e.offsetParent !== null;
+                        });
+                        if (!el) return '';
+                        el.focus();
+                        if (el.isContentEditable) {
+                          el.textContent = arg;
+                          el.dispatchEvent(new Event('input', {bubbles:true}));
+                        } else {
+                          const setter = Object.getOwnPropertyDescriptor(
+                            HTMLInputElement.prototype, 'value').set ||
+                            Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+                          setter.call(el, arg);
+                          el.dispatchEvent(new Event('input', {bubbles:true}));
+                        }
+                        return el.tagName;
+                    }""", payload.title)
+                    title_set = bool(tag)
+                    print("公众号标题 JS 填充:", tag or "未找到")
+                except Exception as e:
+                    print("公众号标题 JS 提示:", e)
+            if not title_set:
+                print("公众号标题: 未找到可见输入框")
+                try:
+                    await page.screenshot(path="/data/shared/gzh_debug_title.png", full_page=True)
+                    print("已截图: /data/shared/gzh_debug_title.png")
+                except Exception as se:
+                    print("截图失败:", se)
 
-            # 填写正文：优先富文本注入（gzh-design 输出的 HTML），失败回退纯文本
-            try:
-                editor = await page.wait_for_selector(
-                    'div[contenteditable="true"], .ProseMirror, #ueditor_0', timeout=8000)
-                if editor:
+            # 填写正文：遍历所有 frame + 可见 contenteditable（新版编辑器兼容）
+            content_set = False
+            for f in page.frames:
+                try:
+                    body = f.locator('body[contenteditable="true"]:visible, '
+                                     '[contenteditable="true"]:visible').first
+                    if await body.count():
+                        await body.click()
+                        await body.evaluate(
+                            "(el, html) => { el.innerHTML = html; "
+                            "el.dispatchEvent(new Event('input', {bubbles:true})); }",
+                            payload.content)
+                        content_set = True
+                        break
+                except Exception as e:
+                    print("公众号 frame 正文提示:", e)
+            if not content_set:
+                for sel in ['div[contenteditable="true"]:visible',
+                            ".ProseMirror:visible",
+                            ".ql-editor:visible"]:
                     try:
-                        await editor.evaluate(
-                            "(el, html) => { el.innerHTML = html; }", payload.content)
-                    except Exception:
-                        await editor.fill(payload.content)
-            except Exception as e:
-                print("公众号填写正文提示:", e)
+                        el = page.locator(sel).first
+                        if await el.count() and await el.is_visible():
+                            await el.click()
+                            await el.evaluate(
+                                "(el, html) => { el.innerHTML = html; "
+                                "el.dispatchEvent(new Event('input', {bubbles:true})); }",
+                                payload.content)
+                            content_set = True
+                            break
+                    except Exception as e:
+                        print("公众号正文提示:", e)
+            if not content_set:
+                try:
+                    done = await page.evaluate("""(arg) => {
+                        const all = [...document.querySelectorAll(
+                            '[contenteditable="true"], div[data-placeholder], div[placeholder]')];
+                        const el = all.find(e => e.offsetParent !== null);
+                        if (!el) return false;
+                        el.focus();
+                        el.innerHTML = arg;
+                        el.dispatchEvent(new Event('input', {bubbles:true}));
+                        return true;
+                    }""", payload.content)
+                    content_set = bool(done)
+                    print("公众号正文 JS 填充:", "OK" if done else "未找到")
+                except Exception as e:
+                    print("公众号正文 JS 提示:", e)
+            if not content_set:
+                print("公众号正文提示: 未找到可编辑区域")
+                try:
+                    await page.screenshot(path="/data/shared/gzh_debug_content.png", full_page=True)
+                    print("已截图: /data/shared/gzh_debug_content.png")
+                except Exception as se:
+                    print("截图失败:", se)
 
             # 保存草稿并二次断言(不点群发)
             saved, evidence = False, ""
             try:
-                draft_btn = await page.query_selector('button:has-text("存草稿")')
+                draft_btn = await page.query_selector(
+                    'button:has-text("保存为草稿"), a:has-text("保存为草稿"), '
+                    'button:has-text("存草稿"), #js_save, '
+                    'a:has-text("存草稿"), button:has-text("保存草稿")')
                 if draft_btn:
                     await draft_btn.click()
                     saved, evidence = await wait_for_success(

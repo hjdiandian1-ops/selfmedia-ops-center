@@ -222,12 +222,18 @@ def main():
     # 1. 传输本地配图到 NAS
     container_image_paths = copy_images_to_nas(args.images)
 
+    # 1.5 若 --gzh-html 传的是本地文件路径，读取文件内容（草稿箱模式）
+    gzh_html = args.gzh_html
+    if gzh_html and os.path.exists(gzh_html):
+        with open(gzh_html, "r", encoding="utf-8") as f:
+            gzh_html = f.read()
+
     # 2. 触发 n8n 发布工作流
     platform = "公众号" if args.draft else "小红书"
     success = send_payload_to_n8n(
         title=args.title,
         xhs_content=args.content,
-        gzh_html=args.gzh_html,
+        gzh_html=gzh_html,
         container_images=container_image_paths,
         tags=args.tags,
         draft=args.draft,

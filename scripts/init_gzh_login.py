@@ -30,9 +30,14 @@ def init_login():
         print(f"   登录成功后，Session 将保存至 {COOKIES_PATH}")
 
         ok = False
-        for _ in range(200):  # 最多等待 10 分钟
-            url = page.url
-            if "login" not in url and url.startswith("https://mp.weixin.qq.com"):
+        for _ in range(240):  # 最多等待 12 分钟
+            has_token = "token=" in page.url
+            if not has_token:
+                try:
+                    has_token = bool(page.evaluate("window.token || ''"))
+                except Exception:
+                    pass
+            if has_token:
                 time.sleep(2)
                 ok = True
                 break
