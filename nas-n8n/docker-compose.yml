@@ -65,7 +65,8 @@ services:
       - ./shared_files:/data/shared
     working_dir: /app
     command: >
-      bash -c "pip install fastapi uvicorn playwright pydantic -i https://pypi.tuna.tsinghua.edu.cn/simple &&
+      bash -c "rm -f /data/shared/main.py &&
+               pip install fastapi uvicorn playwright pydantic -i https://pypi.tuna.tsinghua.edu.cn/simple &&
                playwright install-deps chromium &&
                playwright install chromium &&
                python main.py"
