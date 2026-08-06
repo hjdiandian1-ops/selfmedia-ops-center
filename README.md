@@ -131,6 +131,14 @@ graph TD
 2. 扫描出现的二维码登录创作者中心。
 3. 生成的 `shared_files/xhs_cookies.json` 将自动同步挂载至 NAS 容器路径 `/data/shared/xhs_cookies.json`。
 
+### 4.3 公众号 Cookie 持久化授权（草稿箱链路）
+公众号草稿发布需要独立的登录态：
+```bash
+python3 scripts/init_gzh_login.py
+```
+生成的 `nas-n8n/shared_files/gzh_cookies.json` 对应 NAS 容器路径 `/data/shared/gzh_cookies.json`；
+若本地与 NAS 不是同一台机器，请手动把该文件同步到 NAS 的 `shared_files/` 目录。
+
 ### 4.3 飞书多维表格与 n8n 工作流导入
 - **飞书结构规范**：详见 [FEISHU_TABLE_SCHEMA.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/FEISHU_TABLE_SCHEMA.md)。
 - **一键导入工作流**：
