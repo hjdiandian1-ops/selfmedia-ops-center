@@ -1,6 +1,7 @@
 import os
 import time
 import re
+import html as html_lib
 os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/data/shared/ms-playwright"
 os.environ["PLAYWRIGHT_DOWNLOAD_HOST"] = "https://npmmirror.com/mirrors/playwright"
 import asyncio
@@ -234,6 +235,22 @@ async def publish_gzh_draft(payload: PublishPayload):
         async with async_playwright() as p:
             browser, context = await launch_context(p, cookies)
             page = await context.new_page()
+            console_msgs = []
+            save_reqs = []
+            page.on("console", lambda m: console_msgs.append(f"[{m.type}] {m.text[:200]}"))
+            page.on("pageerror", lambda e: console_msgs.append(f"[pageerror] {str(e)[:300]}"))
+
+            async def _on_response(r):
+                if "operate_appmsg" in r.url or "cgi-bin" in r.url:
+                    try:
+                        body = await r.text()
+                        save_reqs.append(f"RESP {r.status} {r.url} :: {body[:300]}")
+                    except Exception:
+                        save_reqs.append(f"RESP {r.status} {r.url}")
+
+            page.on("request", lambda r: save_reqs.append(
+                f"REQ {r.method} {r.url}") if "operate_appmsg" in r.url else None)
+            page.on("response", lambda r: asyncio.ensure_future(_on_response(r)))
 
             await page.goto("https://mp.weixin.qq.com/", wait_until="domcontentloaded")
             await page.wait_for_timeout(3000)
@@ -287,29 +304,42 @@ async def publish_gzh_draft(payload: PublishPayload):
             await page.wait_for_timeout(6000)
             print("公众号编辑页 URL:", page.url)
 
-            # 填写标题：按可见元素/占位符定位（新版编辑器 #title 是隐藏的）
+            # 填写标题：优先在可见 ProseMirror 标题框内键入（触发编辑器真实事件）
             title_set = False
-            for sel in ['input[placeholder*="标题"]:visible',
-                        'textarea[placeholder*="标题"]:visible',
-                        'div[placeholder*="标题"]:visible',
-                        'div[data-placeholder*="标题"]:visible',
-                        '#title:visible']:
-                try:
-                    el = page.locator(sel).first
-                    if await el.count():
-                        await el.click()
-                        tag = (await el.evaluate("e => e.tagName")).upper()
-                        if tag in ("DIV", "SPAN") or await el.get_attribute("contenteditable") == "true":
-                            await el.evaluate(
-                                "(e, t) => { e.textContent = t; "
-                                "e.dispatchEvent(new Event('input', {bubbles:true})); }",
-                                payload.title)
-                        else:
-                            await el.fill(payload.title)
-                        title_set = True
-                        break
-                except Exception as e:
-                    print("公众号标题提示:", e)
+            try:
+                title_box = page.locator(".ProseMirror:visible").first
+                if await title_box.count():
+                    await title_box.click()
+                    await page.keyboard.insert_text(payload.title)
+                    await page.wait_for_timeout(800)
+                    title_set = True
+                    print("公众号标题: 键入 ProseMirror")
+            except Exception as e:
+                print("公众号标题键入提示:", e)
+            # 回退 1：可见占位元素 DOM 填充
+            if not title_set:
+                for sel in ['input[placeholder*="标题"]:visible',
+                            'textarea[placeholder*="标题"]:visible',
+                            'div[placeholder*="标题"]:visible',
+                            'div[data-placeholder*="标题"]:visible',
+                            '#title:visible']:
+                    try:
+                        el = page.locator(sel).first
+                        if await el.count():
+                            await el.click()
+                            tag = (await el.evaluate("e => e.tagName")).upper()
+                            if tag in ("DIV", "SPAN") or await el.get_attribute("contenteditable") == "true":
+                                await el.evaluate(
+                                    "(e, t) => { e.textContent = t; "
+                                    "e.dispatchEvent(new Event('input', {bubbles:true})); }",
+                                    payload.title)
+                            else:
+                                await el.fill(payload.title)
+                            title_set = True
+                            break
+                    except Exception as e:
+                        print("公众号标题提示:", e)
+            # 回退 2：JS 定位占位符元素
             if not title_set:
                 try:
                     tag = await page.evaluate("""(arg) => {
@@ -345,23 +375,102 @@ async def publish_gzh_draft(payload: PublishPayload):
                     print("已截图: /data/shared/gzh_debug_title.png")
                 except Exception as se:
                     print("截图失败:", se)
+            else:
+                print("公众号标题填充: OK")
 
-            # 填写正文：遍历所有 frame + 可见 contenteditable（新版编辑器兼容）
+            # 诊断：列出所有标题占位元素（含可见性/尺寸），用于定位新版编辑器真实标题框
+            try:
+                candidates = await page.evaluate("""() => {
+                    const out = [];
+                    document.querySelectorAll(
+                        'input, textarea, div, span, [contenteditable="true"]').forEach(e => {
+                        const ph = e.getAttribute ? (e.getAttribute('placeholder') ||
+                            e.getAttribute('data-placeholder') || '') : '';
+                        if (ph.includes('标题')) {
+                            const r = e.getBoundingClientRect();
+                            out.push({
+                                tag: e.tagName, id: e.id || '', cls: (e.className || '').toString().slice(0, 40),
+                                vis: e.offsetParent !== null, w: Math.round(r.width), h: Math.round(r.height),
+                                text: (e.innerText || e.value || '').slice(0, 30), ph: ph.slice(0, 20),
+                            });
+                        }
+                    });
+                    return out;
+                }""")
+                print("公众号标题候选:", candidates)
+            except Exception as e:
+                print("公众号标题诊断提示:", e)
+
+            # 强制回写隐藏的 #title（新版编辑器的真实数据模型）
+            try:
+                await page.evaluate("""(t) => {
+                    const el = document.querySelector('#title');
+                    if (el) {
+                        const setter = Object.getOwnPropertyDescriptor(
+                            HTMLTextAreaElement.prototype, 'value').set;
+                        setter.call(el, t);
+                        el.dispatchEvent(new Event('input', {bubbles:true}));
+                        el.dispatchEvent(new Event('change', {bubbles:true}));
+                    }
+                    return el ? el.value.length : -1;
+                }""", payload.title)
+                title_len = await page.evaluate(
+                    "() => document.querySelector('#title') ? document.querySelector('#title').value.length : -1")
+                print("公众号隐藏标题 #title 长度:", title_len)
+            except Exception as e:
+                print("公众号隐藏标题同步提示:", e)
+
+            # 填写正文：优先键盘键入（触发 ProseMirror/ueditor 事务，保证字数登记）
             content_set = False
+            plain_content = html_lib.unescape(re.sub(r"<[^>]+>", "", payload.content))
+            plain_content = re.sub(r"[ \t\u00a0]+", " ", plain_content)
+            plain_content = re.sub(r"\n{3,}", "\n\n", plain_content).strip()
+
+            # 1) iframe 编辑器 body 键入
             for f in page.frames:
                 try:
                     body = f.locator('body[contenteditable="true"]:visible, '
                                      '[contenteditable="true"]:visible').first
                     if await body.count():
                         await body.click()
-                        await body.evaluate(
-                            "(el, html) => { el.innerHTML = html; "
-                            "el.dispatchEvent(new Event('input', {bubbles:true})); }",
-                            payload.content)
+                        await page.keyboard.insert_text(plain_content)
+                        await page.wait_for_timeout(800)
                         content_set = True
+                        print("公众号正文: 键入 iframe body")
                         break
                 except Exception as e:
-                    print("公众号 frame 正文提示:", e)
+                    print("公众号 frame 键入提示:", e)
+            # 2) 主页面可见 contenteditable 键入
+            if not content_set:
+                for sel in ['div[contenteditable="true"]:visible', ".ql-editor:visible"]:
+                    try:
+                        el = page.locator(sel).first
+                        if await el.count() and await el.is_visible():
+                            await el.click()
+                            await page.keyboard.insert_text(plain_content)
+                            await page.wait_for_timeout(800)
+                            content_set = True
+                            print("公众号正文: 键入 selector:", sel)
+                            break
+                    except Exception as e:
+                        print("公众号正文键入提示:", e)
+            # 3) innerHTML 注入兜底（仅当键入失败）
+            if not content_set:
+                for f in page.frames:
+                    try:
+                        body = f.locator('body[contenteditable="true"]:visible, '
+                                         '[contenteditable="true"]:visible').first
+                        if await body.count():
+                            await body.click()
+                            await body.evaluate(
+                                "(el, html) => { el.innerHTML = html; "
+                                "el.dispatchEvent(new Event('input', {bubbles:true})); }",
+                                payload.content)
+                            content_set = True
+                            print("公众号正文填充: iframe:", f.url or f.name)
+                            break
+                    except Exception as e:
+                        print("公众号 frame 正文提示:", e)
             if not content_set:
                 for sel in ['div[contenteditable="true"]:visible',
                             ".ProseMirror:visible",
@@ -375,6 +484,7 @@ async def publish_gzh_draft(payload: PublishPayload):
                                 "el.dispatchEvent(new Event('input', {bubbles:true})); }",
                                 payload.content)
                             content_set = True
+                            print("公众号正文填充: selector:", sel)
                             break
                     except Exception as e:
                         print("公众号正文提示:", e)
@@ -401,20 +511,174 @@ async def publish_gzh_draft(payload: PublishPayload):
                     print("已截图: /data/shared/gzh_debug_content.png")
                 except Exception as se:
                     print("截图失败:", se)
+            else:
+                print("公众号正文填充: OK")
+
+            # 用编辑器官方 Vue API 把内容登记进模型（DOM/键入都不触发字数统计）
+            try:
+                api_result = await page.evaluate("""(arg) => {
+                    const out = {};
+                    try {
+                        const t = window.__mpTitleEditor;
+                        if (t && typeof t.setContent === 'function') {
+                            t.focus && t.focus();
+                            t.setContent(arg.title);
+                            out.title = 'ok:' + t.getContentLength();
+                        } else {
+                            out.title = 'no-api';
+                        }
+                    } catch (e) {
+                        out.title = 'ERR:' + e.message;
+                    }
+                    try {
+                        const pms = [...document.querySelectorAll('div.ProseMirror')];
+                        const pm = pms.find(e => e.offsetParent !== null &&
+                            (e.innerText || '').length > 50);
+                        if (pm && pm.__vue__ && typeof pm.__vue__.setContent === 'function') {
+                            pm.__vue__.setContent(arg.body);
+                            out.body = 'ok:' + (pm.__vue__.getContentLength ?
+                                pm.__vue__.getContentLength() : '?');
+                        } else {
+                            out.body = 'no-api pm=' + !!pm + ' vue=' + !!(pm && pm.__vue__);
+                        }
+                    } catch (e) {
+                        out.body = 'ERR:' + e.message;
+                    }
+                    return out;
+                }""", {"title": payload.title, "body": payload.content})
+                print("编辑器 Vue API:", api_result)
+            except Exception as e:
+                print("编辑器 Vue API 失败:", e)
+
+            # 验证编辑器是否真的登记了内容（正文字数）
+            await page.wait_for_timeout(1500)
+            try:
+                wc = await page.evaluate(
+                    "() => { const m = document.body.innerText.match(/正文字数\\s*(\\d+)/); "
+                    "return m ? m[1] : '?'; }")
+                print("公众号正文字数:", wc)
+            except Exception as e:
+                print("公众号字数读取提示:", e)
+
+            # 诊断：编辑器全局对象与 iframe 结构（定位真实编辑器实例）
+            try:
+                globs = await page.evaluate("""() => {
+                    const keys = Object.keys(window).filter(
+                        k => /editor|appmsg|prose|ue|ueditor|wx/i.test(k)).slice(0, 50);
+                    const frames = [];
+                    document.querySelectorAll('iframe').forEach(f => {
+                        frames.push({id: f.id, name: f.name, src: (f.src || '').slice(0, 80)});
+                    });
+                    return {
+                        keys: keys,
+                        frames: frames,
+                        hasUE: typeof window.UE !== 'undefined',
+                        hasEditor: typeof window.editor !== 'undefined',
+                        hasProse: typeof window.ProseMirror !== 'undefined',
+                    };
+                }""")
+                print("编辑器全局:", globs)
+            except Exception as e:
+                print("编辑器全局诊断失败:", e)
+            try:
+                api_info = await page.evaluate("""() => {
+                    const out = {};
+                    for (const name of ['__MP_Editor_JSAPI__', '__MpEditor',
+                                        '__mpTitleEditor', 'editorVarGlobal', 'UE']) {
+                        const o = window[name];
+                        if (!o) { out[name] = null; continue; }
+                        out[name] = {
+                            type: typeof o,
+                            keys: Object.keys(o).slice(0, 60),
+                        };
+                    }
+                    return out;
+                }""")
+                print("编辑器 API:", api_info)
+            except Exception as e:
+                print("编辑器 API 诊断失败:", e)
+            for f in page.frames:
+                try:
+                    info = await f.evaluate("""() => {
+                        const els = [...document.querySelectorAll(
+                            '[contenteditable="true"], .ProseMirror, body')];
+                        return els.map(e => ({
+                            tag: e.tagName,
+                            cls: (e.className || '').toString().slice(0, 30),
+                            ce: e.getAttribute('contenteditable'),
+                            vis: e.offsetParent !== null,
+                            len: (e.innerText || '').length,
+                        })).slice(0, 10);
+                    }""")
+                    print("frame 可编辑:", (f.url[:60] or f.name), info)
+                except Exception as e:
+                    print("frame 诊断失败:", e)
 
             # 保存草稿并二次断言(不点群发)
             saved, evidence = False, ""
             try:
-                draft_btn = await page.query_selector(
-                    'button:has-text("保存为草稿"), a:has-text("保存为草稿"), '
-                    'button:has-text("存草稿"), #js_save, '
-                    'a:has-text("存草稿"), button:has-text("保存草稿")')
-                if draft_btn:
-                    await draft_btn.click()
-                    saved, evidence = await wait_for_success(
-                        page, ["保存成功", "已保存"], timeout_ms=15000)
-                else:
-                    evidence = "未找到存草稿按钮"
+                async def dump_ui(tag):
+                    try:
+                        ui_text = await page.evaluate("""() => {
+                            const sels = '[class*="dialog"],[class*="toast"],[class*="tips"],' +
+                                        '[class*="modal"],[role="dialog"]';
+                            const out = [];
+                            document.querySelectorAll(sels).forEach(e => {
+                                const t = (e.innerText || '').trim();
+                                const r = e.getBoundingClientRect();
+                                if (t && r.width > 0 && e.offsetParent !== null) {
+                                    out.push(t.slice(0, 200));
+                                }
+                            });
+                            return out;
+                        }""")
+                        print(f"UI 弹层文本[{tag}]:", ui_text)
+                    except Exception as e:
+                        print(f"UI 读取失败[{tag}]:", e)
+
+                # 方案 1：Ctrl+S 原生保存草稿快捷键
+                await page.keyboard.press("Control+s")
+                await page.wait_for_timeout(3000)
+                print("Ctrl+S 已按下")
+                await dump_ui("ctrl_s")
+                saved, evidence = await wait_for_success(
+                    page, ["保存成功", "已保存", "保存草稿成功"], timeout_ms=5000)
+
+                # 方案 2：JS 点击“保存为草稿”按钮
+                if not saved:
+                    js_clicked = await page.evaluate("""() => {
+                        const btns = [...document.querySelectorAll('button, a, span')];
+                        const el = btns.find(e =>
+                            (e.innerText || '').trim().includes('保存为草稿') &&
+                            e.offsetParent !== null);
+                        if (!el) return false;
+                        el.click();
+                        return true;
+                    }""")
+                    print("保存按钮 JS 点击:", js_clicked)
+                    await page.wait_for_timeout(3000)
+                    await dump_ui("js_click")
+                    saved2, evidence2 = await wait_for_success(
+                        page, ["保存成功", "已保存", "保存草稿成功"], timeout_ms=8000)
+                    if saved2:
+                        saved, evidence = True, evidence2
+                    else:
+                        evidence = f"Ctrl+S 与按钮点击均未确认；{evidence2}"
+
+                try:
+                    await page.screenshot(path="/data/shared/gzh_debug_after_save.png",
+                                          full_page=True)
+                    print("已截图: /data/shared/gzh_debug_after_save.png")
+                except Exception as se:
+                    print("截图失败:", se)
+                print("保存后 URL:", page.url)
+                try:
+                    body_txt = (await page.inner_text("body"))[:200].replace("\n", " | ")
+                    print("保存后 body:", body_txt)
+                except Exception as be:
+                    print("body 读取失败:", be)
+                print("console:", console_msgs[-8:])
+                print("save_reqs:", save_reqs[-20:])
             except Exception as e:
                 evidence = f"存草稿异常: {e}"
 
