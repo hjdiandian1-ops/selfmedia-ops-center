@@ -136,6 +136,7 @@ async def publish_note(payload: PublishPayload):
             # 打开小红书创作服务平台
             await page.goto("https://creator.xiaohongshu.com/publish/publish?source=official")
             await page.wait_for_timeout(4000)
+            print("小红书发布页 URL:", page.url)
 
             # 登录态哨兵：未登录会跳转 login 或出现扫码登录
             body_probe = ""
@@ -151,20 +152,49 @@ async def publish_note(payload: PublishPayload):
                     detail="小红书登录态失效，请重新扫码登录（python3 init_xiaohongshu_login.py 或本地扫码脚本）",
                 )
 
+            # 新版入口页：先点“上传图文”进入图文编辑器
+            try:
+                clicked = await page.evaluate("""() => {
+                    const els = [...document.querySelectorAll('*')].filter(e =>
+                        e.children.length === 0 &&
+                        (e.textContent || '').trim() === '上传图文');
+                    if (!els.length) return false;
+                    els[0].click();
+                    return true;
+                }""")
+                if clicked:
+                    await page.wait_for_timeout(6000)
+                    print("已点击(JS)：上传图文；URL:", page.url)
+                else:
+                    print("未找到『上传图文』文本元素")
+            except Exception as e:
+                print("上传图文点击提示:", e)
+
             # 定位图片上传 file input
             all_inputs = await page.query_selector_all('input[type="file"]')
             image_input = None
+            # 优先多图输入框（正文配图）；封面等单图输入框一次只能传 1 张
             for inp in all_inputs:
-                acc = (await inp.get_attribute("accept")) or ""
                 has_mult = (await inp.get_attribute("multiple")) is not None
-                if "image" in acc or has_mult or ".png" in acc:
+                if has_mult:
                     image_input = inp
                     break
+            if not image_input:
+                for inp in all_inputs:
+                    acc = (await inp.get_attribute("accept")) or ""
+                    if "image" in acc or ".png" in acc:
+                        image_input = inp
+                        break
             if not image_input and all_inputs:
                 image_input = all_inputs[-1]
 
             if image_input:
-                await image_input.set_input_files(valid_images)
+                has_mult = (await image_input.get_attribute("multiple")) is not None
+                if has_mult or len(valid_images) == 1:
+                    await image_input.set_input_files(valid_images)
+                else:
+                    # 兜底：单图输入框一次只能传 1 张，先传第一张
+                    await image_input.set_input_files(valid_images[:1])
             else:
                 await page.set_input_files('input[type="file"]', valid_images)
             await page.wait_for_timeout(5000)
@@ -176,6 +206,12 @@ async def publish_note(payload: PublishPayload):
                     await title_input.fill(payload.title)
             except Exception as e:
                 print("填写标题提示:", e)
+                try:
+                    await page.screenshot(path="/data/shared/xhs_debug_title.png", full_page=True)
+                    body_snip = (await page.inner_text("body"))[:200].replace("\n", " | ")
+                    print("已截图: xhs_debug_title；body:", body_snip)
+                except Exception as se:
+                    print("截图失败:", se)
 
             # 填写正文与标签
             try:
@@ -188,19 +224,106 @@ async def publish_note(payload: PublishPayload):
                     await content_input.fill(full_content)
             except Exception as e:
                 print("填写正文提示:", e)
+                try:
+                    await page.screenshot(path="/data/shared/xhs_debug_content.png", full_page=True)
+                    print("已截图: xhs_debug_content")
+                except Exception as se:
+                    print("截图失败:", se)
 
             await page.wait_for_timeout(3000)
 
             # 点击发布按钮并二次断言成功(不再 sleep 5s 谎报成功)
             published, evidence = False, ""
             try:
-                publish_btn = await page.query_selector('button:has-text("发布"), .publishBtn')
-                if publish_btn:
-                    await publish_btn.click()
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                await page.wait_for_timeout(1000)
+                try:
+                    cands = await page.evaluate("""() => {
+                        const out = [];
+                        [...document.querySelectorAll('button, a, div, span')].forEach(e => {
+                            const t = (e.innerText || '').trim();
+                            const r = e.getBoundingClientRect();
+                            if ((t === '发布' || t === '发布笔记' || t === '下一步' || t === '完成')
+                                    && r.width > 0 && r.height > 0) {
+                                out.push({
+                                    tag: e.tagName,
+                                    cls: (e.className || '').toString().slice(0, 60),
+                                    text: t.slice(0, 20),
+                                    x: Math.round(r.x), y: Math.round(r.y),
+                                    w: Math.round(r.width), h: Math.round(r.height),
+                                });
+                            }
+                        });
+                        return out.slice(0, 40);
+                    }""")
+                    print("发布按钮候选:", cands)
+                except Exception as ce:
+                    print("发布按钮诊断失败:", ce)
+
+                pub_clicked = False
+                # Playwright 定位器（可穿透 open shadow DOM）
+                try:
+                    pub_locs = page.locator("text=发布")
+                    pub_n = await pub_locs.count()
+                    print("发布 locator 数量:", pub_n)
+                    for i in range(pub_n):
+                        el = pub_locs.nth(i)
+                        box = await el.bounding_box()
+                        if box and box["x"] > 300 and box["y"] > 500 and box["width"] > 40:
+                            await el.click()
+                            pub_clicked = True
+                            break
+                except Exception as le:
+                    print("发布 locator 点击提示:", le)
+                if not pub_clicked:
+                    pub_clicked = await page.evaluate("""() => {
+                        const els = [...document.querySelectorAll('*')].filter(e => {
+                            const t = (e.innerText || '').trim();
+                            const r = e.getBoundingClientRect();
+                            return t === '发布' &&
+                                r.width > 30 && r.width < 300 &&
+                                r.height > 20 && r.height < 90 &&
+                                r.x > 300;
+                        });
+                        if (!els.length) return false;
+                        els[els.length - 1].click();
+                        return true;
+                    }""")
+                print("发布按钮 JS 点击:", pub_clicked)
+                if pub_clicked:
                     published, evidence = await wait_for_success(
                         page, ["发布成功", "发布完成", "已发布"], timeout_ms=30000)
+                    try:
+                        await page.screenshot(path="/data/shared/xhs_debug_after_publish.png",
+                                              full_page=True)
+                        print("发布后 URL:", page.url)
+                        tail_txt = (await page.inner_text("body"))[-300:].replace("\n", " | ")
+                        print("发布后 body:", tail_txt)
+                    except Exception as se:
+                        print("发布后诊断失败:", se)
                 else:
-                    evidence = "未找到发布按钮"
+                    publish_btn = await page.query_selector('button:has-text("发布"), .publishBtn')
+                    if publish_btn:
+                        await publish_btn.click()
+                        published, evidence = await wait_for_success(
+                            page, ["发布成功", "发布完成", "已发布"], timeout_ms=30000)
+                        try:
+                            await page.screenshot(path="/data/shared/xhs_debug_after_publish.png",
+                                                  full_page=True)
+                            print("发布后 URL:", page.url)
+                            tail_txt = (await page.inner_text("body"))[-300:].replace("\n", " | ")
+                            print("发布后 body:", tail_txt)
+                        except Exception as se:
+                            print("发布后诊断失败:", se)
+                    else:
+                        evidence = "未找到发布按钮"
+                        try:
+                            await page.screenshot(path="/data/shared/xhs_debug_publish.png",
+                                                  full_page=True)
+                            body_snip = (await page.inner_text("body"))[:200].replace("\n", " | ")
+                            print("已截图: xhs_debug_publish；body:", body_snip)
+                        except Exception as se:
+                            print("截图失败:", se)
             except Exception as e:
                 evidence = f"点击发布异常: {e}"
 
