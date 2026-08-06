@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gzh_ai_codex_guide · 公众号排版预览</title>
+<style>
+  body{margin:0;background:#eef0f2;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;-webkit-text-size-adjust:100%;}
+  .gzh-toolbar{position:fixed;top:0;left:0;right:0;height:54px;background:#ffffff;box-shadow:0 1px 10px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:99;}
+  .gzh-hint{font-size:13px;color:#6b7280;line-height:1.4;}
+  .gzh-hint b{color:#111827;}
+  .gzh-copy{background:#059669;color:#fff;border:0;border-radius:9px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(5,150,105,.28);white-space:nowrap;transition:transform .08s,background .15s;}
+  .gzh-copy:hover{background:#047857;}
+  .gzh-copy:active{transform:translateY(1px);}
+  .gzh-toast{position:fixed;top:66px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:88vw;text-align:center;}
+  .gzh-toast.show{opacity:1;}
+  .gzh-stage{max-width:700px;margin:78px auto 64px;padding:0 8px;}
+  @media(max-width:520px){.gzh-hint{max-width:150px;}}
+</style>
+</head>
+<body>
+<div class="gzh-toolbar">
+  <span class="gzh-hint">👇 下方是排版效果 · 点右侧 <b>复制</b> 直接粘到公众号</span>
+  <button class="gzh-copy" id="gzhCopyBtn" onclick="gzhCopy()">📋 复制到公众号</button>
+</div>
+<div class="gzh-toast" id="gzhToast"></div>
+<div class="gzh-stage">
+  <div id="gzh-content">
+<section style="max-width:677px;margin:0 auto;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#374151;line-height:1.75;letter-spacing:0.5px;overflow-x:hidden;">
+
+  <!-- 1. 封面卡片 -->
+  <section style="margin:0 0 32px;background:#fff;border:1.5px solid rgba(5,150,105,0.15);border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);width:100%;">
+    <section style="padding:32px 28px 28px;">
+      <section style="display:flex;align-items:center;gap:8px;margin-bottom:28px;">
+        <span style="width:6px;height:6px;background:#059669;border-radius:50%;"><span leaf=""><br></span></span>
+        <span style="font-size:11px;font-weight:700;letter-spacing:3px;color:#059669;"><span leaf="">TUTORIAL · AI 生产力指南</span></span>
+        <section style="flex:1;height:1px;overflow:hidden;background:linear-gradient(to right,rgba(5,150,105,0.12),transparent);"><span leaf=""><br></span></section>
+        <span style="font-size:10px;color:#D1D5DB;font-weight:600;"><span leaf="">2026.07</span></span>
+      </section>
+      <section>
+        <p style="font-size:15px;color:#D1D5DB;margin:0 0 6px;text-decoration:line-through;letter-spacing:0.5px;">
+          <span leaf="">不懂代码就不能用编程 AI？</span>
+        </p>
+        <p style="font-size:24px;font-weight:900;color:#111827;margin:0;line-height:1.05;letter-spacing:-2px;">
+          <span leaf="">小白零基础包会：</span>
+          <span style="color:#059669;"><span leaf="">AI Codex</span></span>
+        </p>
+        <p style="font-size:24px;font-weight:900;color:#059669;margin:0 0 16px;line-height:1.05;letter-spacing:-2px;">
+          <span leaf="">保姆级入门与落地全指南</span>
+        </p>
+        <section style="width:48px;height:3px;background:linear-gradient(to right,#059669,#34D399);border-radius:2px;margin-bottom:12px;">
+          <span leaf=""><br></span>
+        </section>
+        <p style="font-size:13px;color:#9CA3AF;margin:0;line-height:1.7;letter-spacing:0.5px;">
+          <span leaf="">概念通俗化 · 场景落地 · 避坑指南 · 实操流程</span>
+        </p>
+      </section>
+    </section>
+    <section style="background:linear-gradient(135deg,#059669,#10B981);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;">
+      <p style="font-size:12px;color:rgba(255,255,255,0.9);margin:0;font-weight:600;letter-spacing:0.5px;">
+        <span leaf="">AI 工具破局系列</span>
+      </p>
+      <section style="display:flex;gap:4px;">
+        <span style="background:rgba(255,255,255,0.2);padding:1px 6px;border-radius:3px;font-size:8px;color:#fff;font-weight:600;"><span leaf="">AI Codex</span></span>
+        <span style="background:rgba(255,255,255,0.2);padding:1px 6px;border-radius:3px;font-size:8px;color:#fff;font-weight:600;"><span leaf="">小白零门槛</span></span>
+      </section>
+    </section>
+  </section>
+
+  <!-- 2. 横向目录 -->
+  <section style="margin:0 20px 32px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <p style="font-size:10px;color:#9CA3AF;margin:0;text-transform:uppercase;letter-spacing:2px;font-weight:600;">
+        <span leaf="">📦 3 Parts + Conclusion</span>
+      </p>
+      <p style="font-size:10px;color:#9CA3AF;margin:0;">
+        <span leaf="">👉 滑动导览</span>
+      </p>
+    </section>
+    <section style="overflow-x:scroll;-webkit-overflow-scrolling:touch;white-space:nowrap;padding-bottom:8px;">
+      <section style="display:inline-block;white-space:normal;vertical-align:top;width:110px;background:linear-gradient(135deg,#059669,#10B981);border-radius:12px;padding:12px;margin-right:8px;">
+        <p style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:1px;margin:0 0 5px;">
+          <span leaf="">PART 01</span>
+        </p>
+        <p style="font-size:13px;font-weight:800;color:#fff;margin:0 0 3px;">
+          <span leaf="">重新定义</span>
+        </p>
+        <p style="font-size:10px;color:rgba(255,255,255,0.7);margin:0;">
+          <span leaf="">告别代码恐惧</span>
+        </p>
+      </section>
+      <section style="display:inline-block;white-space:normal;vertical-align:top;width:110px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:12px;margin-right:8px;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+        <p style="font-size:9px;font-weight:700;color:#9CA3AF;letter-spacing:1px;margin:0 0 5px;">
+          <span leaf="">PART 02</span>
+        </p>
+        <p style="font-size:13px;font-weight:800;color:#111827;margin:0 0 3px;">
+          <span leaf="">三大实战场景</span>
+        </p>
+        <p style="font-size:10px;color:#9CA3AF;margin:0;">
+          <span leaf="">非程序员必看</span>
+        </p>
+      </section>
+      <section style="display:inline-block;white-space:normal;vertical-align:top;width:110px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:12px;margin-right:8px;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+        <p style="font-size:9px;font-weight:700;color:#9CA3AF;letter-spacing:1px;margin:0 0 5px;">
+          <span leaf="">PART 03</span>
+        </p>
+        <p style="font-size:13px;font-weight:800;color:#111827;margin:0 0 3px;">
+          <span leaf="">对话四步法</span>
+        </p>
+        <p style="font-size:10px;color:#9CA3AF;margin:0;">
+          <span leaf="">掌握高质输出</span>
+        </p>
+      </section>
+      <section style="display:inline-block;white-space:normal;vertical-align:top;width:110px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+        <p style="font-size:9px;font-weight:700;color:#9CA3AF;letter-spacing:1px;margin:0 0 5px;">
+          <span leaf="">PART ///</span>
+        </p>
+        <p style="font-size:13px;font-weight:800;color:#111827;margin:0 0 3px;">
+          <span leaf="">写在最后</span>
+        </p>
+        <p style="font-size:10px;color:#9CA3AF;margin:0;">
+          <span leaf="">AI 时代新范式</span>
+        </p>
+      </section>
+    </section>
+  </section>
+
+  <!-- 引言卡片 -->
+  <section style="margin:0 20px 32px;padding:20px;background:#ECFDF5;border-left:4px solid #059669;border-radius:0 12px 12px 0;">
+    <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#059669;">
+      <span leaf="">💡 为什么你必须了解 AI Codex？</span>
+    </p>
+    <p style="margin:0;font-size:13px;color:#374151;line-height:1.8;">
+      <span leaf="">很多人一听到编程、Codex 或代码，第一反应就是“这跟我没关系”。但事实恰恰相反，在智能体与大模型爆发的今天，</span><span style="border-bottom:2px solid #A7F3D0;font-weight:600;"><span leaf="">AI Codex 不是给程序员准备的黑科技</span></span><span leaf="">，而是每位普通人掌控自动化、搭建属于自己数字工具箱的超级钥匙。</span>
+    </p>
+  </section>
+
+  <!-- 3. PART 01 -->
+  <section style="margin-top:48px;margin-bottom:32px;padding:0 20px;">
+    <section style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+      <section style="text-align:center;flex-shrink:0;">
+        <p style="margin:0;font-size:28px;font-weight:900;color:#059669;line-height:1;letter-spacing:-2px;">
+          <span leaf="">01</span>
+        </p>
+        <p style="margin:0;font-size:8px;font-weight:700;color:#D1D5DB;letter-spacing:2px;">
+          <span leaf="">PART</span>
+        </p>
+      </section>
+      <span style="width:1px;height:36px;background:#E5E7EB;flex-shrink:0;"><span leaf=""><br></span></span>
+      <section>
+        <p style="margin:0 0 1px;font-size:17px;font-weight:900;color:#111827;letter-spacing:0.3px;">
+          <span leaf="">重新定义 AI Codex：你贴身的 24 小时技术顾问</span>
+        </p>
+        <p style="margin:0;font-size:11px;font-weight:600;color:#9CA3AF;letter-spacing:1.5px;">
+          <span leaf="">REDEFINE CODEX FOR BEGINNERS</span>
+        </p>
+      </section>
+    </section>
+
+    <p style="font-size:14px;color:#374151;margin:0 0 16px;line-height:1.9;">
+      <span leaf="">简单来说，AI Codex 就是一个理解人类自然语言并能自动编写、修改和解释代码的大模型助手。你不需要背任何语法，只需用平时说话的方式，把它当成一位</span><span style="border-bottom:2px solid #A7F3D0;font-weight:600;"><span leaf="">耐心的全栈高级工程师</span></span><span leaf="">。</span>
+    </p>
+
+    <!-- 优势亮点卡片 -->
+    <section style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:16px;margin:20px 0;">
+      <section style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="display:inline-block;padding:2px 8px;background:#059669;color:#fff;font-size:11px;font-weight:700;border-radius:4px;"><span leaf="">核心认知</span></span>
+        <span style="font-size:13px;font-weight:700;color:#111827;"><span leaf="">传统编程 vs AI Codex 模式对比</span></span>
+      </section>
+      <p style="font-size:13px;color:#4B5563;margin:0 0 8px;line-height:1.7;">
+        <span leaf="">• ❌ 传统方式：背诵语法 ➔ 解决报错 ➔ 查阅文档 ➔ 门槛极高</span>
+      </p>
+      <p style="font-size:13px;color:#059669;font-weight:600;margin:0;line-height:1.7;">
+        <span leaf="">• ✅ Codex 方式：描述需求 ➔ AI 生成方案 ➔ 自动检验 ➔ 一键运行</span>
+      </p>
+    </section>
+
+    <p style="font-size:14px;color:#374151;margin:0 0 16px;line-height:1.9;">
+      <span leaf="">无论你是做运营、产品、设计还是自由职业，有了它之后，原本需要花钱找开发解决的网页制作、数据清洗、批量图片处理等小需求，自己半小时就能轻松搞定。</span>
+    </p>
+  </section>
+
+  <!-- 4. PART 02 -->
+  <section style="margin-top:48px;margin-bottom:32px;padding:0 20px;">
+    <section style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+      <section style="text-align:center;flex-shrink:0;">
+        <p style="margin:0;font-size:28px;font-weight:900;color:#059669;line-height:1;letter-spacing:-2px;">
+          <span leaf="">02</span>
+        </p>
+        <p style="margin:0;font-size:8px;font-weight:700;color:#D1D5DB;letter-spacing:2px;">
+          <span leaf="">PART</span>
+        </p>
+      </section>
+      <span style="width:1px;height:36px;background:#E5E7EB;flex-shrink:0;"><span leaf=""><br></span></span>
+      <section>
+        <p style="margin:0 0 1px;font-size:17px;font-weight:900;color:#111827;letter-spacing:0.3px;">
+          <span leaf="">小白必看的 3 个实战应用场景</span>
+        </p>
+        <p style="margin:0;font-size:11px;font-weight:600;color:#9CA3AF;letter-spacing:1.5px;">
+          <span leaf="">THREE PRACTICAL USE CASES</span>
+        </p>
+      </section>
+    </section>
+
+    <!-- 场景1 -->
+    <section style="margin-bottom:20px;">
+      <p style="font-size:15px;font-weight:700;color:#111827;margin:0 0 8px;">
+        <span style="color:#059669;margin-right:6px;"><span leaf="">01.</span></span><span leaf="">自动生成数据表格与可视化图表</span>
+      </p>
+      <p style="font-size:14px;color:#374151;margin:0;line-height:1.9;">
+        <span leaf="">扔给它一个乱七八糟的 Excel 或 CSV，直接指令：“把这份表格里销售额前 10 的数据筛选出来，生成一个好看的交互折线图页面”。</span><span style="border-bottom:2px solid #A7F3D0;font-weight:600;"><span leaf="">不需要学 Python 或复杂函数</span></span><span leaf="">，立刻就能拿到现成的可视化结果。</span>
+      </p>
+    </section>
+
+    <!-- 场景2 -->
+    <section style="margin-bottom:20px;">
+      <p style="font-size:15px;font-weight:700;color:#111827;margin:0 0 8px;">
+        <span style="color:#059669;margin-right:6px;"><span leaf="">02.</span></span><span leaf="">一键批量处理文件与图片水印</span>
+      </p>
+      <p style="font-size:14px;color:#374151;margin:0;line-height:1.9;">
+        <span leaf="">自媒体运营经常遇到几百张图片需要压缩、改名或加水印的苦活。用自然语言告诉 Codex：“帮我写个脚本，把文件夹里的所有 PNG 图片转成 WebP 格式并加右上角文字水印”，</span><span style="border-bottom:2px solid #A7F3D0;font-weight:600;"><span leaf="">几秒钟即可搞定数小时的手工活</span></span><span leaf="">。</span>
+      </p>
+    </section>
+
+    <!-- 场景3 -->
+    <section style="margin-bottom:20px;">
+      <p style="font-size:15px;font-weight:700;color:#111827;margin:0 0 8px;">
+        <span style="color:#059669;margin-right:6px;"><span leaf="">03.</span></span><span leaf="">搭建个人专属展示主页或工具小程序</span>
+      </p>
+      <p style="font-size:14px;color:#374151;margin:0;line-height:1.9;">
+        <span leaf="">想展示个人作品集或搭建一个简单的抽奖器/倒计时工具？直接在对话框输入你的设计想法，Codex 就能自动写好全部代码并教你如何在本地双击打开。</span>
+      </p>
+    </section>
+  </section>
+
+  <!-- 5. PART 03 -->
+  <section style="margin-top:48px;margin-bottom:32px;padding:0 20px;">
+    <section style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+      <section style="text-align:center;flex-shrink:0;">
+        <p style="margin:0;font-size:28px;font-weight:900;color:#059669;line-height:1;letter-spacing:-2px;">
+          <span leaf="">03</span>
+        </p>
+        <p style="margin:0;font-size:8px;font-weight:700;color:#D1D5DB;letter-spacing:2px;">
+          <span leaf="">PART</span>
+        </p>
+      </section>
+      <span style="width:1px;height:36px;background:#E5E7EB;flex-shrink:0;"><span leaf=""><br></span></span>
+      <section>
+        <p style="margin:0 0 1px;font-size:17px;font-weight:900;color:#111827;letter-spacing:0.3px;">
+          <span leaf="">掌握黄金对话四步法，人人都是产品经理</span>
+        </p>
+        <p style="margin:0;font-size:11px;font-weight:600;color:#9CA3AF;letter-spacing:1.5px;">
+          <span leaf="">FOUR-STEP PROMPT METHODOLOGY</span>
+        </p>
+      </section>
+    </section>
+
+    <p style="font-size:14px;color:#374151;margin:0 0 16px;line-height:1.9;">
+      <span leaf="">想让 AI Codex 准确输出你想要的结果，关键不在于懂得编程术语，而在于像对下属布置任务一样，把</span><span style="border-bottom:2px solid #A7F3D0;font-weight:600;"><span leaf="">背景、目标、输入与输出要求</span></span><span leaf="">交代清楚：</span>
+    </p>
+
+    <!-- 代码/Prompt 示例框 -->
+    <section style="background:#111827;border-radius:12px;padding:16px;margin:20px 0;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+      <p style="font-size:11px;color:#9CA3AF;margin:0 0 8px;letter-spacing:1px;font-weight:700;">
+        <span leaf="">PROMPT TEMPLATE · 万能提问公式</span>
+      </p>
+      <p style="font-size:13px;color:#10B981;margin:0 0 4px;line-height:1.6;">
+        <span leaf="">1. 身份设定：你是一名精通数据处理的高级 Python 工程师。</span>
+      </p>
+      <p style="font-size:13px;color:#F3F4F6;margin:0 0 4px;line-height:1.6;">
+        <span leaf="">2. 目标任务：帮我写一个简单易用的本地批量改名脚本。</span>
+      </p>
+      <p style="font-size:13px;color:#F3F4F6;margin:0 0 4px;line-height:1.6;">
+        <span leaf="">3. 限制条件：保持小白视角，不需要安装复杂的第三方库，给每一步附带中文注释。</span>
+      </p>
+      <p style="font-size:13px;color:#FDE68A;margin:0;line-height:1.6;">
+        <span leaf="">4. 运行方式：告诉我如何在 Mac/Windows 终端里一步步运行它。</span>
+      </p>
+    </section>
+
+    <p style="font-size:14px;color:#374151;margin:0 0 16px;line-height:1.9;">
+      <span leaf="">如果在运行过程中遇到任何错误提示，完全不需要慌张。</span><span style="border-bottom:2px solid #A7F3D0;font-weight:600;"><span leaf="">直接复制报错信息发给 Codex</span></span><span leaf="">，并说：“刚才运行出现了这个错误，请帮我分析原因并重新给出修正后的版本。” AI 会自动迭代直到成功。</span>
+    </p>
+  </section>
+
+  <!-- 6. 结语与写在最后 -->
+  <section style="margin-top:48px;margin-bottom:32px;padding:0 20px;">
+    <section style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+      <section style="text-align:center;flex-shrink:0;">
+        <p style="margin:0;font-size:28px;font-weight:900;color:#059669;line-height:1;letter-spacing:-2px;">
+          <span leaf="">///</span>
+        </p>
+        <p style="margin:0;font-size:8px;font-weight:700;color:#D1D5DB;letter-spacing:2px;">
+          <span leaf="">LAST</span>
+        </p>
+      </section>
+      <span style="width:1px;height:36px;background:#E5E7EB;flex-shrink:0;"><span leaf=""><br></span></span>
+      <section>
+        <p style="margin:0 0 1px;font-size:17px;font-weight:900;color:#111827;letter-spacing:0.3px;">
+          <span leaf="">写在最后：AI 时代，想法比语法更重要</span>
+        </p>
+        <p style="margin:0;font-size:11px;font-weight:600;color:#9CA3AF;letter-spacing:1.5px;">
+          <span leaf="">IDEAS OVER SYNTAX</span>
+        </p>
+      </section>
+    </section>
+
+    <p style="font-size:14px;color:#374151;margin:0 0 16px;line-height:1.9;">
+      <span leaf="">在过去，把一个想法变成产品需要数年的技术积累或高昂的人力成本；而在今天，AI Codex 打破了这道高墙。</span><span style="border-bottom:2px solid #A7F3D0;font-weight:600;"><span leaf="">决定你上限的不再是会不会写语法</span></span><span leaf="">，而是你是否拥有敏锐的痛点洞察力和清晰表达诉求的能力。</span>
+    </p>
+  </section>
+
+  <!-- 7. 尾部作者签名与 CTA 卡片 -->
+  <section style="margin:40px 20px 20px;padding:24px 20px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:16px;text-align:center;">
+    <p style="font-size:14px;font-weight:700;color:#111827;margin:0 0 6px;">
+      <span leaf="">我是 {{作者名}}，热衷于分享 AI 观察与效率干货</span>
+    </p>
+    <p style="font-size:12px;color:#6B7280;margin:0 0 16px;line-height:1.6;">
+      <span leaf="">用通俗表达拆解硬核 AI 技术，放大每一位个体的创造力。</span>
+    </p>
+    <section style="height:1px;background:#E5E7EB;margin:16px auto;width:80%;"><span leaf=""><br></span></section>
+    <p style="font-size:13px;color:#059669;font-weight:600;margin:0;">
+      <span leaf="">如果你觉得今天这篇有收获，欢迎点赞、在看、转发三连，我们下期见！</span>
+    </p>
+  </section>
+
+</section>
+  </div>
+</div>
+<script>
+  function gzhShowToast(msg){
+    var t=document.getElementById('gzhToast');
+    t.textContent=msg;t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer=setTimeout(function(){t.classList.remove('show');},2800);
+  }
+  function gzhCopy(){
+    var el=document.getElementById('gzh-content');
+    // 选中渲染后的富文本节点并复制（等价于手动 Ctrl+A / Ctrl+C，保留全部样式）
+    var range=document.createRange();
+    range.selectNodeContents(el);
+    var sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    var ok=false;
+    try{ok=document.execCommand('copy');}catch(e){ok=false;}
+    sel.removeAllRanges();
+    var btn=document.getElementById('gzhCopyBtn');
+    if(ok){
+      gzhShowToast('✅ 已复制！去公众号编辑器按 Ctrl/⌘+V 粘贴即可');
+      var old=btn.textContent;btn.textContent='✅ 已复制';
+      setTimeout(function(){btn.textContent=old;},2200);
+    }else{
+      gzhShowToast('⚠ 自动复制失败，请手动全选(Ctrl/⌘+A)再复制(Ctrl/⌘+C)');
+    }
+  }
+</script>
+</body>
+</html>

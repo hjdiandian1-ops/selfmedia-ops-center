@@ -1,0 +1,39 @@
+{
+  "job_id": "2026-08-04_Agent副业创收v2",
+  "theme": "Agent 副业创收实战（契约验收版）",
+  "state": "review",
+  "created_at": "2026-08-04 01:48:52",
+  "updated_at": "2026-08-07 01:36:19",
+  "history": [
+    {
+      "state": "topic",
+      "at": "2026-08-04 01:48:52",
+      "note": "Job 创建"
+    },
+    {
+      "state": "materials",
+      "at": "2026-08-04 01:48:52",
+      "note": "素材包 v2 schema 契约版落盘"
+    },
+    {
+      "state": "draft",
+      "at": "2026-08-04 01:48:52",
+      "note": "三平台成稿，frontmatter 契约齐全"
+    },
+    {
+      "state": "review",
+      "at": "2026-08-04 01:48:52",
+      "note": "validate PASSED + harsh-critic 98",
+      "score": 98
+    },
+    {
+      "state": "review",
+      "at": "2026-08-07 01:36:19",
+      "note": "审计补录：原 history 时间戳全部同秒、不可靠；产物仅三份文案，缺视觉与质检报告，需重跑流水线后再归档"
+    }
+  ],
+  "reject_count": 0,
+  "scores": {
+    "review": 98
+  }
+}

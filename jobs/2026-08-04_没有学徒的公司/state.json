@@ -1,0 +1,49 @@
+{
+  "job_id": "2026-08-04_没有学徒的公司",
+  "theme": "没有学徒的公司，在等AI长大",
+  "state": "archive",
+  "created_at": "2026-08-04 20:21:28",
+  "updated_at": "2026-08-05 01:46:21",
+  "history": [
+    {
+      "state": "topic",
+      "at": "2026-08-04 20:21:28",
+      "note": "Job 创建"
+    },
+    {
+      "state": "materials",
+      "at": "2026-08-04 20:23:56",
+      "note": "素材包落盘：5核心(斯坦福16%/Anthropic14%/SignalFire7%/人才债/用户实证)+6辅助"
+    },
+    {
+      "state": "draft",
+      "at": "2026-08-04 20:27:58",
+      "note": "三平台成稿完成，frontmatter契约齐全，核心素材M1-M5全消费"
+    },
+    {
+      "state": "visual",
+      "at": "2026-08-04 20:35:37",
+      "note": "4张Swiss ikb卡片+封面渲染通过；公众号红白排版校验0 ERROR、移动端无横向溢出"
+    },
+    {
+      "state": "review",
+      "at": "2026-08-04 20:40:40",
+      "note": "validate PASSED(0 FAIL/WARN) + harsh-critic 98分",
+      "score": 98
+    },
+    {
+      "state": "archive",
+      "at": "2026-08-04 20:41:02",
+      "note": "三级目录归档完成，无process_*临时文件，停在决策卡点2待确认发布"
+    },
+    {
+      "state": "archive",
+      "at": "2026-08-05 01:46:21",
+      "note": "用户决定不推送草稿箱，定稿留存 outputs/ 即可，发布环节跳过"
+    }
+  ],
+  "reject_count": 0,
+  "scores": {
+    "review": 98
+  }
+}

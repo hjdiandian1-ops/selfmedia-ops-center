@@ -1,0 +1,44 @@
+{
+  "job_id": "2026-08-05_AI算力剪刀差",
+  "theme": "模型降价80%、算力一单100亿美元：AI的钱到底被谁赚走了",
+  "state": "archive",
+  "created_at": "2026-08-05 07:52:37",
+  "updated_at": "2026-08-05 08:04:28",
+  "history": [
+    {
+      "state": "topic",
+      "at": "2026-08-05 07:52:37",
+      "note": "Job 创建"
+    },
+    {
+      "state": "materials",
+      "at": "2026-08-05 07:54:04",
+      "note": "素材包落盘 materials/2026-08/，5 条核心素材（M1-M5）schema 双标注完成"
+    },
+    {
+      "state": "draft",
+      "at": "2026-08-05 07:55:51",
+      "note": "三平台成稿完成，frontmatter 契约齐全，M1-M5 核心素材全消费"
+    },
+    {
+      "state": "visual",
+      "at": "2026-08-05 08:00:51",
+      "note": "Swiss 4 卡片渲染 PNG + 封面 + 公众号红白排版合规校验通过 + 移动端预览"
+    },
+    {
+      "state": "review",
+      "at": "2026-08-05 08:04:04",
+      "note": "机器校验 PASSED + harsh-critic 三平台 98/98/93 全部通过（取最低分入账）",
+      "score": 93
+    },
+    {
+      "state": "archive",
+      "at": "2026-08-05 08:04:28",
+      "note": "三级目录归档完成，无 process_* 临时文件，等待用户确认发布"
+    }
+  ],
+  "reject_count": 0,
+  "scores": {
+    "review": 93
+  }
+}

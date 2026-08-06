@@ -1,0 +1,60 @@
+/* 自媒体工作台 · 轻量样式（原生 CSS，无构建） */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f4f6f9; color: #222; }
+.topbar { display: flex; align-items: center; gap: 24px; padding: 12px 24px; background: #1f2937; color: #fff; position: sticky; top: 0; z-index: 10; }
+.brand { font-size: 18px; font-weight: 700; }
+.brand .sub { font-size: 12px; font-weight: 400; opacity: .7; margin-left: 8px; }
+.tabs { display: flex; gap: 6px; }
+.tab { padding: 6px 16px; border: none; border-radius: 6px; background: transparent; color: #cbd5e1; cursor: pointer; font-size: 14px; }
+.tab.active { background: #3b82f6; color: #fff; }
+main { padding: 20px 24px; max-width: 1280px; margin: 0 auto; }
+.view { display: none; }
+.view.active { display: block; }
+.panel { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.panel h3 { font-size: 15px; margin-bottom: 10px; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.card { background: #fff; border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.card .num { font-size: 28px; font-weight: 800; color: #3b82f6; }
+.card .lbl { font-size: 12px; color: #6b7280; margin-top: 4px; }
+.state-bars { display: flex; flex-direction: column; gap: 8px; }
+.sbar { display: flex; align-items: center; gap: 10px; }
+.sbar .name { width: 90px; font-size: 13px; color: #374151; }
+.sbar .track { flex: 1; height: 18px; background: #e5e7eb; border-radius: 9px; overflow: hidden; }
+.sbar .fill { height: 100%; background: #3b82f6; border-radius: 9px; }
+.sbar .cnt { width: 40px; text-align: right; font-size: 13px; }
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th, .table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+.table th { color: #6b7280; font-weight: 600; }
+.table tr:hover td { background: #f8fafc; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; background: #e0e7ff; color: #3730a3; }
+.badge.publish, .badge.recycle { background: #dcfce7; color: #166534; }
+.badge.reject { background: #fee2e2; color: #991b1b; }
+.btn { padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; }
+.btn.primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.btn.small { padding: 3px 10px; font-size: 12px; }
+.btn:hover { opacity: .88; }
+.btn.danger { background: #ef4444; color: #fff; border-color: #ef4444; }
+.row { display: flex; gap: 8px; margin-bottom: 10px; }
+input, textarea { width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 8px; }
+textarea { min-height: 80px; resize: vertical; }
+.result { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 12px; font-size: 12px; overflow: auto; max-height: 420px; white-space: pre-wrap; }
+.muted { color: #9ca3af; font-size: 12px; }
+.topic-item { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.topic-item .t { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.topic-item .meta { font-size: 12px; color: #6b7280; }
+.tag { display: inline-block; padding: 1px 8px; border-radius: 8px; font-size: 11px; background: #f3f4f6; color: #4b5563; margin-right: 4px; }
+.radar-src { margin-bottom: 10px; }
+.radar-src .src { font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 4px; }
+.radar-src ol { margin-left: 18px; font-size: 13px; color: #4b5563; }
+.radar-src li { margin-bottom: 2px; }
+.toast { position: fixed; top: 64px; right: 24px; padding: 10px 18px; border-radius: 8px; color: #fff; font-size: 13px; z-index: 99; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+.toast.ok { background: #16a34a; }
+.toast.err { background: #dc2626; }
+.toast.hidden { display: none; }
+.hidden { display: none; }
+.progress { font-family: ui-monospace, monospace; font-size: 12px; }
+.outfile { display: inline-block; padding: 3px 10px; border: 1px solid #e5e7eb; border-radius: 14px; font-size: 12px; cursor: pointer; margin: 0 6px 6px 0; background: #f8fafc; }
+.outfile:hover { background: #e0e7ff; }
+#output-preview { margin-top: 6px; }

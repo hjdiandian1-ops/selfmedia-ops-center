@@ -1,0 +1,90 @@
+{
+  "output_dir": "outputs/2026-08-06_AI短剧出海一人公司/",
+  "materials": "materials/2026-08/2026-08-06_AI短剧出海一人公司素材包.md",
+  "validated_at": "2026-08-07 01:36:07",
+  "verdict": "CONDITIONAL",
+  "fails": 0,
+  "warns": 2,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-06_AI短剧出海一人公司素材包.md（12 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[短视频] 120s黄金分镜脚本.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜快手数据：95% 产量只换来 4% 播放量**：2026 年第一季度快手磁力引擎大会披露，国内微短剧产量 12.8…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M2「M2｜《波斯复仇记》：72 小时 50 万美元**：2026 年 5 月，一位中国创作者无团队、无摄影棚、无演员，用 A…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜海外市场盘子：2026 年预计突破 50 亿美元**：DataEye 研究院数据，2025 年海外微短剧市场规模约…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜工具链账本：一个人 4 天出一部剧**：剧本层 DeepSeek（逻辑架构）+豆包（灵感落稿）组合，4-6 小时可…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜一人公司不是概念，是已经在跑的系统**：小吴的 NAS 内容工厂实证（用户投喂）——RSSHub 热点雷达 + 8…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 31 处（要求 ≥2）：['72 小时', '50 万', '72 小时', '50 万', '4 天', '72 小时']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 65 处（要求 ≥2）：['72 小时', '50 万', '72 小时', '50 万', '360 万', '3 个']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[短视频] 120s黄金分镜脚本.md 具体数字 50 处（要求 ≥1）：['72 小时', '50 万', '72 小时', '50 万', '1 个', '72 小时']"
+    },
+    {
+      "level": "WARN",
+      "code": "C9-gzh-ref-missing",
+      "message": "[公众号] 缺少文末『参考来源』区块（产出标准要求）"
+    },
+    {
+      "level": "WARN",
+      "code": "C10-score-report",
+      "message": "缺少 评分报告.md（质检链会自动生成；strict 模式下视为 FAIL）"
+    }
+  ]
+}

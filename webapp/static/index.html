@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自媒体工作台</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">📡 自媒体工作台 <span class="sub">小吴聊 · 图文运营平台</span></div>
+  <nav class="tabs">
+    <button class="tab active" data-view="overview">概览</button>
+    <button class="tab" data-view="topics">选题</button>
+    <button class="tab" data-view="jobs">Job</button>
+    <button class="tab" data-view="ops">质检与发布</button>
+  </nav>
+  <div id="toast" class="toast hidden"></div>
+</header>
+
+<main>
+  <!-- 概览 -->
+  <section id="view-overview" class="view active">
+    <div class="cards" id="overview-cards"></div>
+    <div class="panel">
+      <h3>Job 状态分布</h3>
+      <div id="state-bars" class="state-bars"></div>
+    </div>
+  </section>
+
+  <!-- 选题 -->
+  <section id="view-topics" class="view">
+    <div class="split">
+      <div class="panel">
+        <h3>📋 选题推荐 <button class="btn small" id="btn-refresh-topics">刷新</button></h3>
+        <div class="row" style="margin-top:8px">
+          <button class="btn small" onclick="runPipeline('topics')">🔥 采集热点+推荐</button>
+          <button class="btn small" onclick="runPipeline('recycle')">⏰ 48h 回收检查</button>
+          <button class="btn small" onclick="runPipeline('weekly')">📊 生成周报</button>
+        </div>
+        <div id="suggest-list"></div>
+      </div>
+      <div class="panel">
+        <h3>📡 热点雷达 <span id="radar-path" class="muted"></span></h3>
+        <div id="radar-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Job -->
+  <section id="view-jobs" class="view">
+    <div class="panel">
+      <h3>🗂️ Job 列表 <button class="btn small" id="btn-refresh-jobs">刷新</button></h3>
+      <table class="table" id="jobs-table">
+        <thead><tr><th>Job ID</th><th>主题</th><th>状态</th><th>评分</th><th>打回</th><th>更新时间</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="job-detail" class="panel hidden"></div>
+  </section>
+
+  <!-- 质检与发布 -->
+  <section id="view-ops" class="view">
+    <div class="split">
+      <div class="panel">
+        <h3>🛡️ 质检链</h3>
+        <p class="muted">对 outputs/&lt;job_id&gt; 运行契约校验 + harsh-critic 机器评分</p>
+        <div class="row">
+          <input id="qa-job" placeholder="job_id，如 2026-08-04_AI产业1.2万亿">
+          <button class="btn" id="btn-qa">跑质检</button>
+        </div>
+        <pre id="qa-result" class="result hidden"></pre>
+      </div>
+      <div class="panel">
+        <h3>🚀 一键发布</h3>
+        <p class="muted">调 publish_to_n8n.py → NAS。需 NAS 在线且 nas-n8n/.env 已配置。</p>
+        <div class="form">
+          <input id="pub-job" placeholder="job_id（可选，自动写 publish_log）">
+          <input id="pub-title" placeholder="标题 *">
+          <textarea id="pub-content" placeholder="小红书正文"></textarea>
+          <textarea id="pub-gzh" placeholder="公众号 HTML（可选）"></textarea>
+          <input id="pub-images" placeholder="图片路径（逗号分隔，可选）">
+          <input id="pub-tags" placeholder="标签（逗号分隔，可选）">
+          <button class="btn primary" id="btn-publish">发布到 NAS</button>
+        </div>
+        <pre id="publish-result" class="result hidden"></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

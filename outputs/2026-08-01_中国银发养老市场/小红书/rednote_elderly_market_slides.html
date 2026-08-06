@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小红书视觉笔记 - 说个暴论：中国的养老市场大部分都消失了！</title>
+  <style>
+    :root {
+      --bg-color: #0B0F19;
+      --card-bg: #151D2A;
+      --accent-red: #F43F5E;
+      --accent-amber: #F59E0B;
+      --accent-cyan: #06B6D4;
+      --text-main: #F8FAFC;
+      --text-sub: #94A3B8;
+      --border-color: rgba(244, 63, 94, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", sans-serif;
+      background: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      gap: 32px;
+    }
+    .header-title {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .header-title h1 {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--accent-red);
+      letter-spacing: 1px;
+    }
+    .header-title p {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin-top: 6px;
+    }
+    .slide-deck {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 360px));
+      gap: 24px;
+      width: 100%;
+      max-width: 1200px;
+      justify-content: center;
+    }
+    .slide-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 28px 24px;
+      aspect-ratio: 3/4;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      position: relative;
+      overflow: hidden;
+    }
+    .slide-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 6px;
+      background: linear-gradient(90deg, var(--accent-red), var(--accent-amber));
+    }
+    .card-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.12);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      width: fit-content;
+    }
+    .slide-title {
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.35;
+      margin-top: 14px;
+      margin-bottom: 14px;
+      color: #FFFFFF;
+    }
+    .slide-title span {
+      color: var(--accent-red);
+    }
+    .slide-body {
+      font-size: 13.5px;
+      color: #CBD5E1;
+      line-height: 1.7;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .highlight-box {
+      background: rgba(244, 63, 94, 0.1);
+      border-left: 3px solid var(--accent-red);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #F1F5F9;
+    }
+    .amber-box {
+      background: rgba(245, 158, 11, 0.1);
+      border-left: 3px solid var(--accent-amber);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #F1F5F9;
+    }
+    .cyan-box {
+      background: rgba(6, 182, 212, 0.1);
+      border-left: 3px solid var(--accent-cyan);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #F1F5F9;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.03);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .stat-num {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--accent-amber);
+    }
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+    .author { font-weight: 700; color: #E2E8F0; }
+  </style>
+</head>
+<body>
+
+  <div class="header-title">
+    <h1>小红书 3:4 视觉笔记卡片套图</h1>
+    <p>话题：说个暴论：中国的养老市场大部分都消失了！</p>
+  </div>
+
+  <div class="slide-deck">
+
+    <!-- Card 1: Cover -->
+    <div class="slide-card">
+      <div>
+        <div class="card-badge">🔥 商业观察 · 深度暴论</div>
+        <div class="slide-title">说个暴论：<br>中国的<span>养老市场</span><br>大部分都“消失”了！</div>
+      </div>
+      <div class="slide-body">
+        <div class="highlight-box">
+          <b>现象级反差：</b><br>
+          一边是官方与机构天天喊“万亿银发蓝海”，一边是90%的养老项目在悄无声息地亏损、倒闭。
+        </div>
+        <div class="amber-box">
+          <b>核心洞察：</b><br>
+          消亡的不是老龄人口，而是死在“养老”标签里的错位商业！
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span class="author">小吴聊 · IP商业切片</span>
+        <span>01 / 06</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Trap 1 -->
+    <div class="slide-card">
+      <div>
+        <div class="card-badge">⚠️ 陷阱一：付费意愿错位</div>
+        <div class="slide-title">有需求的没钱<br><span>有钱的拒绝买单</span></div>
+      </div>
+      <div class="slide-body">
+        <p>很多创业者错把<b>“老龄人口数量”</b>当成了<b>“市场消费规模”</b>。</p>
+        <div class="stat-row">
+          <span>传统老一辈心理</span>
+          <span class="stat-num">极度节俭</span>
+        </div>
+        <p>50/60后老老人宁可省钱给孙辈，也极度排斥花钱住养老院或买护理服务，认为这是“浪费”和“儿女不孝”。</p>
+        <div class="highlight-box">
+          <b>买单逻辑：</b>没有付费意愿的庞大人口，不叫“市场”，叫“社会基本保障”。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span class="author">小吴聊 · IP商业切片</span>
+        <span>02 / 06</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Trap 2 -->
+    <div class="slide-card">
+      <div>
+        <div class="card-badge">🚫 陷阱二：标签心理排斥</div>
+        <div class="slide-title">挂上<span>“养老”</span>二字<br>客户转身就走</div>
+      </div>
+      <div class="slide-body">
+        <p>刚退休的60后、70后“新老人”，手握稳定退休金，身体健康且有消费能力。</p>
+        <div class="amber-box">
+          <b>人性痛点：</b><br>
+          没有人愿意承认自己“老了需要被照顾”。
+        </div>
+        <p>你卖他“老年游/养老卡”，他觉得被贴标签很耻辱；你卖他“游学/摄影团/抗衰”，他抢着买单！</p>
+      </div>
+      <div class="slide-footer">
+        <span class="author">小吴聊 · IP商业切片</span>
+        <span>03 / 06</span>
+      </div>
+    </div>
+
+    <!-- Card 4: Trap 3 -->
+    <div class="slide-card">
+      <div>
+        <div class="card-badge">🏛️ 陷阱三：补贴依存病</div>
+        <div class="slide-title">拿补贴的算盘<br><span>打不过真 ToC 逻辑</span></div>
+      </div>
+      <div class="slide-body">
+        <div class="stat-row">
+          <span>中国养老格局</span>
+          <span class="stat-num">9073结构</span>
+        </div>
+        <p>90%居家、7%社区、仅3%住机构。大部分商业公司一扎进机构养老，全靠政府补贴维系。</p>
+        <div class="highlight-box">
+          <b>商业现实：</b><br>
+          补贴一退，真面目全露。这是“ToG 政策市场”，根本不是“ToC 商业市场”。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span class="author">小吴聊 · IP商业切片</span>
+        <span>04 / 06</span>
+      </div>
+    </div>
+
+    <!-- Card 5: Real Opportunities -->
+    <div class="slide-card">
+      <div>
+        <div class="card-badge">💡 破局之道：隐形的新老龄商业</div>
+        <div class="slide-title">去<span>“养老”</span>化<br>拥抱活力续费</div>
+      </div>
+      <div class="slide-body">
+        <p>真正赚钱的新老龄消费，都在去“老”化：</p>
+        <div class="cyan-box">
+          <b>1. 尊严与社交：</b>老年大学游学、兴趣社群、中年抗衰诊所
+        </div>
+        <div class="cyan-box">
+          <b>2. 科技与防衰：</b>智能健康穿戴、适老化改造（隐形隐藏式）
+        </div>
+        <div class="cyan-box">
+          <b>3. 陪伴与心绪：</b>宠物消费、老年心理咨询与兴趣陪伴
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span class="author">小吴聊 · IP商业切片</span>
+        <span>05 / 06</span>
+      </div>
+    </div>
+
+    <!-- Card 6: Summary -->
+    <div class="slide-card">
+      <div>
+        <div class="card-badge">📌 操盘总结</div>
+        <div class="slide-title">顺应人性买单<br><span>拒绝概念狂欢</span></div>
+      </div>
+      <div class="slide-body">
+        <div class="highlight-box" style="font-size:14px; line-height:1.8;">
+          <b>最后一句话总结：</b><br>
+          别跟人性做对抗去卖“养老”；要顺应人性去卖“活力重构”、“尊严续费”和“兴趣社交”。
+        </div>
+        <div class="amber-box">
+          <b>互动思考：</b><br>
+          你身边有为“养老产品”买单的父母吗？他们最乐意把钱花在什么地方？评论区聊聊！
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span class="author">小吴聊 · IP商业切片</span>
+        <span>06 / 06</span>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

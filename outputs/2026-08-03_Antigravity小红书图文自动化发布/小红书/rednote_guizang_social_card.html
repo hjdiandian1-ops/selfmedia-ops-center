@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="ink-classic">
+<head>
+  <meta charset="utf-8">
+  <title>NAS + AI 小红书全自动发布全架构实战 · Guizang Social Card</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    /* =========================================================
+       Guizang Social Card Skill (v2.0) — Editorial x E-ink Spec
+       Target: Xiaohongshu 3:4 Posters (1080 × 1440 px per card)
+       ========================================================= */
+    :root,
+    [data-theme="ink-classic"] {
+      --paper:     #f4f1ea;
+      --paper-2:   #e8e3d8;
+      --ink:       #0d0d0e;
+      --muted:     #635c54;
+      --line:      rgba(13,13,14,.18);
+      --accent:    #8c2d19;
+      --accent-soft: #dcd4c6;
+      --serif-zh: "Noto Serif SC", "Songti SC", serif;
+      --serif-en: "Playfair Display", serif;
+      --sans-zh: "Noto Sans SC", sans-serif;
+      --sans-en: "Inter", sans-serif;
+      --mono:    "IBM Plex Mono", monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background: #181818;
+      font-family: var(--sans-zh);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px;
+      gap: 60px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 3:4 小红书卡片 1080 × 1440 px */
+    .poster.xhs {
+      width: 1080px;
+      height: 1440px;
+      background: var(--paper);
+      color: var(--ink);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 72px 80px;
+      border-radius: 16px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+    }
+
+    /* 顶部 Header */
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid var(--ink);
+      padding-bottom: 20px;
+    }
+
+    .hdr-brand {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .hdr-num {
+      font-family: var(--serif-en);
+      font-size: 28px;
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    /* 主体 Content */
+    .bd {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin-top: 6px;
+    }
+
+    .kicker {
+      font-family: var(--mono);
+      font-size: 18px;
+      color: var(--accent);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .h-main {
+      font-family: var(--serif-zh);
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1.25;
+      color: var(--ink);
+      letter-spacing: -1px;
+    }
+
+    .h-main em {
+      font-family: var(--serif-en);
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .lead {
+      font-size: 24px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .quote-box {
+      background: var(--paper-2);
+      border-left: 6px solid var(--accent);
+      padding: 26px 34px;
+      border-radius: 4px;
+      font-family: var(--serif-zh);
+      font-size: 22px;
+      line-height: 1.6;
+      color: var(--ink);
+    }
+
+    /* 布局微格子 Layout Grid */
+    .deck-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 4px;
+    }
+
+    .deck-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      border-bottom: 2px dashed var(--line);
+      padding-bottom: 14px;
+    }
+
+    .deck-num {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .deck-info h4 {
+      font-size: 23px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .deck-info p {
+      font-size: 18px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    /* 底部 Footer */
+    .ftr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 2px solid var(--ink);
+      padding-top: 20px;
+      font-family: var(--mono);
+      font-size: 17px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CARD 1 -->
+  <div class="poster xhs" id="card-1">
+    <div class="hdr">
+      <div class="hdr-brand">GUIZANG SOCIAL CARD · 小吴聊</div>
+      <div class="hdr-num">01 / 04</div>
+    </div>
+    <div class="bd">
+      <div class="kicker">// 实战折腾总结 //</div>
+      <h1 class="h-main">踩坑好几天！<br>我终于把“AI 全自动发小红书”跑通了</h1>
+      <p class="lead">从连续踩坑到端到端闭环：盘点用到的开源项目、学习教程与 NAS 部署全架构。</p>
+      <div class="quote-box">
+        “网上教程一堆，真到了落地环节全是坑。把这套硬核系统拆开，共享给每一个自媒体创作者。”
+      </div>
+    </div>
+    <div class="ftr">
+      <span>FULL STACK AGENT</span>
+      <span>1080 × 1440 3:4</span>
+    </div>
+  </div>
+
+  <!-- CARD 2 -->
+  <div class="poster xhs" id="card-2">
+    <div class="hdr">
+      <div class="hdr-brand">OPEN SOURCE STACK</div>
+      <div class="hdr-num">02 / 04</div>
+    </div>
+    <div class="bd">
+      <div class="kicker">// 用到的开源项目工具库 //</div>
+      <h2 class="h-main">核心开源项目盘点</h2>
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">[01]</div>
+          <div class="deck-info">
+            <h4>大脑 Agent & 去 AI 味</h4>
+            <p>Google Antigravity (Gemini 3.6) + hardikpandya/stop-slop 规则（拒绝所有机器套话）。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">[02]</div>
+          <div class="deck-info">
+            <h4>视觉与排版 Skills</h4>
+            <p>op7418/guizang-social-card-skill (3:4 视觉卡片) + gzh-design-skill (公众号 HTML 排版)。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">[03]</div>
+          <div class="deck-info">
+            <h4>自动化与 NAS 中枢</h4>
+            <p>microsoft/playwright (无头截大图与自动上架) + blowsnow/n8n-chinese (NAS 分发中枢)。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ftr">
+      <span>BY @小吴聊</span>
+      <span>OPEN SOURCE POWER</span>
+    </div>
+  </div>
+
+  <!-- CARD 3 -->
+  <div class="poster xhs" id="card-3">
+    <div class="hdr">
+      <div class="hdr-brand">DEPLOYMENT ARCHITECTURE</div>
+      <div class="hdr-num">03 / 04</div>
+    </div>
+    <div class="bd">
+      <div class="kicker">// 从零部署 4 阶段 //</div>
+      <h2 class="h-main">NAS 部署全架构 SOP</h2>
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">01</div>
+          <div class="deck-info">
+            <h4>NAS 基础设施搭建</h4>
+            <p>Docker Compose 部署 n8n 中文版 + PostgreSQL + xhs-publisher 无头浏览器镜像。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">02</div>
+          <div class="deck-info">
+            <h4>Session Cookies 持久化</h4>
+            <p>自动解析挂载 xiaohongshu_cookies.json 至容器，彻底解决天天扫码登录难题。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">03</div>
+          <div class="deck-info">
+            <h4>知识库注入与端到端闭环</h4>
+            <p>注入个人 IP 语料 ➔ 对话触发 ➔ 4K 截图 ➔ 人工审核 ➔ Webhook 触发自动上架！</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ftr">
+      <span>DEPLOYMENT SOP</span>
+      <span>STEP BY STEP</span>
+    </div>
+  </div>
+
+  <!-- CARD 4 -->
+  <div class="poster xhs" id="card-4">
+    <div class="hdr">
+      <div class="hdr-brand">LESSONS & METHODOLOGY</div>
+      <div class="hdr-num">04 / 04</div>
+    </div>
+    <div class="bd">
+      <div class="kicker">// 核心心法与归档 //</div>
+      <h2 class="h-main">AI 是放大器，<br><em>人才是决策者</em></h2>
+      <p class="lead">参考 @bbkirstry（小晚不在）方法论：“以个人 IP 为核、审美优先、通俗翻译、AI 放大人的判断力”。</p>
+      <div class="quote-box">
+        📊 <strong>数据看板归档</strong>：<br>每次发布自动记录发布 URL、状态与日志至飞书多维表格 (Feishu Bitable)，做号效率提升 10 倍以上！
+      </div>
+    </div>
+    <div class="ftr">
+      <span>@小吴聊 · 科技实战</span>
+      <span>REAL EXPERIENCE</span>
+    </div>
+  </div>
+
+</body>
+</html>

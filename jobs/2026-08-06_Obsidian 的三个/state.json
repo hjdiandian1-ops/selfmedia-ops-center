@@ -1,0 +1,22 @@
+{
+  "job_id": "2026-08-06_Obsidian 的三个",
+  "theme": "Obsidian 的三个问题｜模板开发日志（二）",
+  "state": "archive",
+  "created_at": "2026-08-06 16:59:56",
+  "updated_at": "2026-08-07 01:36:19",
+  "decision_deadline": "2026-08-06 17:29:56",
+  "history": [
+    {
+      "state": "topic",
+      "at": "2026-08-06 16:59:56",
+      "note": "Job 创建"
+    },
+    {
+      "state": "archive",
+      "at": "2026-08-07 01:36:19",
+      "note": "选题决策超时未推进；2026-08-07 人工归档，未产生产物，未来重启需重新 init"
+    }
+  ],
+  "reject_count": 0,
+  "scores": {}
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gzh_workbuddy_guide_olive · 公众号排版预览</title>
+<style>
+  body{margin:0;background:#eef0f2;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;-webkit-text-size-adjust:100%;}
+  .gzh-toolbar{position:fixed;top:0;left:0;right:0;height:54px;background:#ffffff;box-shadow:0 1px 10px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:99;}
+  .gzh-hint{font-size:13px;color:#6b7280;line-height:1.4;}
+  .gzh-hint b{color:#111827;}
+  .gzh-copy{background:#059669;color:#fff;border:0;border-radius:9px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(5,150,105,.28);white-space:nowrap;transition:transform .08s,background .15s;}
+  .gzh-copy:hover{background:#047857;}
+  .gzh-copy:active{transform:translateY(1px);}
+  .gzh-toast{position:fixed;top:66px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:88vw;text-align:center;}
+  .gzh-toast.show{opacity:1;}
+  .gzh-stage{max-width:700px;margin:78px auto 64px;padding:0 8px;}
+  @media(max-width:520px){.gzh-hint{max-width:150px;}}
+</style>
+</head>
+<body>
+<div class="gzh-toolbar">
+  <span class="gzh-hint">👇 下方是排版效果 · 点右侧 <b>复制</b> 直接粘到公众号</span>
+  <button class="gzh-copy" id="gzhCopyBtn" onclick="gzhCopy()">📋 复制到公众号</button>
+</div>
+<div class="gzh-toast" id="gzhToast"></div>
+<div class="gzh-stage">
+  <div id="gzh-content">
+<section style="max-width:677px;margin:0 auto;padding:8px;box-sizing:border-box;background:#fdfdf8;color:#4d4f46;font-family:'IBM Plex Sans',-apple-system,system-ui,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;line-height:1.75;">
+
+  <!-- 组件2 头图卡 hero-card -->
+  <section style="background:#fdfdf8;border:1px solid #bfc1b7;border-radius:6px;overflow:hidden;font-family:'IBM Plex Sans',-apple-system,system-ui,sans-serif;">
+    <section style="padding:28px 24px 22px;">
+      <section style="display:flex;align-items:center;gap:8px;margin-bottom:22px;">
+        <span style="width:8px;height:8px;background:#1e1f23;border-radius:50%;display:inline-block;overflow:hidden;vertical-align:middle;font-size:0;line-height:0;"><span leaf="">&nbsp;</span></span>
+        <span style="font-size:10px;font-weight:700;letter-spacing:3px;color:#65675e;"><span leaf="">OLIVE JOURNAL · 效率手记</span></span>
+        <span style="flex:1;height:1px;background:#bfc1b7;display:inline-block;overflow:hidden;vertical-align:middle;font-size:0;line-height:0;"><span leaf="">&nbsp;</span></span>
+        <span style="font-size:10px;color:#9ea096;font-weight:500;font-variant-numeric:tabular-nums;"><span leaf="">2026.07</span></span>
+      </section>
+      <section style="display:flex;align-items:stretch;gap:18px;">
+        <section style="flex:1;min-width:0;">
+          <p style="font-size:24px;font-weight:800;color:#23251d;margin:0 0 10px;line-height:1.15;letter-spacing:-0.75px;">
+            <span leaf="">Codex 平替神器</span><span style="color:#4d4f46;"><span leaf="">&nbsp;·&nbsp;</span></span><span style="border-bottom:3px solid #ed7b2f;"><span leaf="">WorkBuddy</span></span>
+          </p>
+          <section style="display:flex;align-items:center;gap:4px;margin-bottom:12px;">
+            <span style="width:22px;height:3px;background:#1e1f23;border-radius:2px;display:inline-block;overflow:hidden;vertical-align:middle;font-size:0;line-height:0;"><span leaf="">&nbsp;</span></span>
+            <span style="width:8px;height:3px;background:#bfc1b7;border-radius:2px;display:inline-block;overflow:hidden;vertical-align:middle;font-size:0;line-height:0;"><span leaf="">&nbsp;</span></span>
+          </section>
+          <p style="font-size:13px;color:#65675e;margin:0;line-height:1.7;"><span leaf="">打工人与零基础小白的本地 AI 智能体自动化手记</span></p>
+        </section>
+        <section style="flex-shrink:0;width:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#eeefe9;border:1px dashed #bfc1b7;border-radius:6px;padding:8px;">
+          <svg width="72" height="72" viewBox="0 0 64 64" aria-hidden="true" style="display:block;">
+            <ellipse cx="32" cy="36" rx="22" ry="18" fill="none" stroke="#4d4f46" stroke-width="2"></ellipse>
+            <circle cx="26" cy="30" r="3" fill="#4d4f46"></circle>
+            <circle cx="38" cy="30" r="3" fill="#4d4f46"></circle>
+            <path d="M28 40 Q32 44 36 40" fill="none" stroke="#4d4f46" stroke-width="1.5"></path>
+            <path d="M12 34 L8 28 M52 34 L56 28" stroke="#bfc1b7" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+          <span style="font-size:8px;font-weight:700;color:#9ea096;letter-spacing:1px;margin-top:4px;"><span leaf="">WORKBUDDY</span></span>
+        </section>
+      </section>
+    </section>
+    <section style="background:#1e1f23;padding:11px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+      <p style="font-size:12px;color:rgba(255,255,255,0.92);margin:0;font-weight:600;"><span leaf="">实战案例复盘与本地部署说明</span></p>
+      <section style="display:flex;gap:6px;flex-wrap:wrap;">
+        <span style="background:#e5e7e0;color:#23251d;padding:3px 8px;border-radius:4px;font-size:8px;font-weight:700;border:1px solid #bfc1b7;"><span leaf="">WorkBuddy</span></span>
+        <span style="background:#e5e7e0;color:#23251d;padding:3px 8px;border-radius:4px;font-size:8px;font-weight:700;border:1px solid #bfc1b7;"><span leaf="">橄榄手记</span></span>
+      </section>
+    </section>
+  </section>
+
+  <!-- 引用前导卡片 -->
+  <section style="margin-top:24px;background:#eeefe9;border:1px solid #bfc1b7;border-left:4px solid #1e1f23;border-radius:6px;padding:18px;">
+    <p style="font-size:13px;color:#23251d;margin:0 0 6px;font-weight:700;"><span leaf="">💡 为什么手记推荐 WorkBuddy？</span></p>
+    <p style="font-size:13px;color:#4d4f46;margin:0;line-height:1.8;">
+      <span leaf="">在自媒体与效率工具爆款迭出的今天，许多人苦于 GitHub Copilot / OpenAI Codex 的网络限制和高昂订阅费。</span><span style="border-bottom:2px solid #ed7b2f;font-weight:600;color:#23251d;"><span leaf="">WorkBuddy 带来了真正解耦、本地极简的智能体自愈体验</span></span><span leaf="">，成为了零基础与打工人的开挂首选。</span>
+    </p>
+  </section>
+
+  <!-- PART 01 -->
+  <section style="margin-top:24px;">
+    <section style="font-family:'IBM Plex Sans',-apple-system,sans-serif;">
+      <section style="display:flex;align-items:center;gap:14px;">
+        <section style="text-align:center;flex-shrink:0;">
+          <p style="margin:0;font-size:24px;font-weight:800;color:#23251d;line-height:1;letter-spacing:-2px;"><span leaf="">01</span></p>
+          <p style="margin:0;font-size:8px;font-weight:700;color:#9ea096;letter-spacing:2px;"><span leaf="">PART</span></p>
+        </section>
+        <span style="width:1px;height:36px;background:#bfc1b7;flex-shrink:0;display:inline-block;overflow:hidden;vertical-align:middle;font-size:0;line-height:0;"><span leaf="">&nbsp;</span></span>
+        <section>
+          <p style="margin:0 0 1px;font-size:17px;font-weight:800;color:#23251d;letter-spacing:0.2px;"><span leaf="">解构 WorkBuddy：为什么称它为 Codex 平替？</span></p>
+          <p style="margin:0;font-size:11px;font-weight:600;color:#65675e;letter-spacing:1.2px;"><span leaf="">WHY WORKBUDDY REPLACES CODEX</span></p>
+        </section>
+      </section>
+    </section>
+  </section>
+
+  <p style="font-size:14px;color:#4d4f46;margin:16px 0;line-height:1.9;">
+    <span leaf="">WorkBuddy 的本质是一个运行在本地电脑上的智能代理工具。它不仅拥有和 Codex 同等强大的自然语言理解力，还能</span><span style="border-bottom:2px solid #ed7b2f;font-weight:600;color:#23251d;"><span leaf="">自动读取本地文件系统、独立运行命令行指令</span></span><span leaf="">并自动诊断错误自愈。</span>
+  </p>
+
+  <!-- PART 02 -->
+  <section style="margin-top:24px;">
+    <section style="font-family:'IBM Plex Sans',-apple-system,sans-serif;">
+      <section style="display:flex;align-items:center;gap:14px;">
+        <section style="text-align:center;flex-shrink:0;">
+          <p style="margin:0;font-size:24px;font-weight:800;color:#23251d;line-height:1;letter-spacing:-2px;"><span leaf="">02</span></p>
+          <p style="margin:0;font-size:8px;font-weight:700;color:#9ea096;letter-spacing:2px;"><span leaf="">PART</span></p>
+        </section>
+        <span style="width:1px;height:36px;background:#bfc1b7;flex-shrink:0;display:inline-block;overflow:hidden;vertical-align:middle;font-size:0;line-height:0;"><span leaf="">&nbsp;</span></span>
+        <section>
+          <p style="margin:0 0 1px;font-size:17px;font-weight:800;color:#23251d;letter-spacing:0.2px;"><span leaf="">打工人必看： WorkBuddy 的 3 个神仙应用场景</span></p>
+          <p style="margin:0;font-size:11px;font-weight:600;color:#65675e;letter-spacing:1.2px;"><span leaf="">THREE KILLER USE CASES</span></p>
+        </section>
+      </section>
+    </section>
+  </section>
+
+  <section style="margin-top:16px;background:#fdfdf8;border:1px solid #bfc1b7;border-radius:6px;padding:16px;">
+    <p style="font-size:14px;font-weight:800;color:#23251d;margin:0 0 8px;"><span leaf="">1. 批量文档与表格提取汇总</span></p>
+    <p style="font-size:13px;color:#4d4f46;margin:0;line-height:1.8;">
+      <span leaf="">数十份分散在各处的 Word/Markdown 文件，拖入 WorkBuddy 一句对话：“自动提取全部核心要点，整理成一张结构清晰的表格”。</span><span style="border-bottom:2px solid #ed7b2f;font-weight:600;color:#23251d;"><span leaf="">省去数小时人工复制粘贴</span></span><span leaf="">。</span>
+    </p>
+  </section>
+
+  <section style="margin-top:12px;background:#fdfdf8;border:1px solid #bfc1b7;border-radius:6px;padding:16px;">
+    <p style="font-size:14px;font-weight:800;color:#23251d;margin:0 0 8px;"><span leaf="">2. 自媒体文案自动化一键排版</span></p>
+    <p style="font-size:13px;color:#4d4f46;margin:0;line-height:1.8;">
+      <span leaf="">结合 gzh-design-skill 规范，秒级将草稿转化为</span><span style="border-bottom:2px solid #ed7b2f;font-weight:600;color:#23251d;"><span leaf="">微信后台可一键粘贴的精致富文本 HTML</span></span><span leaf="">。</span>
+    </p>
+  </section>
+
+  <!-- 尾部互动区 -->
+  <section style="margin-top:32px;background:#1e1f23;color:#fdfdf8;border-radius:6px;padding:20px;text-align:center;">
+    <p style="font-size:14px;font-weight:800;margin:0 0 6px;color:#fdfdf8;"><span leaf="">我是 {{作者名}}，热衷于分享 AI 观察与效率手记</span></p>
+    <p style="font-size:12px;color:#9ea096;margin:0 0 14px;"><span leaf="">用通俗表达拆解硬核 AI 技术，放大每一位个体的创造力。</span></p>
+    <p style="font-size:13px;color:#ed7b2f;font-weight:700;margin:0;"><span leaf="">如果你觉得今天这篇手记有收获，欢迎点赞、在看、转发三连！</span></p>
+  </section>
+
+</section>
+  </div>
+</div>
+<script>
+  function gzhShowToast(msg){
+    var t=document.getElementById('gzhToast');
+    t.textContent=msg;t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer=setTimeout(function(){t.classList.remove('show');},2800);
+  }
+  function gzhCopy(){
+    var el=document.getElementById('gzh-content');
+    // 选中渲染后的富文本节点并复制（等价于手动 Ctrl+A / Ctrl+C，保留全部样式）
+    var range=document.createRange();
+    range.selectNodeContents(el);
+    var sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    var ok=false;
+    try{ok=document.execCommand('copy');}catch(e){ok=false;}
+    sel.removeAllRanges();
+    var btn=document.getElementById('gzhCopyBtn');
+    if(ok){
+      gzhShowToast('✅ 已复制！去公众号编辑器按 Ctrl/⌘+V 粘贴即可');
+      var old=btn.textContent;btn.textContent='✅ 已复制';
+      setTimeout(function(){btn.textContent=old;},2200);
+    }else{
+      gzhShowToast('⚠ 自动复制失败，请手动全选(Ctrl/⌘+A)再复制(Ctrl/⌘+C)');
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+{
+  "output_dir": "outputs/2026-08-06_有效token与模型调度/",
+  "materials": "materials/2026-08/2026-08-06_有效token与模型调度素材包.md",
+  "scored_at": "2026-08-07 01:36:12",
+  "pos": {
+    "素材引用率": 20.0,
+    "数据密度": 15,
+    "真实感": 15,
+    "Hook冲击力": 10
+  },
+  "pos_total": 60.0,
+  "neg_deducted": 40,
+  "neg_raw": 150,
+  "score": 60.0,
+  "verdict": "REJECTED",
+  "manual_review": "机器分为初筛：人工必须复核 Hook 六维、事实来源与视觉排版，并在 outputs/<job_id>/评分报告.md 逐条写出证据。",
+  "results": [
+    {
+      "level": "PASS",
+      "code": "P1-rate",
+      "message": "素材引用率 3/3=100% → 20.0/20"
+    },
+    {
+      "level": "PASS",
+      "code": "P2-density",
+      "message": "具体数字 30 处 → 15/15"
+    },
+    {
+      "level": "PASS",
+      "code": "P3-realness",
+      "message": "第一人称/真实项目名/型号 3 处 → 15/15"
+    },
+    {
+      "level": "PASS",
+      "code": "P4-hook",
+      "message": "Hook 冲击力（小红书:5维；公众号:6维）→ 10/10（机器 6 维初筛，需人工复核并写入评分报告.md）"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A1「真实数据｜辅助：DeepSeek 8月6日官宣整体上调API定价，预计涨幅较大…」 → -15"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A2「真实数据｜核心：缓存命中0.02元/百万Token，未命中1元/百万Token，价差达50倍…」 → -15"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A3「真实数据｜核心：DeepSeek V4 Flash周调用6.6万亿Token，8月4日曾因访问量过大容量不足…」 → -15"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A4「真实数据｜核心：硅基流动2026.6递表港交所，B轮超20亿，日均Token峰值破万亿…」 → -15"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A5「真实数据｜辅助：2026年智谱、月之暗面、MiniMax、阿里云、腾讯云、百度智能云已集体调价…」 → -15"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A6「真实数据｜辅助：缓存命中率90%的用户，输入侧实际单价仅为零命中用户的1/8…」 → -15"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A7「真实数据｜辅助：无问芯穹累计融资22亿+，Agentic MaaS调用量较去年底增20倍…」 → -15"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A8「真实数据｜辅助：趋境科技A轮半年融资超10亿，专攻缓存复用与成本控制…」 → -15"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A9「真实数据｜辅助：基流科技2026.4递表港交所，全栈AI算力集群…」 → -15"
+    },
+    {
+      "level": "FAIL",
+      "code": "C8-url-required",
+      "message": "真实数据必须带可打开链接（source/url 字段）：A10「真实数据｜辅助：沙利文白皮书：某大行统一AI基础设施平台GPU效率提升70%+、部署效率提升60%…」 → -15"
+    }
+  ]
+}

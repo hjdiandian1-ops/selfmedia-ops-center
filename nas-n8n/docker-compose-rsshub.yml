@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  rsshub:
+    image: diygod/rsshub:latest
+    container_name: rsshub
+    restart: always
+    ports:
+      - "1200:1200"
+    environment:
+      NODE_ENV: production
+      CACHE_TYPE: memory
+      PUPPETEER_WS_ENDPOINT: 'ws://browserless:3000'
+      # 避免风控访问微博/36kr等
+      ALLOW_USER_HOTLINK_HEADER: 'true'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1200/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  browserless:
+    image: browserless/chrome:latest
+    container_name: browserless
+    restart: always
+    environment:
+      MAX_CONCURRENT_SESSIONS: 10

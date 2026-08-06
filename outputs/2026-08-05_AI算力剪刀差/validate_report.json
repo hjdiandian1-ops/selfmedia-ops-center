@@ -1,0 +1,80 @@
+{
+  "output_dir": "outputs/2026-08-05_AI算力剪刀差/",
+  "materials": "materials/2026-08/2026-08-05_AI算力剪刀差素材包.md",
+  "validated_at": "2026-08-05 08:02:48",
+  "verdict": "PASSED",
+  "fails": 0,
+  "warns": 0,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-05_AI算力剪刀差素材包.md（11 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[短视频] 120s黄金分镜脚本.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜模型层价格崩塌**：7 月 31 日同一天，OpenAI 官宣 GPT-5.6 Luna 降价 80%、Terra…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M2「M2｜算力层一单百亿**：Anthropic 与 Volta 达成 100 亿美元算力协议——模型公司在应用层打价格战亏…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜云厂商财报实锤**：亚马逊 AWS 单季营收 422 亿美元，同比增长 37%，创 18 个季度最快增速，AI 相…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜算力军备出地球**：SpaceX 携手英伟达开发卫星计算载荷，把数据中心级算力送入太空；国内「十五五」规划新增 4…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜剪刀差时代的个体策略**：小吴的 NAS 内容工厂实证（用户投喂）——用降价后的平价模型 API + 自有 NAS…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 11 处（要求 ≥2）：['80%', '80%', '100 亿', '80%', '100 亿', '422 亿']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 24 处（要求 ≥2）：['80%', '100 亿', '80%', '20%', '100 亿', '80%']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[短视频] 120s黄金分镜脚本.md 具体数字 27 处（要求 ≥1）：['80%', '80%', '100 亿', '80%', '100 亿', '80%']"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+# macOS / 编辑器
+.DS_Store
+*.swp
+
+# Python 缓存与测试缓存
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 本地工具状态（含会话记忆，禁止入库）
+.reasonix/
+.workbuddy/
+.codex/
+
+# 环境变量与凭据（禁止入库）
+.env
+nas-n8n/.env
+xiaohongshu_cookies.json
+nas-n8n/shared_files/*.json
+
+# 大体积产出（图片/视频/音频）；文案/HTML/JSON 报告保留入库
+outputs/**/*.png
+outputs/**/*.jpg
+outputs/**/*.jpeg
+outputs/**/*.gif
+outputs/**/*.webp
+outputs/**/*.bmp
+outputs/**/*.mp4
+outputs/**/*.mov
+outputs/**/*.mp3
+outputs/**/*.wav
+output_images/
+
+# 历史测试残留
+output_test_flow/

@@ -1,0 +1,80 @@
+{
+  "output_dir": "outputs/2026-08-04_AI降价副业变难/",
+  "materials": "materials/2026-08/2026-08-04_AI降价副业变难素材包.md",
+  "validated_at": "2026-08-04 08:06:06",
+  "verdict": "PASSED",
+  "fails": 0,
+  "warns": 0,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-04_AI降价副业变难素材包.md（11 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[短视频] 120s黄金分镜脚本.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜价格战事实**：最近 72 小时内，海外顶级 AI 直接降价 80%，国内好几款主流大模型干脆直接开源免费；半年前…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M2「M2｜收入腰斩**：全网做 AI 接单、AI 自媒体的普通人收入普遍腰斩；原先 50 块一条的 AI 文案，现在 5 块…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜规模化碾压**：电商工厂、连锁门店批量接入 AI 系统，一天批量产出约 1000 条带货短视频；普通人一个人一部手…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜委托率数据**：据 Anthropic 报告，60% 开发者已把战术编码委托给 AI，但能完全委托的任务仅占 0-…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜个人玩家生存位（用户实证）**：小吴自己的实证——NAS 上跑通 RSSHub 热点雷达 + 8 态 Job 状态…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 12 处（要求 ≥2）：['80%', '50 块', '5 块', '72 小时', '80%', '50 块']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 23 处（要求 ≥2）：['80%', '80%', '50 块', '5 块', '80%', '72 小时']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[短视频] 120s黄金分镜脚本.md 具体数字 26 处（要求 ≥1）：['80%', '80%', '80%', '80%', '80%', '72 小时']"
+    }
+  ]
+}

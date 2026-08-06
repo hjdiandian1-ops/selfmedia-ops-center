@@ -1,0 +1,6 @@
+[tool.pytest.ini_options]
+# 只收集 tests/ 下的用例；scripts/ 下的 test_*.py 是手工连通脚本（部分导入即 SSH 重启 n8n），必须排除
+testpaths = ["tests"]
+pythonpath = ["scripts"]
+norecursedirs = ["scripts", "outputs", "jobs", "skills", "webapp", "nas-n8n", "materials"]
+addopts = "-v"

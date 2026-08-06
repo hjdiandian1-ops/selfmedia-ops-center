@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="indigo-porcelain">
+<head>
+  <meta charset="utf-8">
+  <title>小红书图文自动化制作方案 · 青花瓷风 9 图</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    /* =========================================================
+       guizang-social-card-skill — Indigo Porcelain (青花瓷蓝)
+       Target: Xiaohongshu 3:4 Posters (1080 × 1440 px per card)
+       ========================================================= */
+    :root,
+    [data-theme="indigo-porcelain"] {
+      --paper:     #f2f4f5;
+      --paper-2:   #e5ebef;
+      --ink:       #0a1f3d;
+      --muted:     #5f6d78;
+      --line:      rgba(10,31,61,.18);
+      --accent:    #315d93;
+      --accent-soft: #d7e1ec;
+      --serif-zh: "Noto Serif SC", "Songti SC", serif;
+      --serif-en: "Playfair Display", serif;
+      --sans-zh: "Noto Sans SC", sans-serif;
+      --sans-en: "Inter", sans-serif;
+      --mono:    "IBM Plex Mono", monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #181e29;
+      font-family: var(--sans-zh);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px;
+      gap: 60px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 3:4 小红书卡片 1080 × 1440 px */
+    .poster.xhs {
+      width: 1080px;
+      height: 1440px;
+      background: var(--paper);
+      color: var(--ink);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 64px 72px;
+      border-radius: 20px;
+      box-shadow: 0 30px 60px rgba(10, 31, 61, 0.25);
+    }
+
+    /* 顶部 Header */
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 18px;
+    }
+
+    .hdr-brand {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .hdr-num {
+      font-family: var(--serif-en);
+      font-size: 28px;
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    /* 包含区域 Content Canvas (铺满正文区域，不留上下大块空白) */
+    .bd {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      margin-top: 24px;
+      margin-bottom: 18px;
+      justify-content: space-between;
+    }
+
+    /* 参考给出的示例图片：封面大图框 (Photo Well) */
+    .cover-photo-frame {
+      width: 100%;
+      height: 660px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: 0 12px 28px rgba(10, 31, 61, 0.12);
+      margin-bottom: 28px;
+    }
+
+    .cover-photo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    /* 标题置于左上角 (Unified typography) */
+    .h-main-left {
+      font-family: var(--serif-zh);
+      font-size: 48px;
+      font-weight: 900;
+      line-height: 1.3;
+      color: var(--ink);
+      letter-spacing: -0.5px;
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    .subtitle-line {
+      font-size: 24px;
+      color: var(--muted);
+      line-height: 1.6;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .subtitle-line::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 24px;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* 底部小气泡背景框关键词标签 (Bubble Tag) */
+    .bubble-tags-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .bubble-tag {
+      background: var(--accent-soft);
+      border: 1px solid rgba(49, 93, 147, 0.3);
+      color: var(--accent);
+      font-size: 20px;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 20px;
+    }
+
+    /* 步骤卡片拆解列表 (格式规范) */
+    .deck-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .deck-row {
+      background: var(--paper-2);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 26px 30px;
+      display: flex;
+      align-items: flex-start;
+      gap: 22px;
+    }
+
+    .deck-num {
+      font-family: var(--mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+      background: #ffffff;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(10, 31, 61, 0.08);
+    }
+
+    .deck-info h4 {
+      font-size: 27px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .deck-info p {
+      font-size: 22px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* 页脚 */
+    .ftr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 2px solid var(--line);
+      padding-top: 18px;
+      font-family: var(--mono);
+      font-size: 18px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== 图 1：封面 (参考用户提供的质感排版：上图片框，下标题与气泡标签) ==================== -->
+  <div class="poster xhs" id="card-1">
+    <div class="hdr">
+      <div class="hdr-brand">INDIGO PORCELAIN · 小吴聊</div>
+      <div class="hdr-num">01 / 09</div>
+    </div>
+
+    <div class="bd" style="justify-content: flex-start;">
+      <!-- 上部加菲猫图片框 (完美复刻参考样图) -->
+      <div class="cover-photo-frame">
+        <img class="cover-photo-img" src="garfield.jpg" alt="可爱加菲猫">
+      </div>
+
+      <!-- 下部左上角标题与气泡标签 -->
+      <h1 class="h-main-left">公开分享我的小红书图文自动化制作方案</h1>
+      <div class="subtitle-line">把机械重复的排版与上传工作交给自动化流程</div>
+
+      <div style="border-bottom: 1px solid var(--line); margin: 10px 0 16px 0;"></div>
+
+      <div class="bubble-tags-wrapper">
+        <span class="bubble-tag">#小红书图文</span>
+        <span class="bubble-tag">#自动化流程</span>
+        <span class="bubble-tag">#做号实操</span>
+        <span class="bubble-tag">#高效干货</span>
+      </div>
+    </div>
+
+    <div class="card-footer ftr">
+      <span>INDIGO PORCELAIN STYLE</span>
+      <span>AUTOMATION GUIDE</span>
+    </div>
+  </div>
+
+  <!-- ==================== 图 2：步骤一 (对话提出需求) ==================== -->
+  <div class="poster xhs" id="card-2">
+    <div class="hdr">
+      <div class="hdr-brand">STEP 01 OF 07</div>
+      <div class="hdr-num">02 / 09</div>
+    </div>
+
+    <div class="bd">
+      <div class="h-main-left">步骤一：对话提出需求</div>
+      
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">01</div>
+          <div class="deck-info">
+            <h4>像发微信一样提需求</h4>
+            <p>不用编写复杂参数，直接在对话框输入想要制作的笔记主题。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">02</div>
+          <div class="deck-info">
+            <h4>自动整理核心大纲</h4>
+            <p>系统自动分析选题重点，提炼出清晰的卡片大纲与核心视角。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">03</div>
+          <div class="deck-info">
+            <h4>生成通俗干货文案</h4>
+            <p>自动避开社区敏感词，生成亲切、接地气且易读的笔记内容。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <span>BY @小吴聊</span>
+      <span>REQUIREMENT INTAKE</span>
+    </div>
+  </div>
+
+  <!-- ==================== 图 3：步骤二 (3:4 卡片自动排版) ==================== -->
+  <div class="poster xhs" id="card-3">
+    <div class="hdr">
+      <div class="hdr-brand">STEP 02 OF 07</div>
+      <div class="hdr-num">03 / 09</div>
+    </div>
+
+    <div class="bd">
+      <div class="h-main-left">步骤二：3:4 卡片自动排版</div>
+      
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">01</div>
+          <div class="deck-info">
+            <h4>小红书标准 3:4 比例</h4>
+            <p>严格按照画幅规格设计卡片容器，保证在手机端展现最佳效果。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">02</div>
+          <div class="deck-info">
+            <h4>智能字体与色彩搭配</h4>
+            <p>自动处理标题与正文的字号对比、行间距以及高亮色彩呈现。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">03</div>
+          <div class="deck-info">
+            <h4>不用手动打字对齐</h4>
+            <p>告别在设计软件里逐行对齐的繁琐过程，自动完成整套卡片设计。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <span>BY @小吴聊</span>
+      <span>LAYOUT AUTO-DESIGN</span>
+    </div>
+  </div>
+
+  <!-- ==================== 图 4：步骤三 (4K 高清卡片导出) ==================== -->
+  <div class="poster xhs" id="card-4">
+    <div class="hdr">
+      <div class="hdr-brand">STEP 03 OF 07</div>
+      <div class="hdr-num">04 / 09</div>
+    </div>
+
+    <div class="bd">
+      <div class="h-main-left">步骤三：4K 高清卡片导出</div>
+      
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">01</div>
+          <div class="deck-info">
+            <h4>网页无头渲染技术</h4>
+            <p>采用高清渲染工具，将排版好的 HTML 页面秒级转化为图片。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">02</div>
+          <div class="deck-info">
+            <h4>4K Retina 级别的画质</h4>
+            <p>保证文字边缘锐利无锯齿，在各类大屏手机上显示都清晰饱满。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">03</div>
+          <div class="deck-info">
+            <h4>一键生成多张图片</h4>
+            <p>一次性导出 9 张连续卡片，无需单张导出保存，大幅提升效率。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <span>BY @小吴聊</span>
+      <span>HD RENDERING EXPORT</span>
+    </div>
+  </div>
+
+  <!-- ==================== 图 5：步骤四 (预览检查与修改) ==================== -->
+  <div class="poster xhs" id="card-5">
+    <div class="hdr">
+      <div class="hdr-brand">STEP 04 OF 07</div>
+      <div class="hdr-num">05 / 09</div>
+    </div>
+
+    <div class="bd">
+      <div class="h-main-left">步骤四：预览检查与修改</div>
+      
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">01</div>
+          <div class="deck-info">
+            <h4>界面实时呈送预览</h4>
+            <p>生成好的 9 张图文卡片第一时间在界面展示，方便仔细检查。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">02</div>
+          <div class="deck-info">
+            <h4>灵活调整文字与风格</h4>
+            <p>可以根据喜好修改标题措辞，或者随心切换青花瓷等视觉风格。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">03</div>
+          <div class="deck-info">
+            <h4>人工把关确定满意</h4>
+            <p>只有你检查无误并确认后，系统才会继续执行后续的发布流程。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <span>BY @小吴聊</span>
+      <span>QUALITY PREVIEW</span>
+    </div>
+  </div>
+
+  <!-- ==================== 图 6：步骤五 (账号登录态免扫码挂载) ==================== -->
+  <div class="poster xhs" id="card-6">
+    <div class="hdr">
+      <div class="hdr-brand">STEP 05 OF 07</div>
+      <div class="hdr-num">06 / 09</div>
+    </div>
+
+    <div class="bd">
+      <div class="h-main-left">步骤五：账号登录态免扫码挂载</div>
+      
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">01</div>
+          <div class="deck-info">
+            <h4>安全持久化保存凭证</h4>
+            <p>首次授权登录后，安全保存授权 Cookie 凭证，避免反复登录。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">02</div>
+          <div class="deck-info">
+            <h4>告别频繁扫码繁琐</h4>
+            <p>每次发布无需再掏出手机扫码，系统自动读取安全凭证即可验证。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">03</div>
+          <div class="deck-info">
+            <h4>保障连贯稳定运行</h4>
+            <p>挂载环境隔离运行，确保长期连贯、顺畅地执行发布任务。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <span>BY @小吴聊</span>
+      <span>SECURE SESSION MOUNT</span>
+    </div>
+  </div>
+
+  <!-- ==================== 图 7：步骤六 (后台自动填单发布) ==================== -->
+  <div class="poster xhs" id="card-7">
+    <div class="hdr">
+      <div class="hdr-brand">STEP 06 OF 07</div>
+      <div class="hdr-num">07 / 09</div>
+    </div>
+
+    <div class="bd">
+      <div class="h-main-left">步骤六：后台自动填单发布</div>
+      
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">01</div>
+          <div class="deck-info">
+            <h4>批量一次性上传图片</h4>
+            <p>调起后台服务，将渲染好的 9 张卡片顺序选入上传框完成选择。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">02</div>
+          <div class="deck-info">
+            <h4>自动填写标题与正文</h4>
+            <p>精准填入笔记标题、段落正文，并自动挂载合适的话题标签。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">03</div>
+          <div class="deck-info">
+            <h4>一键提交完成发布</h4>
+            <p>自动点击提交发布按钮，全程无需双手繁琐点击鼠标和按键盘。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <span>BY @小吴聊</span>
+      <span>AUTOMATED SUBMISSION</span>
+    </div>
+  </div>
+
+  <!-- ==================== 图 8：步骤七 (表格归档与状态跟踪) ==================== -->
+  <div class="poster xhs" id="card-8">
+    <div class="hdr">
+      <div class="hdr-brand">STEP 07 OF 07</div>
+      <div class="hdr-num">08 / 09</div>
+    </div>
+
+    <div class="bd">
+      <div class="h-main-left">步骤七：表格归档与状态跟踪</div>
+      
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">01</div>
+          <div class="deck-info">
+            <h4>自动记录发布日志</h4>
+            <p>发布完成后，系统自动将发布时间、标题与状态汇总记录。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">02</div>
+          <div class="deck-info">
+            <h4>形成资产管理看板</h4>
+            <p>同步更新到云端表格，清晰掌握做号历史与内容发布进度。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">03</div>
+          <div class="deck-info">
+            <h4>防止漏发或重复发</h4>
+            <p>通过数据归档形成清晰记录，让长期多号运营更加井井有条。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <span>BY @小吴聊</span>
+      <span>DATA ARCHIVING</span>
+    </div>
+  </div>
+
+  <!-- ==================== 图 9：总结与做号感悟 ==================== -->
+  <div class="poster xhs" id="card-9">
+    <div class="hdr">
+      <div class="hdr-brand">SUMMARY & THOUGHTS</div>
+      <div class="hdr-num">09 / 09</div>
+    </div>
+
+    <div class="bd">
+      <div class="h-main-left">总结：用工具解放双手</div>
+      
+      <div class="deck-grid">
+        <div class="deck-row">
+          <div class="deck-num">💡</div>
+          <div class="deck-info">
+            <h4>解放重复劳动</h4>
+            <p>把排版做图、上传填单等重复机械工作交给自动化流程。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">🎨</div>
+          <div class="deck-info">
+            <h4>保障内容质量</h4>
+            <p>坚持人工审核与质量把关，做有温度、有价值的自媒体干货。</p>
+          </div>
+        </div>
+        <div class="deck-row">
+          <div class="deck-num">🌟</div>
+          <div class="deck-info">
+            <h4>留时间给生活</h4>
+            <p>把省下来的时间和精力，留给自己去思考、学习与体验生活。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <span>@小吴聊 · 科技实战</span>
+      <span>WORKFLOW WRAP-UP</span>
+    </div>
+  </div>
+
+</body>
+</html>

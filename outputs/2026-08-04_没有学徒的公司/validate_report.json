@@ -1,0 +1,80 @@
+{
+  "output_dir": "outputs/2026-08-04_没有学徒的公司/",
+  "materials": "materials/2026-08/2026-08-04_没有学徒的公司素材包.md",
+  "validated_at": "2026-08-04 22:28:25",
+  "verdict": "PASSED",
+  "fails": 0,
+  "warns": 0,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-04_没有学徒的公司素材包.md（14 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[短视频] 120s黄金分镜脚本.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜斯坦福\"煤矿金丝雀\"研究**：斯坦福数字经济实验室分析美国数百万条薪资记录发现：在 AI 暴露程度最高的职业中，2…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M2「M2｜Anthropic 劳动力研究**：Anthropic 2026 年 3 月发布的研究显示，与 2022 年相比，…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜Big Tech 应届生招聘断崖**：SignalFire《2025 State of Tech Talent R…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜\"人才债\"概念**：Jeff Raikes（微软前高管、盖茨基金会前 CEO）2026 年 7 月在《Fortun…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜大众新出路（趋势数据）**：入口变窄的另一侧，新职业在批量诞生。CNNIC 第 57 次报告：截至 2025 年 …」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 17 处（要求 ≥2）：['16%', '7%', '16%', '14%', '25%', '50%']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 29 处（要求 ≥2）：['16%', '7%', '16%', '14%', '25%', '50%']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[短视频] 120s黄金分镜脚本.md 具体数字 22 处（要求 ≥1）：['16%', '16%', '16%', '16%', '14%', '25%']"
+    }
+  ]
+}
