@@ -121,7 +121,7 @@ def cmd_qa(args):
     if cur in ("draft", "visual", "review"):
         if not run([sys.executable, os.path.join(SCRIPTS, "job_state.py"),
                     "set", job_id, "archive",
-                    "--note", "质检链通过且评分报告已落盘，自动归档"], "推进 archive"):
+                    "--note", "质检链通过且评分报告已落盘，自动归档；发布前仍需人工复核评分报告"], "推进 archive"):
             return False
     return True
 
