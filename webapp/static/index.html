@@ -3,92 +3,188 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>自媒体工作台</title>
+<title>自媒体运营中心</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">📡 自媒体工作台 <span class="sub">小吴聊 · 图文运营平台</span></div>
-  <nav class="tabs">
-    <button class="tab active" data-view="overview">概览</button>
-    <button class="tab" data-view="topics">选题</button>
-    <button class="tab" data-view="jobs">Job</button>
-    <button class="tab" data-view="ops">质检与发布</button>
-  </nav>
-  <div id="toast" class="toast hidden"></div>
-</header>
-
-<main>
-  <!-- 概览 -->
-  <section id="view-overview" class="view active">
-    <div class="cards" id="overview-cards"></div>
-    <div class="panel">
-      <h3>Job 状态分布</h3>
-      <div id="state-bars" class="state-bars"></div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-logo">吴</span>
+      <span class="brand-text">
+        <b>自媒体运营中心</b>
+        <small>小吴聊 · 结果看板</small>
+      </span>
     </div>
-  </section>
+    <nav class="nav" id="nav">
+      <button class="nav-item active" data-view="overview">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        概览
+      </button>
+      <button class="nav-item" data-view="topics">
+        <svg viewBox="0 0 24 24"><path d="M5 3v18M5 5h12l-2 4 2 4H5"/></svg>
+        选题
+      </button>
+      <button class="nav-item" data-view="pipeline">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/></svg>
+        流水线
+      </button>
+      <button class="nav-item" data-view="outputs">
+        <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4"/></svg>
+        成品库
+      </button>
+      <button class="nav-item" data-view="data">
+        <svg viewBox="0 0 24 24"><path d="M4 20h16M7 20v-6M12 20v-10M17 20v-8"/></svg>
+        数据
+      </button>
+    </nav>
+    <div class="sidebar-footer">v2.0 · 生产在 Codex · 看板只展示结果</div>
+  </aside>
 
-  <!-- 选题 -->
-  <section id="view-topics" class="view">
-    <div class="split">
-      <div class="panel">
-        <h3>📋 选题推荐 <button class="btn small" id="btn-refresh-topics">刷新</button></h3>
-        <div class="row" style="margin-top:8px">
-          <button class="btn small" onclick="runPipeline('topics')">🔥 采集热点+推荐</button>
-          <button class="btn small" onclick="runPipeline('recycle')">⏰ 48h 回收检查</button>
-          <button class="btn small" onclick="runPipeline('weekly')">📊 生成周报</button>
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1 class="page-title" id="page-title">概览</h1>
+        <p class="page-sub" id="page-sub">数据大盘 · 结果优先</p>
+      </div>
+      <div class="topbar-meta" id="topbar-meta"></div>
+    </header>
+
+    <main class="content">
+      <!-- 概览 -->
+      <section id="view-overview" class="view active">
+        <div class="kpi-grid" id="kpi-cards"></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>Job 状态分布</h3></div>
+            <div id="state-bars" class="state-bars"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>近 7 天发布趋势</h3><span class="muted">按回填数据</span></div>
+            <div id="trend-chart" class="trend-chart"></div>
+          </div>
         </div>
-        <div id="suggest-list"></div>
-      </div>
-      <div class="panel">
-        <h3>📡 热点雷达 <span id="radar-path" class="muted"></span></h3>
-        <div id="radar-list"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Job -->
-  <section id="view-jobs" class="view">
-    <div class="panel">
-      <h3>🗂️ Job 列表 <button class="btn small" id="btn-refresh-jobs">刷新</button></h3>
-      <table class="table" id="jobs-table">
-        <thead><tr><th>Job ID</th><th>主题</th><th>状态</th><th>评分</th><th>打回</th><th>更新时间</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <div id="job-detail" class="panel hidden"></div>
-  </section>
-
-  <!-- 质检与发布 -->
-  <section id="view-ops" class="view">
-    <div class="split">
-      <div class="panel">
-        <h3>🛡️ 质检链</h3>
-        <p class="muted">对 outputs/&lt;job_id&gt; 运行契约校验 + harsh-critic 机器评分</p>
-        <div class="row">
-          <input id="qa-job" placeholder="job_id，如 2026-08-04_AI产业1.2万亿">
-          <button class="btn" id="btn-qa">跑质检</button>
+        <div class="card">
+          <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 20 条回填记录</span></div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>时间</th><th>Job</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th></tr></thead>
+              <tbody id="recent-table"></tbody>
+            </table>
+          </div>
         </div>
-        <pre id="qa-result" class="result hidden"></pre>
-      </div>
-      <div class="panel">
-        <h3>🚀 一键发布</h3>
-        <p class="muted">调 publish_to_n8n.py → NAS。需 NAS 在线且 nas-n8n/.env 已配置。</p>
-        <div class="form">
-          <input id="pub-job" placeholder="job_id（可选，自动写 publish_log）">
-          <input id="pub-title" placeholder="标题 *">
-          <textarea id="pub-content" placeholder="小红书正文"></textarea>
-          <textarea id="pub-gzh" placeholder="公众号 HTML（可选）"></textarea>
-          <input id="pub-images" placeholder="图片路径（逗号分隔，可选）">
-          <input id="pub-tags" placeholder="标签（逗号分隔，可选）">
-          <button class="btn primary" id="btn-publish">发布到 NAS</button>
-        </div>
-        <pre id="publish-result" class="result hidden"></pre>
-      </div>
-    </div>
-  </section>
-</main>
+      </section>
 
+      <!-- 选题 -->
+      <section id="view-topics" class="view">
+        <div class="toolbar">
+          <button class="btn tonal" id="btn-fetch-topics" onclick="runPipeline('topics')">采集热点 + 推荐</button>
+          <button class="btn tonal" onclick="runPipeline('recycle')">48h 回收检查</button>
+          <button class="btn tonal" onclick="runPipeline('weekly')">生成周报</button>
+          <button class="btn" id="btn-refresh-topics">刷新</button>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>选题推荐</h3><span class="muted" id="suggest-path"></span></div>
+            <div id="suggest-list" class="stack"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>热点雷达</h3><span class="muted" id="radar-path"></span></div>
+            <div id="radar-list" class="stack"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 流水线 -->
+      <section id="view-pipeline" class="view">
+        <div class="toolbar">
+          <label class="field-label" for="pipeline-job-select">选择 Job</label>
+          <select id="pipeline-job-select" class="select" onchange="renderPipelineJob()"></select>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>生产状态机</h3><span class="muted" id="pipeline-job-meta"></span></div>
+          <div id="state-stepper" class="stepper"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Agent 流水线</h3><span class="muted">角色职责与当前产出</span></div>
+          <div id="agent-cards" class="agent-grid"></div>
+        </div>
+      </section>
+
+      <!-- 成品库 -->
+      <section id="view-outputs" class="view">
+        <div class="toolbar">
+          <label class="field-label" for="outputs-job-select">选择 Job</label>
+          <select id="outputs-job-select" class="select" onchange="renderOutputs()"></select>
+        </div>
+        <div class="tabs" id="artifact-tabs">
+          <button class="tab active" data-artifact="xhs" onclick="switchArtifact('xhs')">小红书</button>
+          <button class="tab" data-artifact="gzh" onclick="switchArtifact('gzh')">公众号</button>
+          <button class="tab" data-artifact="video" onclick="switchArtifact('video')">短视频</button>
+        </div>
+        <div class="artifact-layout">
+          <div class="card artifact-preview">
+            <div id="carousel" class="carousel hidden"></div>
+            <div id="artifact-frame"></div>
+          </div>
+          <div class="card artifact-side">
+            <h3>Job 状态</h3>
+            <div id="artifact-meta" class="stack"></div>
+            <h3 style="margin-top:20px">质检报告</h3>
+            <div id="artifact-qa" class="stack"></div>
+            <h3 style="margin-top:20px">发布记录</h3>
+            <div id="artifact-publish" class="stack"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 数据 -->
+      <section id="view-data" class="view">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>回填平台数据</h3><span class="muted">阅读 / 赞 / 藏 / 评</span></div>
+            <form id="backfill-form" class="form">
+              <label class="field-label">Job</label>
+              <select id="bf-job" class="select"></select>
+              <label class="field-label">平台</label>
+              <select id="bf-platform" class="select">
+                <option>小红书</option><option>公众号</option><option>短视频</option>
+              </select>
+              <div class="form-grid">
+                <div><label class="field-label">阅读/播放</label><input id="bf-reads" type="number" min="0" value="0"></div>
+                <div><label class="field-label">点赞</label><input id="bf-likes" type="number" min="0" value="0"></div>
+                <div><label class="field-label">收藏</label><input id="bf-collects" type="number" min="0" value="0"></div>
+                <div><label class="field-label">评论</label><input id="bf-comments" type="number" min="0" value="0"></div>
+              </div>
+              <label class="field-label">作品链接（可选）</label>
+              <input id="bf-url" type="url" placeholder="https://…">
+              <button class="btn filled" type="submit">保存回填</button>
+            </form>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>数据说明</h3></div>
+            <div class="stack muted">
+              <p>回填数据落盘到 <code>jobs/&lt;job_id&gt;/publish_log.json</code>，并同步更新概览大盘。</p>
+              <p>爆款阈值：阅读 ≥ 5000 或 点赞 ≥ 200，命中后建议执行爆款解剖。</p>
+              <p>公众号 data cube / 小红书官方接口自动拉取为后续扩展，当前以人工回填为准。</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>发布表现明细</h3><span class="muted">全部回填记录</span></div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>时间</th><th>Job</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th></tr></thead>
+              <tbody id="perf-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
 <script src="/static/app.js"></script>
 </body>
 </html>

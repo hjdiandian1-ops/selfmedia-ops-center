@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-自媒体工作台 WebUI · 后端 (FastAPI)
+自媒体运营中心看板 · 后端 (FastAPI)
 ====================================
-集中展示选题/Job/质检/发布数据,并提供一键操作(采纳选题/跑质检/触发流水线/发布)。
+结果导向的运营看板:数据大盘 / 选题 / Agent 流水线 / 成品预览 / 平台数据回收。
 仅绑定 127.0.0.1,操作端点仅 POST + 白名单参数,子进程统一超时。
 
 启动:
@@ -31,7 +31,51 @@ OUTPUTS_DIR = os.path.join(ROOT, "outputs")
 MATERIALS_DIR = os.path.join(ROOT, "materials")
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
-app = FastAPI(title="自媒体工作台", version="1.0.0")
+app = FastAPI(title="自媒体运营中心看板", version="2.0.0")
+
+# ---------- Agent 流水线元数据（静态职责 + 动态状态关联） ----------
+AGENTS_ROSTER = [
+    {
+        "role": "总编", "en": "Orchestrator", "emoji": "🧭",
+        "responsibility": "选题决策、流程调度、人机确认卡点",
+        "state_keys": ["topic"],
+    },
+    {
+        "role": "资深采编", "en": "Senior Researcher", "emoji": "🔎",
+        "responsibility": "热点雷达、素材包（真实数据/用户投喂双标注）",
+        "state_keys": ["materials"],
+    },
+    {
+        "role": "小红书主编", "en": "XHS Editor", "emoji": "📕",
+        "responsibility": "小红书文案、3:4 卡片、标签与互动引导",
+        "state_keys": ["draft"],
+    },
+    {
+        "role": "公众号主编", "en": "WeChat Editor", "emoji": "📰",
+        "responsibility": "公众号深度长文、排版 HTML、参考来源",
+        "state_keys": ["draft"],
+    },
+    {
+        "role": "短视频导演", "en": "Video Director", "emoji": "🎬",
+        "responsibility": "120s 黄金分镜脚本（五段式）",
+        "state_keys": ["draft"],
+    },
+    {
+        "role": "美术总监", "en": "Visual Director", "emoji": "🎨",
+        "responsibility": "3:4 视觉卡片与封面渲染",
+        "state_keys": ["visual"],
+    },
+    {
+        "role": "资深校对排版", "en": "Chief Reviewer", "emoji": "🛡️",
+        "responsibility": "契约校验、harsh-critic 评分、移动端审核",
+        "state_keys": ["review"],
+    },
+    {
+        "role": "归档发布员", "en": "Distro Ops", "emoji": "📦",
+        "responsibility": "三级目录落盘、清扫、草稿箱同步",
+        "state_keys": ["archive", "publish", "recycle"],
+    },
+]
 
 
 # ---------- 子进程封装 ----------
@@ -117,6 +161,144 @@ def api_overview():
         "hits": hits,
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
+
+
+def _collect_job_rows():
+    """读取 jobs/ 下所有 Job 的 state.json + publish_log.json。"""
+    rows = []
+    for d in sorted(os.listdir(JOBS_DIR)):
+        sf = os.path.join(JOBS_DIR, d, "state.json")
+        data = read_json(sf)
+        if not data:
+            continue
+        rows.append({
+            "job_id": data.get("job_id", d),
+            "dir": d,
+            "theme": data.get("theme", ""),
+            "state": data.get("state", "?"),
+            "scores": data.get("scores", {}),
+            "reject_count": data.get("reject_count", 0),
+            "updated_at": data.get("updated_at", ""),
+            "log": read_json(os.path.join(JOBS_DIR, d, "publish_log.json")) or {},
+        })
+    return rows
+
+
+@app.get("/api/stats")
+def api_stats():
+    """聚合大盘指标：KPI / 状态分布 / 最近发布表现 / 近 7 天趋势 / 待回收。"""
+    from collections import Counter
+    by_state = Counter()
+    total = reject_total = 0
+    scores = []
+    records = []
+    published_jobs = pending_recycle = 0
+
+    for j in _collect_job_rows():
+        total += 1
+        by_state[j["state"]] += 1
+        reject_total += j["reject_count"]
+        for st, sc in (j["scores"] or {}).items():
+            scores.append(sc)
+        log = j["log"]
+        if log.get("publish") or log.get("records"):
+            published_jobs += 1
+        for rec in log.get("records", []):
+            records.append({**rec, "job_id": j["job_id"], "theme": j["theme"]})
+        if log.get("records"):
+            continue
+        if j["state"] not in ("publish", "archive"):
+            continue
+        pt = log.get("published_at")
+        try:
+            age_h = (datetime.now() - datetime.strptime(pt, "%Y-%m-%d %H:%M:%S")).total_seconds() / 3600
+            if age_h >= 48:
+                pending_recycle += 1
+        except Exception:
+            pass
+
+    records.sort(key=lambda r: r.get("collected_at", ""), reverse=True)
+    recent = records[:20]
+    total_reads = sum(r.get("reads", 0) for r in records)
+    total_likes = sum(r.get("likes", 0) for r in records)
+    total_collects = sum(r.get("collects", 0) for r in records)
+    total_comments = sum(r.get("comments", 0) for r in records)
+    hits = sum(1 for r in records if r.get("hit"))
+    avg_engagement = round((total_likes + total_collects + total_comments) / total_reads, 4) if total_reads else 0.0
+
+    today = datetime.now().date()
+    trend = []
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        day_recs = [r for r in records if (r.get("collected_at") or "")[:10] == day.isoformat()]
+        trend.append({
+            "date": day.isoformat(),
+            "label": day.strftime("%m-%d"),
+            "count": len(day_recs),
+            "reads": sum(r.get("reads", 0) for r in day_recs),
+            "hits": sum(1 for r in day_recs if r.get("hit")),
+        })
+
+    return {
+        "jobs_total": total,
+        "by_state": dict(by_state),
+        "reject_total": reject_total,
+        "avg_score": round(sum(scores) / len(scores), 1) if scores else None,
+        "score_count": len(scores),
+        "pending_recycle": pending_recycle,
+        "published_jobs": published_jobs,
+        "hits": hits,
+        "total_reads": total_reads,
+        "total_likes": total_likes,
+        "total_collects": total_collects,
+        "total_comments": total_comments,
+        "avg_engagement": avg_engagement,
+        "recent": recent,
+        "trend": trend,
+        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+
+def _agent_outputs(job_id: str, limit: int = 3):
+    """取某个 Job 产出目录里的代表性文件（优先三平台子目录）。"""
+    jdir = os.path.join(OUTPUTS_DIR, job_id)
+    if not os.path.isdir(jdir):
+        return []
+    out = []
+    for sub in ("小红书", "公众号", "短视频"):
+        subdir = os.path.join(jdir, sub)
+        if not os.path.isdir(subdir):
+            continue
+        names = sorted(n for n in os.listdir(subdir)
+                       if n.lower().endswith((".png", ".jpg", ".jpeg", ".html", ".md")))
+        for n in names[:limit]:
+            out.append({"platform": sub, "file": n, "url": f"/assets/outputs/{job_id}/{sub}/{n}"})
+    return out[:6]
+
+
+@app.get("/api/agents")
+def api_agents():
+    """返回 Agent 职责元数据 + 当前活跃 Job 与最近产出。"""
+    jobs = _collect_job_rows()
+    agents = []
+    for a in AGENTS_ROSTER:
+        active = [j for j in jobs if j["state"] in a["state_keys"]]
+        agents.append({
+            "role": a["role"],
+            "en": a["en"],
+            "emoji": a["emoji"],
+            "responsibility": a["responsibility"],
+            "state_keys": a["state_keys"],
+            "active_count": len(active),
+            "active_jobs": [{
+                "job_id": j["job_id"],
+                "theme": j["theme"],
+                "state": j["state"],
+                "updated_at": j["updated_at"],
+                "outputs": _agent_outputs(j["job_id"]),
+            } for j in active[-3:]],
+        })
+    return {"agents": agents}
 
 
 @app.get("/api/topics")
@@ -250,6 +432,16 @@ class PublishRequest(BaseModel):
     job_id: str = ""
 
 
+class StatsBackfill(BaseModel):
+    job_id: str
+    platform: str
+    reads: int = 0
+    likes: int = 0
+    collects: int = 0
+    comments: int = 0
+    url: str = ""
+
+
 @app.post("/api/publish")
 def api_publish(payload: PublishRequest):
     """一键发布(调 publish_to_n8n.py → NAS)。发布前请确认 NAS 在线、.env 凭据已配置。"""
@@ -267,6 +459,36 @@ def api_publish(payload: PublishRequest):
     if payload.job_id:
         args += ["--job-id", payload.job_id]
     r = run_script(args, timeout=180)
+    return r
+
+
+@app.post("/api/stats/backfill")
+def api_stats_backfill(payload: StatsBackfill):
+    """平台数据回填：校验后调用 collect_post_stats.py 落盘 publish_log.json。"""
+    job_id = payload.job_id.strip()
+    if not job_id:
+        raise HTTPException(status_code=400, detail="job_id 不能为空")
+    if not os.path.isdir(os.path.join(JOBS_DIR, job_id)):
+        raise HTTPException(status_code=404, detail=f"Job 不存在: {job_id}")
+    if payload.platform not in ("小红书", "公众号", "短视频"):
+        raise HTTPException(status_code=400, detail=f"平台不合法: {payload.platform}")
+    for name, val in (("reads", payload.reads), ("likes", payload.likes),
+                      ("collects", payload.collects), ("comments", payload.comments)):
+        if not isinstance(val, int) or val < 0:
+            raise HTTPException(status_code=400, detail=f"{name} 必须是非负整数")
+    if len(payload.url) > 500:
+        raise HTTPException(status_code=400, detail="url 过长（≤500 字符）")
+
+    args = [
+        "collect_post_stats.py", job_id, "--platform", payload.platform,
+        "--reads", str(payload.reads), "--likes", str(payload.likes),
+        "--collects", str(payload.collects), "--comments", str(payload.comments),
+    ]
+    if payload.url.strip():
+        args += ["--url", payload.url.strip()]
+    r = run_script(args, timeout=30)
+    if not r["ok"]:
+        raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False))
     return r
 
 

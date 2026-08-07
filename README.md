@@ -221,9 +221,9 @@ outputs/YYYY-MM-DD_主题名/
 
 ---
 
-## 7. 🖥️ 自媒体工作台 WebUI（本地可视化操作台）
+## 7. 🖥️ 自媒体运营中心看板（本地 WebUI）
 
-> 集中展示选题/Job/质检/发布数据，支持一键操作（采纳选题、跑质检、触发流水线、发布到 NAS）。仅绑定 `127.0.0.1`，零构建（原生 HTML/JS + FastAPI）。
+> 结果导向的运营看板：数据大盘、选题、Agent 流水线、三平台成品预览、平台数据回收。创作与修改仍在 Codex 对话框完成，看板只做「看结果、选选题、回填数据」。仅绑定 `127.0.0.1`，零构建（原生 HTML/JS + FastAPI，Google Material 3 风格）。
 
 ### 7.1 启动
 
@@ -237,10 +237,11 @@ bash webapp/start.sh 9000     # 指定端口
 
 | 视图 | 内容 | 一键操作 |
 |---|---|---|
-| 概览 | Job 总数/状态分布/平均分/待回收/爆款 | — |
+| 概览 | Job 总数/已发布/爆款/总阅读/平均互动率/待回收；状态分布、近 7 天趋势、最近发布表现 | — |
 | 选题 | 热点雷达 + 选题推荐 | 采纳选题 → 建 Job；采集热点；48h 回收；生成周报 |
-| Job | 状态机进度/评分/打回/详情抽屉 | 详情；跑质检 |
-| 质检与发布 | 契约校验 + harsh-critic 报告 | 跑质检；一键发布到 NAS（二次确认） |
+| 流水线 | 8 个 Agent 角色职责、活跃 Job、最近产出；生产状态机步骤条 | 点击 Job 跳转成品库 |
+| 成品库 | 小红书卡片轮播 + slides HTML、公众号排版预览（桌面/移动）、短视频分镜脚本 | 按 Job 查看质检与发布状态 |
+| 数据 | 发布表现明细 + 回填表单（阅读/赞/藏/评/链接） | 保存回填 → 落盘 publish_log.json |
 
 ### 7.3 与 NAS 的关系
 
@@ -252,11 +253,15 @@ bash webapp/start.sh 9000     # 指定端口
 
 ```
 GET  /api/overview            # 统计概览
+GET  /api/stats               # 大盘指标（KPI/趋势/最近发布表现/待回收）
+GET  /api/agents              # Agent 职责 + 活跃 Job + 最近产出
 GET  /api/topics              # 热点雷达 + 选题推荐
 GET  /api/jobs                # Job 列表
 GET  /api/jobs/{job_id}       # Job 详情（state/质检/发布日志）
+GET  /api/outputs/{job_id}    # 产出文件树
 POST /api/topics/adopt        # 采纳选题建 Job
 POST /api/qa                  # 跑质检链（需 output_dir）
 POST /api/pipeline/run        # 触发流水线（action: topics|recycle|weekly|qa）
 POST /api/publish             # 一键发布到 NAS
+POST /api/stats/backfill      # 平台数据回填（落盘 publish_log.json）
 ```
