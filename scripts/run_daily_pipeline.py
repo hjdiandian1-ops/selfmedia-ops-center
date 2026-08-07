@@ -111,7 +111,7 @@ def cmd_qa(args):
         print("🛑 未通过质检门，退回对应主编重写。")
         return False
     # P0：质检通过后自动推进状态机（review → archive）
-    score = hr.get("score", 0)
+    score = int(hr.get("score", 0))
     cur = state_data.get("state")
     if cur in ("draft", "visual"):
         if not run([sys.executable, os.path.join(SCRIPTS, "job_state.py"),

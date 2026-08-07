@@ -8,8 +8,12 @@
 
 用法：
     /Users/xiaowuliao/.workbuddy/binaries/python/envs/default/bin/python \
-        scripts/xhs_manual_publish.py
+        scripts/xhs_manual_publish.py \
+        --title "标题" --content-file outputs/<job>/小红书/文案.md \
+        --images outputs/<job>/小红书/xhs-01.png outputs/<job>/小红书/xhs-02.png \
+        --tags AI 一人公司
 """
+import argparse
 import os
 import sys
 import time
@@ -19,36 +23,34 @@ from playwright.sync_api import sync_playwright
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COOKIES_PATH = os.path.join(PROJECT_DIR, "nas-n8n", "shared_files", "xhs_cookies.json")
 
-TITLE = "一个人拍短剧，72 小时流水 50 万美元"
-IMAGES = [
+DEFAULT_TITLE = "一个人拍短剧，72 小时流水 50 万美元"
+DEFAULT_IMAGES = [
     os.path.join(PROJECT_DIR, "outputs/2026-08-06_AI短剧出海一人公司/小红书/xhs-01.png"),
     os.path.join(PROJECT_DIR, "outputs/2026-08-06_AI短剧出海一人公司/小红书/xhs-02.png"),
     os.path.join(PROJECT_DIR, "outputs/2026-08-06_AI短剧出海一人公司/小红书/xhs-03.png"),
     os.path.join(PROJECT_DIR, "outputs/2026-08-06_AI短剧出海一人公司/小红书/xhs-04.png"),
 ]
-TAGS = ["AI短剧", "出海", "一人公司", "AI工具", "副业", "内容创业"]
+DEFAULT_MD = os.path.join(PROJECT_DIR, "outputs/2026-08-06_AI短剧出海一人公司/小红书/文案.md")
+DEFAULT_TAGS = ["AI短剧", "出海", "一人公司", "AI工具", "副业", "内容创业"]
 
 
-def build_content():
-    md = os.path.join(PROJECT_DIR, "outputs/2026-08-06_AI短剧出海一人公司/小红书/文案.md")
+def build_content(md):
     text = open(md, encoding="utf-8").read()
     body = text.split("## 📝 笔记正文：", 1)[1]
     lines = []
     for ln in body.splitlines():
-        if ln.strip().startswith("数据来源") or ln.strip().startswith("#AI短剧"):
+        if ln.strip().startswith("数据来源") or ln.strip().startswith("#"):
             break
         lines.append(ln)
-    content = "\n".join(lines).strip()
-    content += "\n\n数据来源：快手磁力引擎大会 / DataEye 研究院 / 网易报道（2026-05）"
-    content += "\n\n" + " ".join(f"#{t}" for t in TAGS)
-    return content
+    return "\n".join(lines).strip()
 
 
-def run():
+def run(title, content_file, images, tags):
     if not os.path.exists(COOKIES_PATH):
         print(f"❌ 未找到 Cookie：{COOKIES_PATH}，请先运行 scripts/init_xiaohongshu_login.py 扫码登录。")
         return
-    content = build_content()
+    content = build_content(content_file)
+    content += "\n\n" + " ".join(f"#{t}" for t in tags)
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
         context = browser.new_context(storage_state=COOKIES_PATH)
@@ -76,12 +78,12 @@ def run():
         multi = [i for i in inputs if i.get_attribute("multiple") is not None]
         target = multi[0] if multi else (inputs[-1] if inputs else None)
         if target:
-            target.set_input_files(IMAGES)
+            target.set_input_files(images)
         page.wait_for_timeout(6000)
 
         print("✍️ 填写标题 ...")
         try:
-            page.wait_for_selector('input[placeholder*="标题"]', timeout=15000).fill(TITLE)
+            page.wait_for_selector('input[placeholder*="标题"]', timeout=15000).fill(title)
         except Exception as e:
             print("标题填写提示:", e)
 
@@ -102,4 +104,10 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    ap = argparse.ArgumentParser(description="小红书半自动发布（人工终审）")
+    ap.add_argument("--title", default=DEFAULT_TITLE)
+    ap.add_argument("--content-file", default=DEFAULT_MD)
+    ap.add_argument("--images", nargs="*", default=DEFAULT_IMAGES)
+    ap.add_argument("--tags", nargs="*", default=DEFAULT_TAGS)
+    args = ap.parse_args()
+    run(args.title, args.content_file, args.images, args.tags)
