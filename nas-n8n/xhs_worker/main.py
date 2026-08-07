@@ -165,6 +165,10 @@ async def publish_note(payload: PublishPayload):
                 if clicked:
                     await page.wait_for_timeout(6000)
                     print("已点击(JS)：上传图文；URL:", page.url)
+                    try:
+                        print("XHS frames:", [(f.name or '', f.url[:90]) for f in page.frames])
+                    except Exception as fe:
+                        print("XHS frames 诊断失败:", fe)
                 else:
                     print("未找到『上传图文』文本元素")
             except Exception as e:
@@ -235,8 +239,46 @@ async def publish_note(payload: PublishPayload):
             # 点击发布按钮并二次断言成功(不再 sleep 5s 谎报成功)
             published, evidence = False, ""
             try:
-                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                # 回到顶部：发布按钮在固定底部栏，保持初始视口
+                await page.evaluate("""() => {
+                    [...document.querySelectorAll('*')].forEach(e => {
+                        if (e.scrollHeight > e.clientHeight + 50) {
+                            e.scrollTop = 0;
+                        }
+                    });
+                }""")
                 await page.wait_for_timeout(1000)
+                # 全量扫描：文字恰为“发布”的元素（不限标签）
+                try:
+                    deep = await page.evaluate("""() => {
+                        const out = [];
+                        [...document.querySelectorAll('button, a, div, span, section, footer')]
+                            .forEach(e => {
+                                const t = (e.innerText || '').trim();
+                                const r = e.getBoundingClientRect();
+                                const cls = (e.className || '').toString();
+                                const aria = e.getAttribute('aria-label') ||
+                                    e.getAttribute('title') || '';
+                                const hit = t === '发布' ||
+                                    aria.includes('发布') ||
+                                    (/publish|submit|发布/i.test(cls) && t.length <= 10);
+                                if (hit && r.width > 20 && r.width < 300 &&
+                                        r.height > 15 && r.height < 100) {
+                                    out.push({
+                                        tag: e.tagName,
+                                        cls: cls.slice(0, 80),
+                                        text: t.slice(0, 20),
+                                        aria: aria.slice(0, 30),
+                                        x: Math.round(r.x), y: Math.round(r.y),
+                                        w: Math.round(r.width), h: Math.round(r.height),
+                                    });
+                                }
+                            });
+                        return out.slice(0, 50);
+                    }""")
+                    print("发布深层候选:", deep)
+                except Exception as ce:
+                    print("发布深层诊断失败:", ce)
                 try:
                     cands = await page.evaluate("""() => {
                         const out = [];
@@ -261,34 +303,63 @@ async def publish_note(payload: PublishPayload):
                     print("发布按钮诊断失败:", ce)
 
                 pub_clicked = False
-                # Playwright 定位器（可穿透 open shadow DOM）
+                # 编辑器可能在 iframe 内：先在每个 frame 里找“发布”
                 try:
-                    pub_locs = page.locator("text=发布")
-                    pub_n = await pub_locs.count()
-                    print("发布 locator 数量:", pub_n)
-                    for i in range(pub_n):
-                        el = pub_locs.nth(i)
-                        box = await el.bounding_box()
-                        if box and box["x"] > 300 and box["y"] > 500 and box["width"] > 40:
-                            await el.click()
-                            pub_clicked = True
+                    for f in page.frames:
+                        try:
+                            locs = f.locator("text=发布")
+                            n = await locs.count()
+                            if n:
+                                print("frame 发布数:", (f.url[:60] or f.name), n)
+                            for i in range(n):
+                                el = locs.nth(i)
+                                box = await el.bounding_box()
+                                txt = ""
+                                try:
+                                    txt = (await el.inner_text() or "").strip()
+                                except Exception:
+                                    pass
+                                if txt == "发布" and box and box["x"] > 900 and \
+                                        box["y"] > 600 and box["width"] < 250:
+                                    print("frame 发布按钮:", box)
+                                    await el.click()
+                                    pub_clicked = True
+                                    break
+                        except Exception as fe:
+                            print("frame 发布扫描失败:", fe)
+                        if pub_clicked:
                             break
-                except Exception as le:
-                    print("发布 locator 点击提示:", le)
+                except Exception as fe:
+                    print("frame 枚举失败:", fe)
+                # 先定位“暂存离开”，发布按钮就在它右边
                 if not pub_clicked:
-                    pub_clicked = await page.evaluate("""() => {
-                        const els = [...document.querySelectorAll('*')].filter(e => {
-                            const t = (e.innerText || '').trim();
-                            const r = e.getBoundingClientRect();
-                            return t === '发布' &&
-                                r.width > 30 && r.width < 300 &&
-                                r.height > 20 && r.height < 90 &&
-                                r.x > 300;
-                        });
-                        if (!els.length) return false;
-                        els[els.length - 1].click();
-                        return true;
-                    }""")
+                    try:
+                        leave = await page.evaluate("""() => {
+                            const els = [...document.querySelectorAll('*')].filter(e =>
+                                (e.innerText || '').trim() === '暂存离开');
+                            if (!els.length) return null;
+                            const r = els[els.length - 1].getBoundingClientRect();
+                            return {
+                                x: Math.round(r.x), y: Math.round(r.y),
+                                w: Math.round(r.width), h: Math.round(r.height),
+                            };
+                        }""")
+                        print("暂存离开:", leave)
+                        if leave:
+                            click_x = leave["x"] + leave["w"] + 70
+                            click_y = leave["y"] + leave["h"] / 2
+                            await page.mouse.click(click_x, click_y)
+                            pub_clicked = True
+                            print("基于暂存离开点击:", click_x, click_y)
+                    except Exception as le:
+                        print("暂存离开定位失败:", le)
+                # 发布按钮疑似在 closed shadow DOM 里：用底部操作栏坐标点击
+                if not pub_clicked:
+                    # 1280x800 视口：右下角固定底栏的红色“发布”按钮
+                    click_x, click_y = 1200, 770
+                    print("兜底点击坐标:", click_x, click_y)
+                    await page.mouse.click(click_x, click_y)
+                    pub_clicked = True
                 print("发布按钮 JS 点击:", pub_clicked)
                 if pub_clicked:
                     published, evidence = await wait_for_success(
