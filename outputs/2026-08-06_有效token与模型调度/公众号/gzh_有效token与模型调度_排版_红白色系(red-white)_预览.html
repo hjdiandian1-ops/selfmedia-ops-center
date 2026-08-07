@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gzh_有效token与模型调度_排版_红白色系(red-white) · 公众号排版预览</title>
+<style>
+  body{margin:0;background:#eef0f2;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;-webkit-text-size-adjust:100%;}
+  .gzh-toolbar{position:fixed;top:0;left:0;right:0;height:54px;background:#ffffff;box-shadow:0 1px 10px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:99;}
+  .gzh-hint{font-size:13px;color:#6b7280;line-height:1.4;}
+  .gzh-hint b{color:#111827;}
+  .gzh-copy{background:#059669;color:#fff;border:0;border-radius:9px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(5,150,105,.28);white-space:nowrap;transition:transform .08s,background .15s;}
+  .gzh-copy:hover{background:#047857;}
+  .gzh-copy:active{transform:translateY(1px);}
+  .gzh-toast{position:fixed;top:66px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:88vw;text-align:center;}
+  .gzh-toast.show{opacity:1;}
+  .gzh-stage{max-width:700px;margin:78px auto 64px;padding:0 8px;}
+  @media(max-width:520px){.gzh-hint{max-width:150px;}}
+</style>
+</head>
+<body>
+<div class="gzh-toolbar">
+  <span class="gzh-hint">👇 下方是排版效果 · 点右侧 <b>复制</b> 直接粘到公众号</span>
+  <button class="gzh-copy" id="gzhCopyBtn" onclick="gzhCopy()">📋 复制到公众号</button>
+</div>
+<div class="gzh-toast" id="gzhToast"></div>
+<div class="gzh-stage">
+  <div id="gzh-content">
+<section style="max-width:677px;margin:0 auto;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#374151;line-height:1.75;letter-spacing:0.5px;overflow-x:hidden;">
+
+  <!-- 1. 开头引言卡片 -->
+  <section style="margin:10px 10px 32px;background:#ffffff;border-radius:12px;box-shadow:0 4px 24px -4px rgba(220,38,38,0.15);padding:28px 24px 22px;overflow:hidden;">
+    <p style="font-size:42px;color:#DC2626;font-weight:900;margin:0;line-height:0.6;">
+      <span leaf="">"</span>
+    </p>
+    <p style="font-size:16px;font-weight:800;color:#1C1917;margin:12px 0 8px;line-height:1.75;padding-left:4px;">
+      <span leaf="">DeepSeek 今天涨价了，但你真正该慌的不是价格——</span>
+      <span style="background:#DC2626;color:#FFFFFF;padding:2px 8px;border-radius:4px;"><span leaf="">是你的有效 token 一直在漏</span></span>
+      <span leaf="">。</span>
+    </p>
+    <p style="text-align:right;font-size:12px;color:#9CA3AF;margin:8px 0 0;letter-spacing:1px;">
+      <span leaf="">—— 小吴聊</span>
+    </p>
+  </section>
+
+  <!-- 2. 前言正文 -->
+  <section style="padding:0 10px;">
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">DeepSeek 8 月 6 日官宣整体上调 API 定价，预计涨幅较大。这不是孤例——2026 年以来，智谱、月之暗面、MiniMax、阿里云、腾讯云、百度智能云已经集体调过价。</span>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">半年前我写过一句话：</span>
+      <strong><span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">真正决定你 AI 账单的，不是模型单价，而是你的"有效 token"</span></span></strong>
+      <span leaf="">。当时没人接话。今天涨价一来，这句话突然被行业用真金白银认同了。</span>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">我自己的内容工厂就跑在 NAS 上，每天几个档期无人值守调模型，所以对"token 怎么烧钱"比谁都敏感。这篇文章不聊情绪，只拆三件事：</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">价怎么涨的、为什么"有效 token"成了硬指标、谁在帮企业把这块成本压下去</span></span>
+      <span leaf="">。</span>
+    </p>
+  </section>
+
+  <!-- 3. 前言导读 -->
+  <section style="padding:0 10px 32px;">
+    <p style="font-size:14px;color:#9CA3AF;margin:0 0 14px;letter-spacing:1px;">
+      <span leaf="">📌 本文看点</span>
+    </p>
+    <section style="display:flex;justify-content:space-between;">
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:16px 12px;margin-right:8px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:2px 10px;border-radius:4px;margin:0 0 8px;"><span leaf="">01</span></p>
+        <p style="font-size:13px;font-weight:700;color:#1C1917;margin:0;"><span leaf="">缓存命中 vs 未命中，差 50 倍</span></p>
+      </section>
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:16px 12px;margin-right:8px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:2px 10px;border-radius:4px;margin:0 0 8px;"><span leaf="">02</span></p>
+        <p style="font-size:13px;font-weight:700;color:#1C1917;margin:0;"><span leaf="">"有效 token" 被行业认同</span></p>
+      </section>
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:16px 12px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:2px 10px;border-radius:4px;margin:0 0 8px;"><span leaf="">03</span></p>
+        <p style="font-size:13px;font-weight:700;color:#1C1917;margin:0;"><span leaf="">谁在帮企业省 Token</span></p>
+      </section>
+    </section>
+  </section>
+
+  <!-- 4. 第一章 -->
+  <section style="margin-top:16px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">01</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;text-transform:uppercase;">
+            <span leaf="">PRICING</span>
+          </p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;letter-spacing:0.5px;">
+            <span leaf="">一个数字看懂为什么涨</span>
+          </h3>
+        </section>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">DeepSeek 的计费结构里有两个数字，才是真正的关键：</span>
+    </p>
+
+    <section style="display:flex;justify-content:space-between;margin-bottom:16px;">
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:18px 14px;margin-right:8px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="font-size:11px;font-weight:700;color:#991B1B;margin:0 0 8px;letter-spacing:1px;"><span leaf="">缓存命中价</span></p>
+        <p style="font-size:22px;font-weight:900;color:#1C1917;margin:0;"><span leaf="">0.02</span></p>
+        <p style="font-size:11px;color:#9CA3AF;margin:6px 0 0;"><span leaf="">元 / 百万 Token</span></p>
+      </section>
+      <section style="flex:1;background:#DC2626;border-radius:10px;padding:18px 14px;margin-left:8px;text-align:center;">
+        <p style="font-size:11px;font-weight:700;color:#FECACA;margin:0 0 8px;letter-spacing:1px;"><span leaf="">缓存未命中价</span></p>
+        <p style="font-size:22px;font-weight:900;color:#FFFFFF;margin:0;"><span leaf="">1.00</span></p>
+        <p style="font-size:11px;color:#FECACA;margin:6px 0 0;"><span leaf="">元 / 百万 Token</span></p>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">中间差 </span>
+      <strong><span style="background:#DC2626;color:#FFFFFF;padding:2px 8px;border-radius:4px;"><span leaf="">50 倍</span></span></strong>
+      <span leaf="">。而且高峰时段（工作日 9–12、14–18 点）价格还会再翻倍。</span>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">算力供不应求，涨价是产能跟不上的信号。但更值得盯的不是涨价本身，而是 </span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">这个价差结构</span></span>
+      <span leaf="">——它把"会不会用"和"会不会浪费"直接标了价。</span>
+    </p>
+  </section>
+
+  <!-- 5. 第二章 -->
+  <section style="margin-top:16px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">02</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;text-transform:uppercase;">
+            <span leaf="">CONCEPT</span>
+          </p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;letter-spacing:0.5px;">
+            <span leaf="">我提的"有效 token"，今天被行业认同了</span>
+          </h3>
+        </section>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">概念很简单：真正产生价值的 token，叫"有效 token"；每轮都把全量上下文重新发一遍、被浪费掉的，叫"无效 token"。</span>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">DeepSeek 的计费结构就是它的注脚：</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">缓存命中率 90% 的用户，输入侧实际单价仅为零命中用户的 1/8</span></span>
+      <span leaf="">。涨价真正打中的，是那些"全量重发、按未命中价全额承受"的用户。</span>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">更妙的是，行业里已经有人把"有效 Token"写进技术路线了。无问芯穹的公开表述是：</span>
+    </p>
+    <blockquote style="margin:0 0 20px;padding:14px 18px;background:#FEF2F2;border-left:4px solid #DC2626;border-radius:0 8px 8px 0;">
+      <p style="margin:0;font-size:15px;font-weight:700;color:#1C1917;line-height:1.8;"><span leaf="">"在同等硬件损耗下榨取并交付远超均值的有效 Token 数量。"</span></p>
+    </blockquote>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">这不是我发明的词，是厂商自己在用的产品语言。从"卖模型"到"卖有效 Token"，已经是赛道共识。</span>
+    </p>
+  </section>
+
+  <!-- 6. 第三章 -->
+  <section style="margin-top:16px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">03</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;text-transform:uppercase;">
+            <span leaf="">PLAYERS</span>
+          </p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;letter-spacing:0.5px;">
+            <span leaf="">谁在帮企业省下有效 token</span>
+          </h3>
+        </section>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">把成本压下来的能力，拆开看是五项：</span>
+    </p>
+    <p style="margin-bottom:8px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span style="color:#DC2626;font-weight:700;"><span leaf="">① 模型路由</span></span><span leaf="">：把对的问题发给对的模型，不滥用贵模型。</span>
+    </p>
+    <p style="margin-bottom:8px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span style="color:#DC2626;font-weight:700;"><span leaf="">② 推理加速</span></span><span leaf="">：同样硬件榨出更多有效 Token。</span>
+    </p>
+    <p style="margin-bottom:8px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span style="color:#DC2626;font-weight:700;"><span leaf="">③ 缓存复用</span></span><span leaf="">：前缀固化，命中率拉满。</span>
+    </p>
+    <p style="margin-bottom:8px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span style="color:#DC2626;font-weight:700;"><span leaf="">④ 数据治理</span></span><span leaf="">：干净上下文，少喂垃圾 token。</span>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span style="color:#DC2626;font-weight:700;"><span leaf="">⑤ 成本控制</span></span><span leaf="">：峰谷调度、批处理、量化。</span>
+    </p>
+
+    <section style="margin-bottom:24px;overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr>
+            <th style="background:#DC2626;color:#fff;font-weight:700;padding:8px 12px;text-align:left;"><span leaf="">企业</span></th>
+            <th style="background:#DC2626;color:#fff;font-weight:700;padding:8px 12px;text-align:left;"><span leaf="">核心能力</span></th>
+            <th style="background:#DC2626;color:#fff;font-weight:700;padding:8px 12px;text-align:left;"><span leaf="">关键信号</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;font-weight:600;"><span leaf="">硅基流动</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;"><span leaf="">模型路由 / 无服务器 Token 服务</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;"><span leaf="">2026.6 港股递表；B 轮 20 亿+；日均 Token 峰破万亿</span></td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;background:#FEF2F2;font-weight:600;"><span leaf="">无问芯穹</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;background:#FEF2F2;"><span leaf="">异构算力调度，M×N 中间层</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;background:#FEF2F2;"><span leaf="">累计融资 22 亿+；Agentic MaaS 调用量增 20 倍</span></td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;font-weight:600;"><span leaf="">趋境科技</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;"><span leaf="">ATaaS 平台，缓存复用 / 成本控制</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;"><span leaf="">A 轮，半年融资超 10 亿</span></td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;background:#FEF2F2;font-weight:600;"><span leaf="">清程极智</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;background:#FEF2F2;"><span leaf="">智能算力系统软件</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;background:#FEF2F2;"><span leaf="">连接底层硬件与上层模型推理</span></td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;font-weight:600;"><span leaf="">基流科技</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;"><span leaf="">全栈 AI 算力集群产品及运营</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;"><span leaf="">2026.4 港股递表</span></td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;background:#FEF2F2;font-weight:600;"><span leaf="">魔形智能</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;background:#FEF2F2;"><span leaf="">同赛道推理服务</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;background:#FEF2F2;"><span leaf="">2026.5 融资</span></td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;font-weight:600;"><span leaf="">海外对标</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;"><span leaf="">Fireworks AI / Anthropic</span></td>
+            <td style="padding:8px 12px;border-bottom:1px solid #FEE2E2;color:#374151;"><span leaf="">Fireworks 估值 150 亿美元；Anthropic ARR 破 300 亿</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">旁证（沙利文白皮书）：某大型国有商业银行通过统一 AI 基础设施平台，GPU 资源效率提升 70%+、AI 部署效率提升 60%+。这个赛道正在资本化——硅基流动、基流科技递表港交所，无问芯穹、趋境科技接连大额融资。从"卖模型"到"卖 Token"，已经不是概念，是财报和招股书里的数字。</span>
+    </p>
+  </section>
+
+  <!-- 7. 总结 -->
+  <section style="margin-top:16px;margin-bottom:28px;padding:0 10px;">
+    <section style="background:#FEF2F2;border-radius:12px;padding:22px 20px;border:1px solid #FEE2E2;">
+      <p style="font-size:14px;font-weight:800;color:#991B1B;margin:0 0 12px;letter-spacing:1px;"><span leaf="">我的判断</span></p>
+      <p style="margin:0 0 12px;font-size:15px;line-height:1.8;text-align:justify;color:#1C1917;">
+        <span leaf="">API 价格进入上行周期，企业注意力会从"哪个模型最强"转向"单位调用成本最低"。拥有模型路由、推理加速、数据治理、成本控制能力的软件企业，价值可能被重估。</span>
+      </p>
+      <p style="margin:0;font-size:15px;line-height:1.8;text-align:justify;color:#1C1917;">
+        <span leaf="">但这是产业观察，不是投资建议。融资和递表只是信号，不代表商业兑现；模型降价周期也可能回摆。看赛道逻辑，别看单日涨跌。</span>
+      </p>
+    </section>
+    <p style="margin:18px 0 0;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">最后一句话：</span>
+      <span style="background:linear-gradient(180deg,transparent 60%,#FECACA 60%);font-weight:700;color:#1C1917;"><span leaf="">DeepSeek 涨价的新闻，真正有用的不是"贵了"，而是它把"有效 token"这件事，从个人经验变成了行业账本。</span></span>
+    </p>
+  </section>
+
+  <!-- 8. 参考来源（排版版：名称+关键数字，无裸链接） -->
+  <section style="margin-top:24px;padding:24px 10px 8px;border-top:1px solid #FEE2E2;">
+    <p style="font-size:14px;font-weight:800;color:#1C1917;margin:0 0 16px;letter-spacing:1px;">
+      <span leaf="">参考来源</span>
+    </p>
+    <section style="margin-bottom:14px;">
+      <p style="margin:0 0 6px;">
+        <span style="display:inline-block;font-size:14px;font-weight:700;color:#991B1B;background:#FEE2E2;padding:3px 10px;border-radius:999px;"><span style="display:inline-block;width:6px;height:6px;background:#DC2626;border-radius:50%;margin-right:5px;vertical-align:middle;"><span leaf=""><br></span></span><span leaf="">DeepSeek 开放平台公告（2026-08-06）</span></span>
+      </p>
+      <p style="margin:0;font-size:13px;color:#6B7280;line-height:1.7;"><span leaf="">整体上调 API 定价，预计涨幅较大；缓存命中 0.02 元、未命中 1 元 / 百万 Token；高峰时段价格翻倍。</span></p>
+    </section>
+    <section style="margin-bottom:14px;">
+      <p style="margin:0 0 6px;">
+        <span style="display:inline-block;font-size:14px;font-weight:700;color:#991B1B;background:#FEE2E2;padding:3px 10px;border-radius:999px;"><span style="display:inline-block;width:6px;height:6px;background:#DC2626;border-radius:50%;margin-right:5px;vertical-align:middle;"><span leaf=""><br></span></span><span leaf="">21 世纪经济报道 / 每日经济新闻 / 新浪财经（2026-08-06）</span></span>
+      </p>
+      <p style="margin:0;font-size:13px;color:#6B7280;line-height:1.7;"><span leaf="">DeepSeek V4 Flash 周调用 6.6 万亿 Token、8 月 4 日因访问量过大容量不足；2026 年智谱、月之暗面、MiniMax、阿里云、腾讯云、百度智能云已集体调价。</span></p>
+    </section>
+    <section style="margin-bottom:14px;">
+      <p style="margin:0 0 6px;">
+        <span style="display:inline-block;font-size:14px;font-weight:700;color:#991B1B;background:#FEE2E2;padding:3px 10px;border-radius:999px;"><span style="display:inline-block;width:6px;height:6px;background:#DC2626;border-radius:50%;margin-right:5px;vertical-align:middle;"><span leaf=""><br></span></span><span leaf="">无问芯穹（公开技术路线表述）</span></span>
+      </p>
+      <p style="margin:0;font-size:13px;color:#6B7280;line-height:1.7;"><span leaf="">"在同等硬件损耗下榨取并交付远超均值的有效 Token 数量"。</span></p>
+    </section>
+    <section style="margin-bottom:14px;">
+      <p style="margin:0 0 6px;">
+        <span style="display:inline-block;font-size:14px;font-weight:700;color:#991B1B;background:#FEE2E2;padding:3px 10px;border-radius:999px;"><span style="display:inline-block;width:6px;height:6px;background:#DC2626;border-radius:50%;margin-right:5px;vertical-align:middle;"><span leaf=""><br></span></span><span leaf="">硅基流动（2026.6 港股递表报道）</span></span>
+      </p>
+      <p style="margin:0;font-size:13px;color:#6B7280;line-height:1.7;"><span leaf="">B 轮超 20 亿、日均 Token 峰值破万亿。</span></p>
+    </section>
+    <section style="margin-bottom:14px;">
+      <p style="margin:0 0 6px;">
+        <span style="display:inline-block;font-size:14px;font-weight:700;color:#991B1B;background:#FEE2E2;padding:3px 10px;border-radius:999px;"><span style="display:inline-block;width:6px;height:6px;background:#DC2626;border-radius:50%;margin-right:5px;vertical-align:middle;"><span leaf=""><br></span></span><span leaf="">趋境科技（融资报道）</span></span>
+      </p>
+      <p style="margin:0;font-size:13px;color:#6B7280;line-height:1.7;"><span leaf="">A 轮半年融资超 10 亿，专攻缓存复用与成本控制。</span></p>
+    </section>
+    <section style="margin-bottom:14px;">
+      <p style="margin:0 0 6px;">
+        <span style="display:inline-block;font-size:14px;font-weight:700;color:#991B1B;background:#FEE2E2;padding:3px 10px;border-radius:999px;"><span style="display:inline-block;width:6px;height:6px;background:#DC2626;border-radius:50%;margin-right:5px;vertical-align:middle;"><span leaf=""><br></span></span><span leaf="">沙利文白皮书 / IDC（2025H2）</span></span>
+      </p>
+      <p style="margin:0;font-size:13px;color:#6B7280;line-height:1.7;"><span leaf="">某大型国有商业银行统一 AI 基础设施平台，GPU 资源效率 +70%、AI 部署效率 +60%。</span></p>
+    </section>
+  </section>
+
+  <!-- 9. END + 署名 -->
+  <section style="text-align:center;margin:36px 0 16px;">
+    <section style="display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+      <span style="height:2px;width:60px;background:linear-gradient(to right,transparent,#DC2626);margin-right:12px;"><span leaf=""><br></span></span>
+      <span style="font-size:11px;color:#DC2626;letter-spacing:3px;font-weight:700;"><span leaf="">END</span></span>
+      <span style="height:2px;width:60px;background:linear-gradient(to left,transparent,#DC2626);margin-left:12px;"><span leaf=""><br></span></span>
+    </section>
+    <p style="font-size:14px;color:#1C1917;font-weight:700;margin:0 0 8px;"><span leaf="">我是小吴聊，一个把内容工厂跑在 NAS 上的极客操盘手，专注 AI 产业观察与一人公司实战。</span></p>
+    <p style="font-size:14px;color:#6B7280;margin:0;">
+      <span leaf="">如果你觉得今天这篇有收获，欢迎</span>
+      <strong style="color:#DC2626;"><span leaf="">点赞、在看、转发</span></strong>
+      <span leaf="">三连，我们下篇见。</span>
+    </p>
+  </section>
+
+</section>
+
+  </div>
+</div>
+<script>
+  function gzhShowToast(msg){
+    var t=document.getElementById('gzhToast');
+    t.textContent=msg;t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer=setTimeout(function(){t.classList.remove('show');},2800);
+  }
+  function gzhCopy(){
+    var el=document.getElementById('gzh-content');
+    var range=document.createRange();
+    range.selectNodeContents(el);
+    var sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    var ok=false;
+    try{ok=document.execCommand('copy');}catch(e){ok=false;}
+    sel.removeAllRanges();
+    var btn=document.getElementById('gzhCopyBtn');
+    if(ok){
+      gzhShowToast('✅ 已复制！去公众号编辑器按 Ctrl/⌘+V 粘贴即可');
+      var old=btn.textContent;btn.textContent='✅ 已复制';
+      setTimeout(function(){btn.textContent=old;},2200);
+    }else{
+      gzhShowToast('⚠ 自动复制失败，请手动全选(Ctrl/⌘+A)再复制(Ctrl/⌘+C)');
+    }
+  }
+</script>
+</body>
+</html>
