@@ -227,6 +227,49 @@ def platform_completeness(output_dir):
     return issues
 
 
+def gzh_data_viz_issues(output_dir):
+    """
+    C11（数据可视化硬门）：公众号排版 HTML 必须包含 ≥2 个 data-viz 组件；
+    且不得残留 [[IMG:...]] 正文图片占位符。
+    """
+    issues = []
+    html_files = [
+        p for p in glob.glob(os.path.join(output_dir, "公众号", "*.html"))
+        if "_预览" not in os.path.basename(p) and "移动端预览" not in os.path.basename(p)
+    ]
+    for p in html_files:
+        html = read_text(p)
+        count = len(re.findall(r'data-viz\s*=\s*"([^"]+)"', html))
+        if count < 2:
+            issues.append((
+                "FAIL", "C11-viz-count",
+                f"[公众号] {os.path.basename(p)} 数据可视化组件 {count} 个（要求 ≥2：表格/条形/占比/KPI）",
+            ))
+        placeholders = re.findall(r"\[\[IMG:[^\]]+\]\]", html)
+        if placeholders:
+            issues.append((
+                "FAIL", "C11-img-placeholder",
+                f"[公众号] {os.path.basename(p)} 含未替换的正文图片占位符 {placeholders[:3]}",
+            ))
+    return issues
+
+
+def xhs_data_viz_issues(output_dir):
+    """
+    C12（数据可视化硬门）：小红书 slides HTML 必须含条形/占比可视化标记。
+    """
+    issues = []
+    for p in sorted(glob.glob(os.path.join(output_dir, "小红书", "rednote_*.html"))):
+        html = read_text(p)
+        if not re.search(r"h-bar-chart|bar-tower|data-viz", html):
+            issues.append((
+                "FAIL", "C12-viz-missing",
+                f"[小红书] {os.path.basename(p)} 缺少条形/占比可视化标记"
+                "（h-bar-chart / bar-tower / data-viz），关键数字对比必须可视化",
+            ))
+    return issues
+
+
 def find_material_pack(output_dir, explicit):
     if explicit:
         return explicit if os.path.exists(explicit) else None
@@ -390,6 +433,12 @@ def main():
     # ---------- C10: 目录完整性（P0） ----------
     for lvl, code, msg in platform_completeness(args.output_dir):
         report(lvl, code, msg)
+
+    # ---------- C11/C12: 数据可视化硬门 ----------
+    for code, msg in gzh_data_viz_issues(args.output_dir):
+        report("FAIL", code, msg)
+    for code, msg in xhs_data_viz_issues(args.output_dir):
+        report("FAIL", code, msg)
 
     # ---------- 汇总 ----------
     fails = [r for r in results if r["level"] == "FAIL"]

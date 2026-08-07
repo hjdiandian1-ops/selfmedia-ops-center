@@ -48,13 +48,13 @@ def get_access_token(appid, secret):
     return data["access_token"]
 
 
-def upload_cover(access_token, cover_path):
-    """上传永久图片素材，返回 thumb_media_id。"""
+def _upload_file(access_token, path, url):
+    """通用 multipart 图片上传，返回响应 JSON。"""
     boundary = "----codex-" + uuid.uuid4().hex
-    filename = os.path.basename(cover_path)
-    with open(cover_path, "rb") as f:
+    filename = os.path.basename(path)
+    with open(path, "rb") as f:
         file_bytes = f.read()
-    ctype = "image/png" if cover_path.lower().endswith(".png") else "image/jpeg"
+    ctype = "image/png" if path.lower().endswith(".png") else "image/jpeg"
     parts = []
     parts.append(f"--{boundary}\r\n".encode())
     parts.append(f'Content-Disposition: form-data; name="media"; filename="{filename}"\r\n'.encode())
@@ -63,13 +63,27 @@ def upload_cover(access_token, cover_path):
     parts.append(b"\r\n")
     parts.append(f"--{boundary}--\r\n".encode())
     body = b"".join(parts)
-    url = f"{API_BASE}/cgi-bin/material/add_material?access_token={access_token}&type=image"
-    data = http_json(url, data=body, method="POST",
+    return http_json(url, data=body, method="POST",
                      headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
                      timeout=120)
+
+
+def upload_cover(access_token, cover_path):
+    """上传永久图片素材，返回 thumb_media_id。"""
+    url = f"{API_BASE}/cgi-bin/material/add_material?access_token={access_token}&type=image"
+    data = _upload_file(access_token, cover_path, url)
     if "media_id" not in data:
         raise RuntimeError(f"上传封面失败: {data}")
     return data["media_id"]
+
+
+def upload_image_url(access_token, image_path):
+    """上传正文图片，返回可插入 draft/add 正文的微信 URL。"""
+    url = f"{API_BASE}/cgi-bin/media/uploadimg?access_token={access_token}"
+    data = _upload_file(access_token, image_path, url)
+    if "url" not in data:
+        raise RuntimeError(f"正文图片上传失败: {data}")
+    return data["url"]
 
 
 def add_draft(access_token, title, content, thumb_media_id, author, digest):
@@ -149,6 +163,21 @@ def main():
     print("② 上传封面 ...")
     thumb_media_id = upload_cover(token, args.cover)
     print(f"   封面 media_id: {thumb_media_id[:12]}...")
+    # ②.5 替换正文 [[IMG:路径]] 占位符为微信图 URL
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    placeholders = re.findall(r"\[\[IMG:([^\]]+)\]\]", content)
+    for ph in placeholders:
+        img_path = ph if os.path.isabs(ph) else os.path.join(root, ph)
+        if not os.path.exists(img_path):
+            print(f"❌ 正文图片不存在：{img_path}")
+            return 2
+        print(f"   上传正文图片：{img_path}")
+        img_url = upload_image_url(token, img_path)
+        content = content.replace(
+            f"[[IMG:{ph}]]",
+            f'<img src="{img_url}" style="max-width:100%;border-radius:8px;'
+            'display:block;margin:16px auto;" />',
+        )
     print("③ 调用 draft/add 存草稿 ...")
     result = add_draft(token, args.title, content, thumb_media_id, args.author, digest)
     media_id = result.get("media_id", "")

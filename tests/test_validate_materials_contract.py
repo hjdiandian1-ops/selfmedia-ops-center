@@ -151,3 +151,49 @@ def test_platform_completeness_missing_dir(tmp_path):
     issues = VMC.platform_completeness(str(tmp_path))
     assert any(code == "C10-dir-missing" for _, code, _ in issues)
     assert any(code == "C10-score-report" for _, code, _ in issues)
+
+
+def test_c11_gzh_viz_count_fails(tmp_path):
+    d = tmp_path / "公众号"
+    d.mkdir(parents=True)
+    (d / "gzh_x.html").write_text('<section data-viz="table"></section>', encoding="utf-8")
+    issues = VMC.gzh_data_viz_issues(str(tmp_path))
+    assert any(code == "C11-viz-count" for _, code, _ in issues)
+
+
+def test_c11_gzh_viz_placeholder_fails(tmp_path):
+    d = tmp_path / "公众号"
+    d.mkdir(parents=True)
+    (d / "gzh_x.html").write_text(
+        '<section data-viz="table"></section><section data-viz="bar"></section>'
+        "[[IMG:outputs/x/chart.png]]",
+        encoding="utf-8",
+    )
+    issues = VMC.gzh_data_viz_issues(str(tmp_path))
+    assert any(code == "C11-img-placeholder" for _, code, _ in issues)
+
+
+def test_c11_gzh_viz_two_components_pass(tmp_path):
+    d = tmp_path / "公众号"
+    d.mkdir(parents=True)
+    (d / "gzh_x.html").write_text(
+        '<section data-viz="table"></section><section data-viz="bar"></section>',
+        encoding="utf-8",
+    )
+    assert VMC.gzh_data_viz_issues(str(tmp_path)) == []
+
+
+def test_c12_xhs_viz_missing_fails(tmp_path):
+    d = tmp_path / "小红书"
+    d.mkdir(parents=True)
+    (d / "rednote_x_slides.html").write_text("<div>纯文字，无可视化</div>", encoding="utf-8")
+    issues = VMC.xhs_data_viz_issues(str(tmp_path))
+    assert any(code == "C12-viz-missing" for _, code, _ in issues)
+
+
+def test_c12_xhs_viz_marker_pass(tmp_path):
+    d = tmp_path / "小红书"
+    d.mkdir(parents=True)
+    (d / "rednote_x_slides.html").write_text(
+        '<div class="h-bar-chart"></div>', encoding="utf-8")
+    assert VMC.xhs_data_viz_issues(str(tmp_path)) == []
