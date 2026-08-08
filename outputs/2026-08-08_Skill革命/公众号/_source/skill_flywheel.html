@@ -5,21 +5,26 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #FFFFFF; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-  .wrap { width: 760px; padding: 48px 40px; }
-  .title { font-size: 30px; font-weight: 900; color: #1C1917; margin-bottom: 30px; }
-  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .node { background: #FEF2F2; border: 2px solid #FCA5A5; border-radius: 18px; padding: 20px 18px; text-align: center; width: 132px; }
-  .node .emoji { font-size: 32px; }
-  .node .name { font-size: 18px; font-weight: 900; color: #DC2626; margin-top: 8px; }
-  .node .sub { font-size: 13px; color: #6B7280; margin-top: 4px; line-height: 1.5; }
-  .arrow { font-size: 26px; color: #DC2626; font-weight: 900; }
-  .loop { margin-top: 30px; background: #1C1917; color: #fff; border-radius: 16px; padding: 18px 22px; font-size: 18px; font-weight: 700; }
-  .foot { margin-top: 24px; font-size: 14px; color: #9CA3AF; border-top: 1px dashed #F3E2E2; padding-top: 16px; }
+  .wrap { width: 1500px; padding: 40px 48px; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 28px; }
+  .title { font-size: 34px; font-weight: 900; color: #1C1917; }
+  .headsub { font-size: 17px; color: #6B7280; }
+  .flow { display: flex; align-items: center; gap: 14px; }
+  .node { background: #FEF2F2; border: 2px solid #FCA5A5; border-radius: 18px; padding: 20px 18px; text-align: center; width: 244px; }
+  .node .emoji { font-size: 34px; }
+  .node .name { font-size: 20px; font-weight: 900; color: #DC2626; margin-top: 8px; }
+  .node .sub { font-size: 14px; color: #6B7280; margin-top: 4px; line-height: 1.5; }
+  .arrow { font-size: 28px; color: #DC2626; font-weight: 900; }
+  .loop { margin-top: 28px; background: #1C1917; color: #fff; border-radius: 16px; padding: 18px 26px; font-size: 20px; font-weight: 700; }
+  .foot { margin-top: 22px; font-size: 14px; color: #9CA3AF; border-top: 1px dashed #F3E2E2; padding-top: 14px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="title">技能沉淀飞轮：经验越用越厚</div>
+  <div class="head">
+    <div class="title">技能沉淀飞轮：经验越用越厚</div>
+    <div class="headsub">工具会降价、模型会换代，私有技能库像复利一样越滚越厚</div>
+  </div>
   <div class="flow">
     <div class="node"><div class="emoji">🧠</div><div class="name">经验</div><div class="sub">老师傅踩过的坑</div></div>
     <div class="arrow">→</div>
@@ -31,7 +36,7 @@
     <div class="arrow">→</div>
     <div class="node"><div class="emoji">📚</div><div class="name">版本库</div><div class="sub">每 5 次迭代一版</div></div>
   </div>
-  <div class="loop">工具会降价、模型会换代，私有技能库像复利一样越滚越厚。</div>
+  <div class="loop">返回顶部 ↺ 下一个任务直接调用最新版，飞轮转起来之后，AI 越用越懂你。</div>
   <div class="foot">参考：新京报贝壳财经实测报道（2026-01）｜ 小吴聊 · Skill 革命</div>
 </div>
 </body>
