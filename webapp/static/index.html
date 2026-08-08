@@ -64,7 +64,7 @@
             <div id="state-bars" class="state-bars"></div>
           </div>
           <div class="card">
-            <div class="card-head"><h3>近 7 天发布趋势</h3><span class="muted">按回填数据</span></div>
+            <div class="card-head"><h3>近 7 天发布趋势</h3><span class="muted">发布动作 + 回填阅读</span></div>
             <div id="trend-chart" class="trend-chart"></div>
           </div>
         </div>
@@ -155,6 +155,18 @@
 
       <!-- 数据 -->
       <section id="view-data" class="view">
+        <div class="toolbar">
+          <button class="btn tonal" id="btn-stats-refresh">刷新统计</button>
+          <span class="muted" id="stats-updated-at"></span>
+        </div>
+
+        <div class="kpi-grid" id="stats-kpi"></div>
+
+        <div class="card">
+          <div class="card-head"><h3>平台对比</h3><span class="muted">发布动作 / 回填 / 阅读 / 互动率</span></div>
+          <div id="platform-compare" class="agent-grid"></div>
+        </div>
+
         <div class="grid-2">
           <div class="card">
             <div class="card-head"><h3>回填平台数据</h3><span class="muted">阅读 / 赞 / 藏 / 评</span></div>
@@ -177,14 +189,32 @@
             </form>
           </div>
           <div class="card">
-            <div class="card-head"><h3>数据说明</h3></div>
-            <div class="stack muted">
-              <p>回填数据落盘到 <code>jobs/&lt;job_id&gt;/publish_log.json</code>，并同步更新概览大盘。</p>
-              <p>爆款阈值：阅读 ≥ 5000 或 点赞 ≥ 200，命中后建议执行爆款解剖。</p>
-              <p>公众号 data cube / 小红书官方接口自动拉取为后续扩展，当前以人工回填为准。</p>
-            </div>
+            <div class="card-head"><h3>数据来源与口径</h3><span class="muted">自有统计 · 不依赖第三方接口</span></div>
+            <div id="data-status" class="stack"></div>
           </div>
         </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>主题表现</h3><span class="muted">按回填数据聚合</span></div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>主题</th><th class="num">发文</th><th class="num">回填</th><th class="num">阅读</th><th class="num">互动率</th><th>爆款</th></tr></thead>
+                <tbody id="theme-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>内容特征分析</h3><span class="muted">标题 / 图表 / 卡片 vs 表现（样本少仅供参考）</span></div>
+            <div id="content-insights" class="stack"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>最佳表现</h3><span class="muted">阅读 TOP5 / 互动率 TOP5</span></div>
+          <div id="best-list" class="stack"></div>
+        </div>
+
         <div class="card">
           <div class="card-head"><h3>发布表现明细</h3><span class="muted">全部回填记录</span></div>
           <div class="table-wrap">

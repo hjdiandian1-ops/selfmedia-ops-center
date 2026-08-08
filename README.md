@@ -242,7 +242,7 @@ bash webapp/start.sh 9000     # 指定端口
 | 主题库 | 6 个引流内容主题（定位/受众/钩子/示例选题） | 一键复制出题指令给 Codex |
 | 流水线 | 8 个 Agent 角色职责、活跃任务、最近产出；生产状态机步骤条 | 点击任务跳转成品库 |
 | 成品库 | 小红书卡片轮播 + slides HTML、公众号排版预览（桌面/移动）、短视频分镜脚本 | 按任务查看质检与发布状态 |
-| 数据 | 发布表现明细 + 回填表单（阅读/赞/藏/评/链接） | 保存回填 → 落盘 publish_log.json |
+| 数据 | 自有数据统计：发布动作/回填/阅读/互动率/爆款大盘；平台对比、主题表现、内容特征分析、最佳表现、待回填清单 | 刷新统计；保存回填 → 落盘 publish_log.json |
 
 ### 7.3 与 NAS 的关系
 
@@ -254,7 +254,7 @@ bash webapp/start.sh 9000     # 指定端口
 
 ```
 GET  /api/overview            # 统计概览
-GET  /api/stats               # 大盘指标（KPI/趋势/最近发布表现/待回收）
+GET  /api/stats               # 自有数据统计（KPI/平台/主题/趋势/内容特征/待回收）
 GET  /api/agents              # Agent 职责 + 活跃 Job + 最近产出
 GET  /api/themes              # 引流内容主题库
 GET  /api/topics              # 热点雷达 + 选题推荐
@@ -266,4 +266,11 @@ POST /api/qa                  # 跑质检链（需 output_dir）
 POST /api/pipeline/run        # 触发流水线（action: topics|recycle|weekly|qa）
 POST /api/publish             # 一键发布到 NAS
 POST /api/stats/backfill      # 平台数据回填（落盘 publish_log.json）
+POST /api/stats/refresh       # 重新扫描并生成 data/stats/summary.json + 统计报告
 ```
+
+### 7.5 自有数据统计（不依赖第三方接口）
+
+- 引擎：`scripts/data_stats.py`，只统计本仓库自己产生的数据——发布动作（`publish_log.json` 的 `publish[]`，公众号草稿推送/小红书发布时自动落盘）、人工回填（`records[]`）、内容特征（公众号 `data-viz` 组件数/字数、小红书卡片数）与任务状态。
+- 聚合结果：`data/stats/summary.json`（工作台 `/api/stats` 直接复用）；人类可读报告：`data/stats/数据统计报告.md`。
+- 数据口径：公众号 datacube 未开通权限、小红书无官方开放 API，因此当前以「发布动作自动记录 + 人工回填」为准；爆款趋势跟踪为下一阶段功能，将在此数据基座上扩展。

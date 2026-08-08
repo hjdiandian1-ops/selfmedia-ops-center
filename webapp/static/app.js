@@ -64,7 +64,7 @@ const PAGE_META = {
   themes: ["主题库", "6 个引流内容主题 · 一键复制出题指令"],
   pipeline: ["流水线", "Agent 角色职责与任务状态机"],
   outputs: ["成品库", "小红书 / 公众号 / 短视频成品预览"],
-  data: ["数据", "平台数据回填与发布表现"],
+  data: ["数据", "自有数据统计 · 发布动作自动记录 + 人工回填"],
 };
 
 function switchView(name) {
@@ -110,11 +110,11 @@ async function loadOverview() {
         </div>`).join("")
       : '<span class="muted">暂无任务</span>';
 
-    const maxReads = Math.max(1, ...d.trend.map((t) => t.reads));
+    const maxPubs = Math.max(1, ...d.trend.map((t) => t.publish_count || 0));
     $("#trend-chart").innerHTML = d.trend.map((t) => `
-      <div class="tcol">
-        <span class="val">${t.reads ? fmtNum(t.reads) : ""}</span>
-        <div class="bar" style="height:${Math.max(4, Math.round(t.reads / maxReads * 92))}%">
+      <div class="tcol" title="${t.reads ? `阅读 ${fmtNum(t.reads)}` : "暂无回填阅读"}">
+        <span class="val">${t.publish_count ? t.publish_count + " 篇" : ""}</span>
+        <div class="bar" style="height:${Math.max(4, Math.round((t.publish_count || 0) / maxPubs * 92))}%">
           ${t.hits ? '<span class="hits" title="爆款"></span>' : ""}
         </div>
         <span class="day">${esc(t.label)}</span>
@@ -500,10 +500,97 @@ async function renderArtifactSide(jobId) {
 // ---------- 数据 ----------
 let statsCache = null;
 
+function statKpis(d) {
+  const items = [
+    ["发布动作", d.publish_events ?? 0],
+    ["人工回填", d.backfill_records ?? 0],
+    ["总阅读", fmtNum(d.total_reads)],
+    ["平均互动率", d.total_reads ? pct(d.avg_engagement) : "—"],
+    ["爆款数", d.hits],
+    ["待回收", d.pending_recycle],
+  ];
+  $("#stats-kpi").innerHTML = items.map(([lbl, num]) =>
+    `<div class="kpi"><div class="num ${String(num).length > 5 ? "small" : ""}">${esc(num)}</div><div class="lbl">${esc(lbl)}</div></div>`).join("");
+}
+
+function renderPlatformCompare(rows) {
+  const icons = { "公众号": "📰", "小红书": "📕", "短视频": "🎬" };
+  $("#platform-compare").innerHTML = rows.map((p) => `
+    <div class="agent-card">
+      <div class="head"><span class="emoji">${icons[p.platform] || "📊"}</span><span class="role">${esc(p.platform)}</span></div>
+      <div class="resp">发布 <b>${p.publish_events}</b> 次 ｜ 回填 <b>${p.backfills}</b> 条 ｜ 发文 <b>${p.posts}</b> 篇</div>
+      <div class="kv">总阅读 <b>${fmtNum(p.reads)}</b> ｜ 互动率 <b>${p.reads ? pct(p.engagement) : "—"}</b> ｜ 爆款 <b>${p.hits}</b></div>
+    </div>`).join("") || '<span class="muted">暂无平台数据</span>';
+}
+
+function renderDataStatus(ds, stats) {
+  const untracked = (ds.untracked_list || []).map((u) =>
+    `<div class="kv">· ${esc(u.job_id)}<span class="muted">（${esc(u.title || "")}）</span></div>`).join("")
+    || '<div class="muted">无</div>';
+  $("#data-status").innerHTML = `
+    <div class="kv">自动记录（发布/草稿推送）：<b>${ds.auto_tracked ?? 0}</b> 次</div>
+    <div class="kv">人工回填（阅读/赞/藏/评）：<b>${ds.manual_backfill ?? 0}</b> 条</div>
+    <div class="kv">已发布但未回填：<b>${ds.untracked_posts ?? 0}</b> 篇</div>
+    <div class="kv">待回收检查：<b>${ds.pending_recycle ?? 0}</b> 篇</div>
+    <div class="kv muted" style="margin-top:8px">${esc(ds.external_note || "")}</div>
+    <div class="kv muted">引擎：<code>scripts/data_stats.py</code> · 聚合落盘 <code>data/stats/</code> · 回填源 <code>jobs/*/publish_log.json</code></div>
+    <div class="kv" style="margin-top:8px"><b>待回填任务：</b></div>
+    ${untracked}`;
+}
+
+function renderThemeTable(rows) {
+  if (!rows.length) return $("#theme-table").innerHTML = '<tr><td colspan="6" class="muted">暂无回填数据</td></tr>';
+  $("#theme-table").innerHTML = rows.map((t) => `
+    <tr>
+      <td>${esc(t.theme)}</td>
+      <td class="num">${t.posts}</td>
+      <td class="num">${t.backfills}</td>
+      <td class="num">${fmtNum(t.reads)}</td>
+      <td class="num">${t.reads ? pct(t.engagement) : "—"}</td>
+      <td>${t.hits ? `<span class="badge hit">🔥 ${t.hits}</span>` : t.hits}</td>
+    </tr>`).join("");
+}
+
+function renderContentInsights(ins) {
+  if (!ins || !ins.title_number || !ins.title_number.length) {
+    return $("#content-insights").innerHTML = '<span class="muted">暂无回填数据，完成人工回填后这里会对比标题/图表/卡片的表现。</span>';
+  }
+  const block = (title, rows) => `
+    <div>
+      <div class="kv" style="margin-bottom:6px"><b>${esc(title)}</b></div>
+      ${rows.map((r) => `
+        <div class="kv">${esc(r.bucket)}：样本 <b>${r.n}</b> ｜ 均阅读 <b>${fmtNum(r.avg_reads)}</b> ｜ 均互动 <b>${pct(r.avg_engagement)}</b> ｜ 爆款 <b>${r.hits}</b></div>`).join("")}
+    </div>`;
+  $("#content-insights").innerHTML =
+    block("标题数字", ins.title_number) +
+    block("公众号图表数", ins.gzh_viz) +
+    block("小红书卡片数", ins.xhs_cards) +
+    `<div class="kv muted">${esc(ins.note || "")}</div>`;
+}
+
+function renderBest(best) {
+  const byReads = best && best.by_reads ? best.by_reads : [];
+  const byEng = best && best.by_engagement ? best.by_engagement : [];
+  if (!byReads.length && !byEng.length) return $("#best-list").innerHTML = '<span class="muted">暂无回填数据</span>';
+  const row = (r) => `
+    <div class="kv">${r.hit ? "🔥 " : ""}<b>${esc(r.title || r.job_id)}</b>（${esc(r.platform)}）阅读 ${fmtNum(r.reads)} ｜ 互动率 ${pct(r.engagement)}<span class="muted"> · ${esc(r.job_id)}</span></div>`;
+  let html = "";
+  if (byReads.length) html += `<div class="kv" style="margin-bottom:4px"><b>阅读 TOP${byReads.length}</b></div>` + byReads.map(row).join("");
+  if (byEng.length) html += `<div class="kv" style="margin:10px 0 4px"><b>互动率 TOP${byEng.length}</b></div>` + byEng.map(row).join("");
+  $("#best-list").innerHTML = html;
+}
+
 async function loadData() {
   try {
     const [stats, jobs] = await Promise.all([api("/api/stats"), api("/api/jobs")]);
     statsCache = stats;
+    $("#stats-updated-at").textContent = "更新于 " + (stats.generated_at || "");
+    statKpis(stats);
+    renderPlatformCompare(stats.by_platform || []);
+    renderDataStatus(stats.data_status || {}, stats);
+    renderThemeTable(stats.by_theme || []);
+    renderContentInsights(stats.content_insights || {});
+    renderBest(stats.best || {});
     $("#perf-table").innerHTML = renderRows(stats.recent);
     const sel = $("#bf-job");
     const prev = sel.value;
@@ -537,6 +624,17 @@ $("#backfill-form").addEventListener("submit", async (e) => {
     loadOverview();
   } catch (err) {
     toast("回填失败: " + err.message, false);
+  }
+});
+
+$("#btn-stats-refresh").addEventListener("click", async () => {
+  try {
+    await api("/api/stats/refresh", { method: "POST" });
+    toast("统计已刷新");
+    loadData();
+    loadOverview();
+  } catch (err) {
+    toast("刷新失败: " + err.message, false);
   }
 });
 

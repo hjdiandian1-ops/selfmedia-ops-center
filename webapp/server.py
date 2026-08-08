@@ -31,6 +31,10 @@ OUTPUTS_DIR = os.path.join(ROOT, "outputs")
 MATERIALS_DIR = os.path.join(ROOT, "materials")
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+import data_stats  # noqa: E402
+
 app = FastAPI(title="自媒体运营中心看板", version="2.0.0")
 
 # ---------- Agent 流水线元数据（静态职责 + 动态状态关联） ----------
@@ -280,77 +284,8 @@ def _collect_job_rows():
 
 @app.get("/api/stats")
 def api_stats():
-    """聚合大盘指标：KPI / 状态分布 / 最近发布表现 / 近 7 天趋势 / 待回收。"""
-    from collections import Counter
-    by_state = Counter()
-    total = reject_total = 0
-    scores = []
-    records = []
-    published_jobs = pending_recycle = 0
-
-    for j in _collect_job_rows():
-        total += 1
-        by_state[j["state"]] += 1
-        reject_total += j["reject_count"]
-        for st, sc in (j["scores"] or {}).items():
-            scores.append(sc)
-        log = j["log"]
-        if log.get("publish") or log.get("records"):
-            published_jobs += 1
-        for rec in log.get("records", []):
-            records.append({**rec, "job_id": j["job_id"], "theme": j["theme"]})
-        if log.get("records"):
-            continue
-        if j["state"] not in ("publish", "archive"):
-            continue
-        pt = log.get("published_at")
-        try:
-            age_h = (datetime.now() - datetime.strptime(pt, "%Y-%m-%d %H:%M:%S")).total_seconds() / 3600
-            if age_h >= 48:
-                pending_recycle += 1
-        except Exception:
-            pass
-
-    records.sort(key=lambda r: r.get("collected_at", ""), reverse=True)
-    recent = records[:20]
-    total_reads = sum(r.get("reads", 0) for r in records)
-    total_likes = sum(r.get("likes", 0) for r in records)
-    total_collects = sum(r.get("collects", 0) for r in records)
-    total_comments = sum(r.get("comments", 0) for r in records)
-    hits = sum(1 for r in records if r.get("hit"))
-    avg_engagement = round((total_likes + total_collects + total_comments) / total_reads, 4) if total_reads else 0.0
-
-    today = datetime.now().date()
-    trend = []
-    for i in range(6, -1, -1):
-        day = today - timedelta(days=i)
-        day_recs = [r for r in records if (r.get("collected_at") or "")[:10] == day.isoformat()]
-        trend.append({
-            "date": day.isoformat(),
-            "label": day.strftime("%m-%d"),
-            "count": len(day_recs),
-            "reads": sum(r.get("reads", 0) for r in day_recs),
-            "hits": sum(1 for r in day_recs if r.get("hit")),
-        })
-
-    return {
-        "jobs_total": total,
-        "by_state": dict(by_state),
-        "reject_total": reject_total,
-        "avg_score": round(sum(scores) / len(scores), 1) if scores else None,
-        "score_count": len(scores),
-        "pending_recycle": pending_recycle,
-        "published_jobs": published_jobs,
-        "hits": hits,
-        "total_reads": total_reads,
-        "total_likes": total_likes,
-        "total_collects": total_collects,
-        "total_comments": total_comments,
-        "avg_engagement": avg_engagement,
-        "recent": recent,
-        "trend": trend,
-        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    }
+    """自有数据统计：实时扫描 jobs/ + outputs/，聚合 KPI/平台/主题/趋势/内容特征。"""
+    return data_stats.build_summary(jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR)
 
 
 def _agent_outputs(job_id: str, limit: int = 3):
@@ -590,6 +525,19 @@ def api_stats_backfill(payload: StatsBackfill):
     if not r["ok"]:
         raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False))
     return r
+
+
+@app.post("/api/stats/refresh")
+def api_stats_refresh():
+    """重新扫描仓库，落盘 data/stats/summary.json + 数据统计报告。"""
+    r = run_script(["data_stats.py", "collect"], timeout=90)
+    if not r["ok"]:
+        raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False))
+    return {
+        "ok": True,
+        "result": r,
+        "summary": data_stats.build_summary(jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR),
+    }
 
 
 # ---------- 静态前端 ----------
