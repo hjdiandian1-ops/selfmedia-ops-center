@@ -20,7 +20,8 @@ import json
 import os
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
 MATERIALS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "materials"))
 
@@ -70,7 +71,7 @@ def normalize_title(t):
 
 
 def parse_radar(path):
-    """解析热点雷达 md → [(title, source, link, rank)]"""
+    """解析热点雷达 md → [(title, source, link, rank, published_at)]"""
     rows = []
     source = ""
     for ln in open(path, encoding="utf-8"):
@@ -78,10 +79,35 @@ def parse_radar(path):
         if ln.startswith("## "):
             source = ln[3:].strip()
             continue
-        m = re.match(r"\s*(\d+)[\.、．]\s*(.+?)(?:（\[链接\]\((.*?)\)）)?\s*$", ln)
+        m = re.match(
+            r"\s*(\d+)[\.、．]\s*(.+?)(?:（\[链接\]\((.*?)\)）)?"
+            r"(?:（发布于 ([^）]+)）)?(?:\s*｜.*)?$", ln)
         if m and source:
-            rows.append((m.group(2).strip(), source, m.group(3) or "", int(m.group(1))))
+            rows.append((m.group(2).strip(), source, m.group(3) or "",
+                         int(m.group(1)), (m.group(4) or "").strip()))
     return rows
+
+
+def fresh_info(published_at):
+    """按发布时间给时效分：≤24h +1；24-72h 0；>72h -2 并标记过时；未知 0。"""
+    if not published_at:
+        return {"label": "时效未知", "hours": None, "score": 0}
+    try:
+        raw = str(published_at)
+        try:
+            dt = parsedate_to_datetime(raw)  # RSS RFC822: Sat, 08 Aug 2026 ...
+        except (TypeError, ValueError):
+            dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        hours = max(0.0, (datetime.now(timezone.utc) - dt).total_seconds() / 3600)
+        if hours <= 24:
+            return {"label": "2 天内", "hours": round(hours, 1), "score": 1}
+        if hours <= 72:
+            return {"label": "3 天内", "hours": round(hours, 1), "score": 0}
+        return {"label": f"{int(hours // 24)} 天前", "hours": round(hours, 1), "score": -2}
+    except Exception:
+        return {"label": "时效未知", "hours": None, "score": 0}
 
 
 def score_item(title):
@@ -137,13 +163,18 @@ def main():
         print(f"⚠️ 合规初筛剔除 {before - len(rows)} 条", file=sys.stderr)
 
     # 评分 + 排序
-    scored = sorted(
-        ({"title": normalize_title(t), "source": s, "link": l, "rank": r,
-          "score": score_item(t), "view": suggest_view(t), "formulas": suggest_formulas(t),
-          "compliance": "海外源·需人工复核（国内可发布性）" if s in OVERSEAS_SOURCES else ""}
-         for t, s, l, r in rows),
-        key=lambda x: (-x["score"], x["rank"]),
-    )
+    scored = []
+    for t, s, l, r, pub in rows:
+        fresh = fresh_info(pub)
+        base = score_item(t)
+        scored.append({
+            "title": normalize_title(t), "source": s, "link": l, "rank": r,
+            "score": base + fresh["score"], "fresh": fresh,
+            "published_at": pub,
+            "view": suggest_view(t), "formulas": suggest_formulas(t),
+            "compliance": "海外源·需人工复核（国内可发布性）" if s in OVERSEAS_SOURCES else "",
+        })
+    scored.sort(key=lambda x: (-x["score"], x["rank"]))
 
     # 跨源去重：同标题不同源计一次，加权 +3
     seen, deduped = {}, []
@@ -172,8 +203,9 @@ def main():
     lines = [
         f"# 🎯 选题推荐（{today}）",
         "",
-        f"> 依据：{os.path.basename(radar_path)}｜排序：IP 相关度 + 标题冲击力 + 跨源热度",
+        f"> 依据：{os.path.basename(radar_path)}｜排序：IP 相关度 + 标题冲击力 + 跨源热度 + 时效",
         "> 用法：候选必须由用户（老板）拍板后进入 `topic` 态，禁止自动选第 1 条；海外源候选需人工复核国内可合规发布。",
+        "> 时效：≤24h 加 1 分、>72h 降权 2 分并标注天数；未知发布时间的条目按中性处理。",
         "> 📕 封面套路观察由采编在创作前按 `guizang-social-card-skill`/小红书对标补充。",
         "",
     ]
@@ -185,6 +217,9 @@ def main():
             f"- 建议视角：{it['view']}",
             f"- 建议标题公式：{' + '.join(it['formulas'])}（对照 dbs-xhs-title 公式库）",
             f"- 合规：{it['compliance'] or '国内源·正常'}",
+            f"- 时效：{it['fresh']['label']}"
+            + (f"（{it['fresh']['hours']}h）" if it["fresh"]["hours"] is not None else "")
+            + (" ⚠️ 已降权" if it["fresh"]["score"] < 0 else ""),
             "- 📕 封面套路观察：（采编补充：参考同类爆款封面的构图/钩子/配色）",
             f"- 原文链接：{it['link'] or '无'}",
             "",
@@ -195,7 +230,10 @@ def main():
     print(f"📁 选题推荐已落盘：{out_path}（{len(picks)} 个候选）")
     for it in picks:
         flag = "⚠️海外" if it["compliance"] else ""
-        print(f"   ⭐{it['score']:.1f} [{it['view']}] {it['title']} ← {it['source']} {flag}")
+        fresh = f"｜时效 {it['fresh']['label']}"
+        if it["fresh"]["hours"] is not None:
+            fresh += f" {it['fresh']['hours']}h"
+        print(f"   ⭐{it['score']:.1f} [{it['view']}] {it['title']} ← {it['source']} {flag}{fresh}")
 
 
 if __name__ == "__main__":

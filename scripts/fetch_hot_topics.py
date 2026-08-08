@@ -59,6 +59,7 @@ X_TRENDS_ENABLED = os.environ.get("X_TRENDS_ENABLED", "1") == "1"
 # region = 地区趋势榜（用 X_TRENDS_WOEID 指定，如 US 23424977 / JP 23424856）
 X_TRENDS_MODE = os.environ.get("X_TRENDS_MODE", "zh")
 X_TRENDS_WOEID = int(os.environ.get("X_TRENDS_WOEID", "23424977") or "23424977")
+X_MAX_AGE_HOURS = int(os.environ.get("X_MAX_AGE_HOURS", "72") or "72")
 X_ZH_QUERIES = os.environ.get(
     "X_ZH_QUERIES",
     "AI OR 大模型 OR 人工智能 lang:zh;;创业 OR 副业 OR 出海 lang:zh;;"
@@ -130,15 +131,26 @@ def fetch_source(name, route, top):
     for it in root.iter("item"):
         title = (it.findtext("title") or "").strip()
         link = (it.findtext("link") or "").strip()
+        published_at = (it.findtext("pubDate") or "").strip()
         if title:
-            items.append({"title": re.sub(r"\s+", " ", title), "link": link})
+            items.append({
+                "title": re.sub(r"\s+", " ", title),
+                "link": link,
+                "published_at": published_at,
+            })
     if not items:
         for it in root.iter(f"{ATOM_NS}entry"):
             title = (it.findtext(f"{ATOM_NS}title") or "").strip()
             link_el = it.find(f"{ATOM_NS}link")
             link = link_el.get("href", "") if link_el is not None else ""
+            published_at = (it.findtext(f"{ATOM_NS}published")
+                            or it.findtext(f"{ATOM_NS}updated") or "").strip()
             if title:
-                items.append({"title": re.sub(r"\s+", " ", title), "link": link})
+                items.append({
+                    "title": re.sub(r"\s+", " ", title),
+                    "link": link,
+                    "published_at": published_at,
+                })
     return items[:top]
 
 
@@ -151,11 +163,13 @@ def fetch_google_trends(top):
         title = (it.findtext("title") or "").strip()
         link = (it.findtext("link") or "").strip()
         traffic = (it.findtext(f"{HT_NS}approx_traffic") or "").strip()
+        published_at = (it.findtext("pubDate") or "").strip()
         if title:
             items.append({
                 "title": re.sub(r"\s+", " ", title),
                 "link": link,
                 "traffic": traffic,
+                "published_at": published_at,
                 "compliance": "海外源·需人工复核（谷歌趋势）",
             })
     return items[:top]
@@ -172,6 +186,7 @@ def fetch_x_trends_via_nas(top):
 
     script = '''
 import asyncio, json, os, re
+from datetime import datetime, timezone
 from urllib.parse import quote
 from twikit import Client
 
@@ -179,6 +194,7 @@ MODE = %(mode)r
 WOEID = %(woeid)d
 QUERIES = %(queries)r
 TOP = %(top)d
+MAX_AGE_H = %(max_age_h)d
 SPAM = ("征集", "投稿", "舍不得删", "超燃", "兄弟们", "点赞", "关注我", "转发抽奖", "评论区", "私信我")
 
 def qurl(text):
@@ -210,6 +226,18 @@ async def main():
                         continue
                     if any(s in text for s in SPAM):
                         continue
+                    created = getattr(t, "created_at_datetime", None) or getattr(t, "created_at", None)
+                    age_ok = True
+                    if created is not None:
+                        try:
+                            dt = created if hasattr(created, "timestamp") else datetime.fromisoformat(str(created).replace("Z", "+00:00"))
+                            if dt.tzinfo is None:
+                                dt = dt.replace(tzinfo=timezone.utc)
+                            age_ok = (datetime.now(timezone.utc) - dt).total_seconds() <= MAX_AGE_H * 3600
+                        except Exception:
+                            age_ok = True
+                    if not age_ok:
+                        continue
                     likes = int(getattr(t, "like_count", 0) or 0)
                     rts = int(getattr(t, "retweet_count", 0) or 0)
                     reps = int(getattr(t, "reply_count", 0) or 0)
@@ -218,6 +246,7 @@ async def main():
                         "name": clean[:80],
                         "url": qurl(clean),
                         "tweet_count": likes + rts * 2 + reps * 3,
+                        "created_at": str(created)[:19] if created is not None else "",
                     }
             except Exception:
                 continue
@@ -230,6 +259,7 @@ asyncio.run(main())
         "woeid": X_TRENDS_WOEID,
         "queries": X_ZH_QUERIES,
         "top": top,
+        "max_age_h": X_MAX_AGE_HOURS,
     }
     import base64
 
@@ -267,6 +297,7 @@ def x_items_to_radar(raw_trends, top):
         "title": re.sub(r"\s+", " ", str(t.get("name") or "")),
         "link": str(t.get("url") or ""),
         "tweet_count": t.get("tweet_count"),
+        "published_at": str(t.get("created_at") or ""),
         "compliance": label,
     } for t in raw_trends[:top] if t.get("name")]
 
@@ -379,7 +410,8 @@ def main():
             link = f"（[链接]({it['link']})）" if it.get("link") else ""
             flag = f" ｜ ⚠️ {it['compliance']}" if it.get("compliance") else ""
             extra = f"（{it['traffic']}）" if it.get("traffic") else ""
-            lines.append(f"{i}. {it['title']}{extra}{link}{flag}")
+            pub = f"（发布于 {str(it['published_at'])[:16]}）" if it.get("published_at") else ""
+            lines.append(f"{i}. {it['title']}{extra}{link}{pub}{flag}")
         lines.append("")
 
     with open(out_path, "w", encoding="utf-8") as f:
