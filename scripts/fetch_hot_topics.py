@@ -171,17 +171,25 @@ async def main():
     print(json.dumps({"success": True, "trends": out}, ensure_ascii=False))
 asyncio.run(main())
 '''
+    import base64
+
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(NAS_IP, port=NAS_SSH_PORT, username=NAS_USER, password=NAS_PASS, timeout=15)
     docker = "/volume1/@appstore/ContainerManager/usr/bin/docker"
-    cmd = f"sudo -S {docker} exec -i x_scraper python3 -"
-    stdin, stdout, stderr = ssh.exec_command(cmd, timeout=25)
-    stdin.write(NAS_PASS + "\n" + script + "\n")
-    stdin.flush()
-    stdin.close()
-    out = stdout.read().decode()
-    err = stderr.read().decode()
+    b64 = base64.b64encode(script.encode("utf-8")).decode("ascii")
+
+    def run(cmd, timeout=40):
+        stdin, stdout, stderr = ssh.exec_command(cmd, timeout=timeout)
+        return stdout.read().decode(), stderr.read().decode()
+
+    # 注意：不能走 `docker exec -i ... python3 -` 喂 stdin——sudo -S 会吃掉 stdin，
+    # 导致 Python 空等。先把探针脚本写进容器再执行。
+    out, err = run(f"echo {NAS_PASS} | sudo -S {docker} exec x_scraper sh -c "
+                   f"\"echo {b64} | base64 -d > /tmp/xprobe.py\"")
+    if "base64" in err.lower() or "error" in err.lower():
+        raise RuntimeError(f"写入 X 探针失败: {err[:300]}")
+    out, err = run(f"echo {NAS_PASS} | sudo -S {docker} exec x_scraper python3 -u /tmp/xprobe.py", timeout=40)
     ssh.close()
     if not out.strip():
         raise RuntimeError(f"X 容器无输出（stderr: {err[:300]}）")

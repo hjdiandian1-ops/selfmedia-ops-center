@@ -161,7 +161,7 @@ python3 scripts/record_manual_publish.py <job_id> --platform 小红书
 - 谷歌趋势走官方趋势 RSS（`scripts/fetch_hot_topics.py` 内置），X 热点复用 personal-website 的 NAS `x_scraper` 容器（twikit + clash 代理 + cookie）。
 - 代理配置与 personal-website 的 `X_SCRAPER_PROXY` 同模式：`nas-n8n/.env` 可设 `SELFMEDIA_PROXY=http://127.0.0.1:7897`（本机 clash 混合端口；未设时自动回退 `X_SCRAPER_PROXY` → `HTTPS_PROXY` → `HTTP_PROXY`）。
 - 海外源条目自动打「海外源·需人工复核」标记并做关键词合规初筛；**入选选题前必须人工确认国内可合规发布**。
-- X 热点依赖 NAS 在线且 `x_scraper` 容器可达；失败时自动跳过，不影响国内源。
+- X 热点依赖 NAS 在线且 `x_scraper` 容器可达；失败时自动跳过，不影响国内源。当前返回账号所在地区（如日本）热门话题，如需全球榜后续在 twikit 参数侧调整。
 
 ---
 
