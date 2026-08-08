@@ -57,7 +57,7 @@ async def render(deck_html, out_dir):
               const body = kids.find(k => k.classList && k.classList.contains('body'));
               const flow = body ? [...body.children]
                                 : kids.filter(k => getComputedStyle(k).position !== 'absolute');
-              const abs = body ? [body] : kids.filter(k => getComputedStyle(k).position === 'absolute');
+              const abs = kids.filter(k => getComputedStyle(k).position === 'absolute');
               const top0 = el.getBoundingClientRect().top;
               const flowMax = flow.length
                 ? Math.max(...flow.map(k => k.getBoundingClientRect().bottom - top0))

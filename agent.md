@@ -30,7 +30,7 @@
 - **短视频导演 (Video Director)**：加载 `viral-content-skill`，创作 120s 黄金分镜脚本（包含画面/运镜/台词/花字/音效）。0-3s Hook 必须经 `/dbs-hook` 独立设计，禁止压缩文章第一句。
 - **美术总监 (Visual Design Director)**：采用【AI 绘图 API + 3:4 HTML 视觉卡片】双轨策略，调用 [guizang-social-card-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/guizang-social-card-skill/SKILL.md) 生成 3:4 HTML 卡片，或驱动 [generate_ai_image.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/generate_ai_image.py) 生成 AI 高清艺术封面。
 - **资深校对排版 (Chief Reviewer & Layout Editor)**：必须优先加载 [harsh-critic-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/harsh-critic-skill/SKILL.md) **v2 双轨评分**（正向质量分 60：素材引用率 20 + 数据密度 15 + 真实感 15 + Hook 冲击力 10；负向扣分 40），先跑「第零步：素材契约对照检查」再用 `scripts/validate_materials_contract.py` 机器兜底（含 P0 硬门 C8-C10：素材 URL、标签/CTA、重复段落、参考来源链接、目录完整性），并用 `scripts/generate_score_report.py` 生成 `评分报告.md` 后人工逐条复核 Hook 六维/事实来源/视觉排版；**并做结构反模式检查（独立自我实证章节 / 结尾仅复述数据 / 未回答为什么火·钱归谁 → 退回重写）**；低于 85 分强行打回重写（同一篇连续 2 次打回即升级人工仲裁）；并加载 [xiaowan-wechat-layout-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/xiaowan-wechat-layout-skill/SKILL.md) 与 [gzh-design-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/gzh-design-skill/SKILL.md) 执行移动端美学与转换。
-- **归档发布员 (Asset & Distribution Ops)**：负责建目录落盘定稿、彻底清扫 process_* 等过程临时文件；公众号草稿用官方 `scripts/gzh_draft_api.py` 推送；小红书生成人工发布素材包（`scripts/prepare_xhs_material.py`），用户手动上传后调用 `scripts/record_manual_publish.py` 标记发布记录。
+- **归档发布员 (Asset & Distribution Ops)**：负责建目录落盘定稿、彻底清扫 process_* 等过程临时文件；公众号草稿用官方 `scripts/gzh_draft_api.py` 推送；小红书直接交付 `outputs/<job_id>/小红书/` 产出文件夹（不另建发布素材包，避免重复存储），用户手动上传后调用 `scripts/record_manual_publish.py` 标记发布记录。
 
 ---
 
@@ -109,7 +109,7 @@
 - **生成高审美公众号长文**：`主题「XXX」`
 - **优化视觉与排版**：`优化这篇笔记的视觉和排版`
 - **公众号草稿推送**：`确认发布` 或 `同步公众号草稿`（Agent 调用 `scripts/gzh_draft_api.py --job-id <job_id>`，通过官方 draft/add 存入公众号草稿箱，人工手机终审）
-- **小红书人工发布**：`生成小红书素材包`（Agent 调用 `scripts/prepare_xhs_material.py <job_id>` 产出图片+文案+发布说明，用户手动上传发布）→ 用户告知已发布后，Agent 调用 `scripts/record_manual_publish.py <job_id> --platform 小红书` 标记记录
+- **小红书人工发布**：`小红书已发布`（Agent 直接交付 `outputs/<job_id>/小红书/`：卡片 PNG + 文案.md，用户手动上传发布）→ 用户告知已发布后，Agent 调用 `scripts/record_manual_publish.py <job_id> --platform 小红书` 标记记录
 - **风控铁律**：小红书禁止任何自动化工具写入/发布（含 Playwright 填表单与点击发布），只允许人工上传。
 - **内容计划**：`本周内容计划`
 

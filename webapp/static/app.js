@@ -429,21 +429,7 @@ function switchArtifact(tab) {
 }
 window.switchArtifact = switchArtifact;
 
-// ---------- 人工发布操作（小红书素材包 / 标记手动发布） ----------
-$("#btn-xhs-pack").addEventListener("click", async () => {
-  const jobId = artifactState.jobId;
-  if (!jobId) return toast("请先选择任务", false);
-  try {
-    const d = await api("/api/xhs/material", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ job_id: jobId }),
-    });
-    toast("小红书素材包已生成：" + d.folder);
-    renderOutputs();
-  } catch (err) {
-    toast("生成素材包失败: " + err.message, false);
-  }
-});
+// ---------- 人工发布操作（标记手动发布） ----------
 
 $("#btn-mark-publish").addEventListener("click", async () => {
   const jobId = artifactState.jobId;

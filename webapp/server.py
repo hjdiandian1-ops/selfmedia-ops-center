@@ -458,10 +458,6 @@ def api_pipeline(payload: PipelineRequest):
     return r
 
 
-class XhsMaterialRequest(BaseModel):
-    job_id: str = ""
-
-
 class ManualPublishRequest(BaseModel):
     job_id: str
     platform: str
@@ -477,25 +473,6 @@ class StatsBackfill(BaseModel):
     collects: int = 0
     comments: int = 0
     url: str = ""
-
-
-@app.post("/api/xhs/material")
-def api_xhs_material(payload: XhsMaterialRequest):
-    """生成小红书发布素材文件夹（图片+文案+发布说明），全程人工上传。"""
-    job_id = payload.job_id.strip()
-    if not job_id:
-        raise HTTPException(status_code=400, detail="job_id 不能为空")
-    if not os.path.isdir(os.path.join(OUTPUTS_DIR, job_id)):
-        raise HTTPException(status_code=404, detail=f"任务不存在: {job_id}")
-    r = run_script(["prepare_xhs_material.py", job_id], timeout=60)
-    if not r["ok"]:
-        raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False))
-    return {
-        "ok": True,
-        "folder": f"outputs/{job_id}/小红书发布素材包",
-        "result": r,
-    }
-
 
 @app.post("/api/publish/manual")
 def api_publish_manual(payload: ManualPublishRequest):

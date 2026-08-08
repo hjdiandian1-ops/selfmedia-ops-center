@@ -38,8 +38,7 @@
 ⑥ 发布(人工终审;小红书禁止自动化工具写入):
         公众号草稿(官方 API,需 GZH_APP_ID/SECRET):
         python3 scripts/gzh_draft_api.py --title "标题" --content-file outputs/<job_id>/公众号/<排版.html> --cover outputs/<job_id>/小红书/封面.png --author "小吴聊" --job-id <job_id>
-        小红书素材包(人工上传):
-        python3 scripts/prepare_xhs_material.py <job_id>
+        小红书(人工上传):直接使用 outputs/<job_id>/小红书/ 产出文件夹
         手机/网页端手动上传发布后标记记录:
         python3 scripts/record_manual_publish.py <job_id> --platform 小红书
 ```
@@ -54,7 +53,6 @@
 | `python3 scripts/run_daily_pipeline.py --recycle / --weekly` | 48h 回收检查 / 周报 |
 | `bash webapp/start.sh` | 启动工作台 WebUI(http://127.0.0.1:8787,产出预览在 Job 详情) |
 | `python3 scripts/gzh_draft_api.py ...` | 公众号草稿(官方 draft/add API) |
-| `python3 scripts/prepare_xhs_material.py <job_id>` | 生成小红书发布素材包(人工上传) |
 | `python3 scripts/record_manual_publish.py <job_id> --platform 小红书` | 小红书手动发布后标记记录 |
 
 ## 五、环境限制与降级(重要)

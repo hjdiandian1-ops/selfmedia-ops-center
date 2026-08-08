@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""小红书人工发布流程单测：素材包生成 + 手动发布标记。"""
+"""小红书人工发布流程单测：手动发布标记（素材包已下线，直接交付 小红书/ 产出文件夹）。"""
 import json
 import os
 import sys
@@ -10,7 +10,6 @@ SCRIPTS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 
-import prepare_xhs_material as PXM  # noqa: E402
 import record_manual_publish as RMP  # noqa: E402
 
 
@@ -51,48 +50,6 @@ def _write_xhs_outputs(outputs_dir, job_id, n=4):
         f.write(
             "---\nplatform: 小红书\n---\n\n# 标题\n\n"
             "## 📝 笔记正文：\n\n正文第一句。\n\n数据来源：测试\n\n#37 #AI视频 #一人公司\n")
-
-
-def test_prepare_xhs_material(tmp_path):
-    jobs, outputs = _dirs(tmp_path)
-    job_id = "2026-08-07_测试"
-    _write_state(jobs, job_id)
-    _write_log(jobs, job_id)
-    _write_xhs_outputs(outputs, job_id)
-
-    dest, info = PXM.prepare(job_id, outputs, jobs)
-    assert os.path.isdir(dest)
-    names = set(os.listdir(dest))
-    assert {"xhs-01.png", "xhs-02.png", "xhs-03.png", "xhs-04.png", "文案.md", "发布说明.md"} <= names
-    assert info["images"] == 4
-    assert info["title"] == "30 块钱、5 小时、500 万播放：AI 把视频创作的门槛拆了"
-    assert info["tags"] == ["#AI视频", "#一人公司"]
-
-    guide = open(os.path.join(dest, "发布说明.md"), encoding="utf-8").read()
-    assert "禁止使用任何自动化工具" in guide
-    assert "手动发布步骤" in guide
-    assert "#AI视频" in guide and "#一人公司" in guide
-
-    # 幂等覆盖：文件数不翻倍
-    dest2, _ = PXM.prepare(job_id, outputs, jobs)
-    assert dest2 == dest
-    assert len(os.listdir(dest2)) == 6
-
-
-def test_prepare_xhs_material_missing_outputs(tmp_path):
-    jobs, outputs = _dirs(tmp_path)
-    _write_state(jobs, "2026-08-07_无小红书产出")
-    with pytest.raises(ValueError, match="未找到小红书产出目录"):
-        PXM.prepare("2026-08-07_无小红书产出", outputs, jobs)
-
-
-def test_prepare_xhs_material_no_images(tmp_path):
-    jobs, outputs = _dirs(tmp_path)
-    job_id = "2026-08-07_无图片"
-    _write_state(jobs, job_id)
-    os.makedirs(os.path.join(outputs, job_id, "小红书"))
-    with pytest.raises(ValueError, match="没有图片"):
-        PXM.prepare(job_id, outputs, jobs)
 
 
 def test_record_manual_publish(tmp_path):

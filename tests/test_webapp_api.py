@@ -182,22 +182,3 @@ def test_manual_publish_success(isolated_dirs, monkeypatch):
     assert "--platform" in captured["args"]
     assert captured["timeout"] == 30
 
-
-def test_xhs_material_endpoint(isolated_dirs, monkeypatch):
-    with pytest.raises(HTTPException) as e:
-        server.api_xhs_material(server.XhsMaterialRequest(job_id="不存在"))
-    assert e.value.status_code == 404
-
-    _write_job("2026-08-05_素材包")
-    os.makedirs(os.path.join(server.OUTPUTS_DIR, "2026-08-05_素材包"), exist_ok=True)
-    captured = {}
-
-    def fake_run(args, timeout=60):
-        captured["args"] = args
-        return {"ok": True, "exit": 0, "stdout": "✅ 小红书发布素材包已生成", "stderr": ""}
-
-    monkeypatch.setattr(server, "run_script", fake_run)
-    r = server.api_xhs_material(server.XhsMaterialRequest(job_id="2026-08-05_素材包"))
-    assert r["ok"] is True
-    assert r["folder"].endswith("小红书发布素材包")
-    assert captured["args"] == ["prepare_xhs_material.py", "2026-08-05_素材包"]

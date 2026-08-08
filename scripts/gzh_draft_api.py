@@ -178,6 +178,21 @@ def main():
             f'<img src="{img_url}" style="max-width:100%;border-radius:8px;'
             'display:block;margin:16px auto;" />',
         )
+    # ②.6 自动识别正文中本地 <img src="...">（相对 HTML 文件目录），上传为微信图 URL
+    html_dir = os.path.dirname(os.path.abspath(args.content_file))
+
+    def _local_img_src(m):
+        src = m.group(2)
+        if src.startswith(("http://", "https://", "data:", "file://")):
+            return m.group(0)
+        img_path = src if os.path.isabs(src) else os.path.join(html_dir, src)
+        if not os.path.exists(img_path):
+            raise RuntimeError(f"正文图片不存在：{img_path}")
+        print(f"   上传正文图片：{img_path}")
+        img_url = upload_image_url(token, img_path)
+        return m.group(1) + img_url + m.group(3)
+
+    content = re.sub(r'(<img\b[^>]*\bsrc=")([^"]+)(")', _local_img_src, content)
     print("③ 调用 draft/add 存草稿 ...")
     result = add_draft(token, args.title, content, thumb_media_id, args.author, digest)
     media_id = result.get("media_id", "")

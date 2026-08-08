@@ -1,0 +1,27 @@
+{
+  "job_id": "2026-08-08_Skill革命",
+  "records": [],
+  "publish": [
+    {
+      "platform": "公众号",
+      "status": "success",
+      "mode": "draft_api",
+      "draft_media_id": "vIAA2pLNaNvLtfZFI4quumNZD5a8ByNwLDvK3E9yS_Vwg3peFovXBPhi1MuPMG5j",
+      "detail": {
+        "media_id": "vIAA2pLNaNvLtfZFI4quumNZD5a8ByNwLDvK3E9yS_Vwg3peFovXBPhi1MuPMG5j",
+        "item": [
+          {
+            "index": 0,
+            "ad_count": 2
+          }
+        ]
+      },
+      "at": "2026-08-08 22:17:03"
+    }
+  ],
+  "published_at": "2026-08-08 22:17:03",
+  "title": "16 分钟做完 96 个实验：AI 的下一个风口，是把老师傅的经验打包成 Skill",
+  "platforms": [
+    "公众号"
+  ]
+}

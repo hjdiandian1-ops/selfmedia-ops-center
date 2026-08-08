@@ -139,14 +139,12 @@ python3 scripts/gzh_draft_api.py \
 小红书账号存在风控要求，**禁止任何自动化工具写入/发布**，已下线全部自动发布链路（NAS `xhs_publisher`、n8n 小红书工作流、Playwright 脚本均已归档/删除）。发布改为人工：
 
 ```bash
-# 1. 生成小红书发布素材包（图片 + 文案 + 发布说明，不触碰平台）
-python3 scripts/prepare_xhs_material.py <job_id>
-
-# 2. 手机/网页端手动上传发布后，标记记录（保住 48h 回收闭环）
+# 1. 直接使用产出文件夹 outputs/<job_id>/小红书/（xhs-01~05.png + 文案.md），手机/网页端手动上传
+# 2. 发布完成后标记记录（保住 48h 回收闭环）
 python3 scripts/record_manual_publish.py <job_id> --platform 小红书
 ```
 
-素材包位于 `outputs/<job_id>/小红书发布素材包/`；也可在工作台「成品库」一键生成与标记。
+成品库「发布记录」卡片提供「标记已手动发布」按钮。
 
 ### 4.4 飞书多维表格与 n8n 工作流导入
 - **飞书结构规范**：详见 [FEISHU_TABLE_SCHEMA.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/FEISHU_TABLE_SCHEMA.md)。
@@ -182,7 +180,7 @@ python3 scripts/record_manual_publish.py <job_id> --platform 小红书
 2. **专职创作**：小红书主编、公众号主编与短视频导演并发创作各自平台的正文与脚本。
 3. **视觉生成**：美术总监渲染 3:4 视觉卡片 HTML 或使用 AI 接口生图。
 4. **校对与归档清扫**：资深校对排版完成移动端孤行打磨；归档发布员存盘定稿，**并强制清扫彻底删除 process_* 等中间过程临时文件夹**。
-5. **人工审核与发布**：你在对话框中预览并检查，确认无误后回复 `确认发布`。公众号由 Agent 调用 `scripts/gzh_draft_api.py` 存入官方草稿箱（人工手机终审）；小红书由 Agent 生成发布素材包（`scripts/prepare_xhs_material.py`），你手动上传发布后调用 `scripts/record_manual_publish.py` 标记记录；发布动作统一落盘 `publish_log.json`。
+5. **人工审核与发布**：你在对话框中预览并检查，确认无误后回复 `确认发布`。公众号由 Agent 调用 `scripts/gzh_draft_api.py` 存入官方草稿箱（人工手机终审）；小红书直接交付 `outputs/<job_id>/小红书/`（卡片 PNG + 文案），你手动上传发布后调用 `scripts/record_manual_publish.py` 标记记录；发布动作统一落盘 `publish_log.json`。
 
 ### 5.2 常用自然语言指令速查表
 | 需求描述 | 对话指令示例 |
@@ -255,7 +253,7 @@ bash webapp/start.sh 9000     # 指定端口
 ### 7.3 与 NAS 的关系
 
 - 公众号草稿走官方 `draft/add` API（`scripts/gzh_draft_api.py`），凭据 `GZH_APP_ID/GZH_APP_SECRET`，不依赖 NAS 浏览器自动化。
-- 小红书为人工发布：`scripts/prepare_xhs_material.py` 生成发布素材包，人工上传后用 `scripts/record_manual_publish.py` 标记（工作台也可操作）。
+- 小红书为人工发布：直接使用产出文件夹 `outputs/<job_id>/小红书/`（与成品同源，不另建素材包），人工上传后用 `scripts/record_manual_publish.py` 标记（工作台也可操作）。
 - 采集热点调用 `scripts/fetch_hot_topics.py`（RSSHub）；NAS 离线时自动降级用最近雷达 + WebSearch。
 - 数据（jobs/outputs/materials）均在本仓库，工作台只读展示 + 白名单脚本调用，不落第三方。
 
@@ -273,7 +271,6 @@ GET  /api/outputs/{job_id}    # 产出文件树
 POST /api/topics/adopt        # 采纳选题建任务
 POST /api/qa                  # 跑质检链（需 output_dir）
 POST /api/pipeline/run        # 触发流水线（action: topics|recycle|weekly|qa）
-POST /api/xhs/material        # 生成小红书发布素材文件夹
 POST /api/publish/manual      # 标记已手动发布（写 publish_log）
 POST /api/stats/backfill      # 平台数据回填（落盘 publish_log.json）
 POST /api/stats/refresh       # 重新扫描并生成 data/stats/summary.json + 统计报告
