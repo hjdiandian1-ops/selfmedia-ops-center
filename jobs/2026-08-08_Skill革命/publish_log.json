@@ -17,6 +17,22 @@
         ]
       },
       "at": "2026-08-08 22:17:03"
+    },
+    {
+      "platform": "公众号",
+      "status": "success",
+      "mode": "draft_api",
+      "draft_media_id": "vIAA2pLNaNvLtfZFI4quulHHYOecjRXzadmvVyDA1wKUO0q80OjyHuT3EBwXGimJ",
+      "detail": {
+        "media_id": "vIAA2pLNaNvLtfZFI4quulHHYOecjRXzadmvVyDA1wKUO0q80OjyHuT3EBwXGimJ",
+        "item": [
+          {
+            "index": 0,
+            "ad_count": 2
+          }
+        ]
+      },
+      "at": "2026-08-08 22:41:39"
     }
   ],
   "published_at": "2026-08-08 22:17:03",
