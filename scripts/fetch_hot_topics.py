@@ -62,7 +62,10 @@ X_TRENDS_WOEID = int(os.environ.get("X_TRENDS_WOEID", "23424977") or "23424977")
 X_ZH_QUERIES = os.environ.get(
     "X_ZH_QUERIES",
     "AI OR 大模型 OR 人工智能 lang:zh;;创业 OR 副业 OR 出海 lang:zh;;"
-    "自媒体 OR 内容创作 OR 短视频 lang:zh;;DeepSeek OR OpenAI OR 算力 lang:zh",
+    "自媒体 OR 内容创作 OR 短视频 lang:zh;;DeepSeek OR OpenAI OR 算力 lang:zh;;"
+    "财经 OR 央行 OR 利率 OR 美联储 lang:zh;;"
+    "AI应用 OR AI产品 OR 智能体 OR AI工作流 lang:zh;;"
+    "股票 OR A股 OR 美股 OR 港股 lang:zh;;投资 OR 理财 OR 基金 OR 黄金 lang:zh",
 ).split(";;")
 
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
@@ -73,6 +76,8 @@ SOURCES = {
     "微博热搜": "/weibo/search/hot",
     "知乎热榜": "/zhihu/hotlist",
     "36氪快讯": "/36kr/newsflashes",
+    "华尔街见闻": "/wallstreetcn/live",
+    "金十数据": "/jin10/major",
     "少数派热门": "/sspai/matrix",
     "B站热门": "/bilibili/popular/all",
     "掘金趋势": "/juejin/trending/all/daily",
@@ -85,6 +90,7 @@ COMPLIANCE_BLOCK = [
     "选举", "竞选", "总统", "首相", "国会", "议会", "政变", "抗议", "示威", "游行",
     "战争", "冲突升级", "核武器", "导弹", "恐怖", "暗杀", "泄密", "制裁",
     "赌博", "博彩", "毒品", "色情", "裸", "违法", "诈骗", "翻墙",
+    "AV",
     "election", "protest", "riot", "coup", "war", "nuclear", "missile",
     "terror", "assassination", "sanction", "porn", "drug", "gambling",
 ]
