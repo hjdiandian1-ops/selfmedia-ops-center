@@ -120,26 +120,9 @@ graph TD
    *服务清单*：
    - `n8n`：中文版工作流引擎 (`http://<NAS_IP>:5678`)
    - `postgres`：工作流持久化数据库
-   - `xhs-publisher`：小红书 Playwright 自动发布 API 服务 (`http://<NAS_IP>:8000`)
    - `rsshub`：热点雷达 RSS 抓取引擎 (`docker-compose-rsshub.yml`)
 
-### 4.2 小红书 Cookie 持久化授权
-1. 本地运行初始化授权脚本：
-   ```bash
-   python3 scripts/init_xiaohongshu_login.py
-   ```
-2. 扫描出现的二维码登录创作者中心。
-3. 生成的 `shared_files/xhs_cookies.json` 将自动同步挂载至 NAS 容器路径 `/data/shared/xhs_cookies.json`。
-
-### 4.3 公众号 Cookie 持久化授权（草稿箱链路）
-公众号草稿发布需要独立的登录态：
-```bash
-python3 scripts/init_gzh_login.py
-```
-生成的 `nas-n8n/shared_files/gzh_cookies.json` 对应 NAS 容器路径 `/data/shared/gzh_cookies.json`；
-若本地与 NAS 不是同一台机器，请手动把该文件同步到 NAS 的 `shared_files/` 目录。
-
-### 4.4 公众号官方草稿箱 API（推荐，稳定）
+### 4.2 公众号官方草稿箱 API（推荐，稳定）
 浏览器自动化受微信新版编辑器限制时，改用官方 `draft/add` 接口存草稿：
 ```bash
 python3 scripts/gzh_draft_api.py \
@@ -151,7 +134,21 @@ python3 scripts/gzh_draft_api.py \
 ```
 凭据从 `nas-n8n/.env` 读取 `GZH_APP_ID` / `GZH_APP_SECRET`；调用机器 IP 需加入公众号「IP 白名单」。
 
-### 4.3 飞书多维表格与 n8n 工作流导入
+### 4.3 小红书发布（人工模式，风控合规）
+
+小红书账号存在风控要求，**禁止任何自动化工具写入/发布**，已下线全部自动发布链路（NAS `xhs_publisher`、n8n 小红书工作流、Playwright 脚本均已归档/删除）。发布改为人工：
+
+```bash
+# 1. 生成小红书发布素材包（图片 + 文案 + 发布说明，不触碰平台）
+python3 scripts/prepare_xhs_material.py <job_id>
+
+# 2. 手机/网页端手动上传发布后，标记记录（保住 48h 回收闭环）
+python3 scripts/record_manual_publish.py <job_id> --platform 小红书
+```
+
+素材包位于 `outputs/<job_id>/小红书发布素材包/`；也可在工作台「成品库」一键生成与标记。
+
+### 4.4 飞书多维表格与 n8n 工作流导入
 - **飞书结构规范**：详见 [FEISHU_TABLE_SCHEMA.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/FEISHU_TABLE_SCHEMA.md)。
 - **一键导入工作流**：
   ```bash
@@ -176,7 +173,7 @@ python3 scripts/gzh_draft_api.py \
 2. **专职创作**：小红书主编、公众号主编与短视频导演并发创作各自平台的正文与脚本。
 3. **视觉生成**：美术总监渲染 3:4 视觉卡片 HTML 或使用 AI 接口生图。
 4. **校对与归档清扫**：资深校对排版完成移动端孤行打磨；归档发布员存盘定稿，**并强制清扫彻底删除 process_* 等中间过程临时文件夹**。
-5. **人工审核与一键发布**：你在对话框中预览并检查，确认无误后回复 `确认发布`，Agent 执行 `publish_to_n8n.py` 将配图同步传输至 NAS 并唤醒发布队列。**主链路为直连 NAS `xhs_publisher`（5800 端口），n8n Webhook 降级为备用**；公众号草稿用 `publish_to_n8n.py --draft --gzh-html <文件>`，发布后自动落盘 `publish_log.json`。
+5. **人工审核与发布**：你在对话框中预览并检查，确认无误后回复 `确认发布`。公众号由 Agent 调用 `scripts/gzh_draft_api.py` 存入官方草稿箱（人工手机终审）；小红书由 Agent 生成发布素材包（`scripts/prepare_xhs_material.py`），你手动上传发布后调用 `scripts/record_manual_publish.py` 标记记录；发布动作统一落盘 `publish_log.json`。
 
 ### 5.2 常用自然语言指令速查表
 | 需求描述 | 对话指令示例 |
@@ -188,7 +185,8 @@ python3 scripts/gzh_draft_api.py \
 | **公众号精细长文** | `主题「NAS 部署 n8n 的避坑指南」，生成高审美公众号长文` |
 | **小红书爆款图文** | `做一篇小红书笔记，主题是「AI工具推荐」，使用 3:4 视觉卡片` |
 | **排版美化与孤行优化** | `优化这篇文章的视觉和排版，检查移动端孤行` |
-| **确认分发发布** | `确认发布` 或 `一键分发到 NAS 发布` |
+| **公众号草稿** | `确认发布` 或 `同步公众号草稿` |
+| **小红书人工发布** | `生成小红书素材包` → 手动上传发布 → `标记已手动发布` |
 | **生成本周内容计划** | `制定本周自媒体内容计划` |
 
 ### 5.3 内容归档与文件夹整理规范 (Outputs Folder Standard)
@@ -246,7 +244,8 @@ bash webapp/start.sh 9000     # 指定端口
 
 ### 7.3 与 NAS 的关系
 
-- 发布功能调用 `scripts/publish_to_n8n.py` → NAS `xhs_publisher` 微服务；需 NAS 在线且 `nas-n8n/.env` 已配置 `NAS_USER/NAS_PASS`。
+- 公众号草稿走官方 `draft/add` API（`scripts/gzh_draft_api.py`），凭据 `GZH_APP_ID/GZH_APP_SECRET`，不依赖 NAS 浏览器自动化。
+- 小红书为人工发布：`scripts/prepare_xhs_material.py` 生成发布素材包，人工上传后用 `scripts/record_manual_publish.py` 标记（工作台也可操作）。
 - 采集热点调用 `scripts/fetch_hot_topics.py`（RSSHub）；NAS 离线时自动降级用最近雷达 + WebSearch。
 - 数据（jobs/outputs/materials）均在本仓库，工作台只读展示 + 白名单脚本调用，不落第三方。
 
@@ -264,7 +263,8 @@ GET  /api/outputs/{job_id}    # 产出文件树
 POST /api/topics/adopt        # 采纳选题建任务
 POST /api/qa                  # 跑质检链（需 output_dir）
 POST /api/pipeline/run        # 触发流水线（action: topics|recycle|weekly|qa）
-POST /api/publish             # 一键发布到 NAS
+POST /api/xhs/material        # 生成小红书发布素材文件夹
+POST /api/publish/manual      # 标记已手动发布（写 publish_log）
 POST /api/stats/backfill      # 平台数据回填（落盘 publish_log.json）
 POST /api/stats/refresh       # 重新扫描并生成 data/stats/summary.json + 统计报告
 ```

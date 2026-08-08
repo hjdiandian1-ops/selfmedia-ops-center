@@ -52,23 +52,3 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
-  # 小红书自动化无头浏览器发布执行器（Python 3.10 + Playwright 服务）
-  xhs-publisher:
-    image: docker.m.daocloud.io/library/python:3.10-slim
-    container_name: xhs_publisher
-    restart: always
-    ports:
-      - "5800:8000"
-    volumes:
-      - ./xhs_worker:/app
-      - ./shared_files:/data/shared
-    working_dir: /app
-    command: >
-      bash -c "rm -f /data/shared/main.py &&
-               pip install fastapi uvicorn playwright pydantic -i https://pypi.tuna.tsinghua.edu.cn/simple &&
-               playwright install-deps chromium &&
-               playwright install chromium &&
-               python main.py"
-    environment:
-      - TZ=Asia/Shanghai

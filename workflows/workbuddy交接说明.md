@@ -35,8 +35,13 @@
         要求:validate=PASSED、harsh ≥85、素材引用率=100%;不达标退回重写(最多2次,第3次请用户仲裁)
 ⑤ 落盘与清扫:三级目录整洁、删除 process_* 临时文件
         → python3 scripts/job_state.py set <job_id> archive --note "质检通过"
-⑥ 发布:用户回复「确认发布」后调用(需要 NAS 在线):
-        python3 scripts/publish_to_n8n.py --title "标题" --content "小红书正文" --gzh-html "公众号HTML" --images 图1 图2 --tags 标签 --job-id <job_id>
+⑥ 发布(人工终审;小红书禁止自动化工具写入):
+        公众号草稿(官方 API,需 GZH_APP_ID/SECRET):
+        python3 scripts/gzh_draft_api.py --title "标题" --content-file outputs/<job_id>/公众号/<排版.html> --cover outputs/<job_id>/小红书/封面.png --author "小吴聊" --job-id <job_id>
+        小红书素材包(人工上传):
+        python3 scripts/prepare_xhs_material.py <job_id>
+        手机/网页端手动上传发布后标记记录:
+        python3 scripts/record_manual_publish.py <job_id> --platform 小红书
 ```
 
 ## 四、关键命令速查
@@ -48,14 +53,16 @@
 | `python3 scripts/run_daily_pipeline.py --qa outputs/<job_id>/` | 质检链(契约+评分) |
 | `python3 scripts/run_daily_pipeline.py --recycle / --weekly` | 48h 回收检查 / 周报 |
 | `bash webapp/start.sh` | 启动工作台 WebUI(http://127.0.0.1:8787,产出预览在 Job 详情) |
-| `python3 scripts/publish_to_n8n.py ...` | 发布到 NAS(需 NAS 在线 + nas-n8n/.env 凭据) |
+| `python3 scripts/gzh_draft_api.py ...` | 公众号草稿(官方 draft/add API) |
+| `python3 scripts/prepare_xhs_material.py <job_id>` | 生成小红书发布素材包(人工上传) |
+| `python3 scripts/record_manual_publish.py <job_id> --platform 小红书` | 小红书手动发布后标记记录 |
 
 ## 五、环境限制与降级(重要)
 
 | 情况 | 处理 |
 |---|---|
 | **生图 API 无 key**(NAS 离线/gemini 额度耗尽) | 封面用 HTML 卡片截图(`scripts/render_card_to_image.py`,本地 playwright),不做 AI 艺术封面 |
-| **NAS/RSSHub 离线** | 热点用最近雷达 + WebSearch 降级;发布停在 archive 态等 NAS 恢复 |
+| **NAS/RSSHub 离线** | 热点用最近雷达 + WebSearch 降级;公众号草稿走官方 API 不受影响,小红书始终人工发布 |
 | **素材不足/无种子素材** | 严禁脑补虚构:向用户索取,或只做观点启发(AI推断 素材不得当事实) |
 | **同一问题失败 3 次** | 立即停止重试,向用户说明并请求换方向(铁律,防 token 浪费) |
 

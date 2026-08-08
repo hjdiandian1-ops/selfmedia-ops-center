@@ -1,5 +1,7 @@
 # 自媒体 Agent + n8n 分发中枢整体架构方案
 
+> ⚠️ **已废弃（2026-08-08）**：小红书账号风控禁止自动化工具写入，n8n 小红书自动发布链路（`xhs_publisher` / Playwright Worker / 三个小红书工作流）已全部下线并删除；公众号草稿改走官方 `draft/add` API。本文仅作历史架构参考，不再作为实施依据。
+
 基于品牌内容营销操盘手 **@bbkirstry（小晚不在）** 的核心理念：“以个人 IP 为核、审美优先、通俗翻译、AI 放大人的判断力”。
 
 ---
@@ -66,6 +68,4 @@
 
 ## 三、 已生成的 n8n 模板 JSON 文件
 
-模板路径：[xhs_gzh_immediate_publish.json](file:///Users/xiaowuliao/Projects/%E8%87%AA%E5%AA%92%E4%BD%93%E5%8F%91%E5%B8%83agent/nas-n8n/workflows/xhs_gzh_immediate_publish.json)
-
-直接在 n8n 中点击 **Import from File** 即可一键载入使用！
+> 原小红书/公众号发布模板（`xhs_publish_v2/v3`、`xhs_gzh_immediate_publish`）已随自动化发布下线删除，不再提供。保留的 n8n 工作流仅有 `hot_topic_radar.json`（热点雷达）。

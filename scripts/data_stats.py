@@ -331,7 +331,8 @@ def aggregate(events, jobs_dir, outputs_dir):
         "untracked_list": untracked[:10],
         "pending_recycle": pending_recycle,
         "external_note": "公众号 datacube 未开通权限、小红书无官方开放 API；"
-                         "当前数据 = 仓库内发布动作（自动） + 人工回填（手动），不依赖第三方抓取。",
+                         "当前数据 = 发布动作（公众号草稿自动记录 + 小红书手动标记）"
+                         " + 人工回填，不依赖第三方抓取。",
     }
 
     return {

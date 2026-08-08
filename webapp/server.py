@@ -458,13 +458,15 @@ def api_pipeline(payload: PipelineRequest):
     return r
 
 
-class PublishRequest(BaseModel):
-    title: str
-    content: str = ""
-    gzh_html: str = ""
-    images: List[str] = []
-    tags: List[str] = []
+class XhsMaterialRequest(BaseModel):
     job_id: str = ""
+
+
+class ManualPublishRequest(BaseModel):
+    job_id: str
+    platform: str
+    title: str = ""
+    note: str = ""
 
 
 class StatsBackfill(BaseModel):
@@ -477,23 +479,47 @@ class StatsBackfill(BaseModel):
     url: str = ""
 
 
-@app.post("/api/publish")
-def api_publish(payload: PublishRequest):
-    """一键发布(调 publish_to_n8n.py → NAS)。发布前请确认 NAS 在线、.env 凭据已配置。"""
-    if not payload.title.strip():
-        raise HTTPException(status_code=400, detail="标题为空")
-    args = ["publish_to_n8n.py", "--title", payload.title]
-    if payload.content:
-        args += ["--content", payload.content]
-    if payload.gzh_html:
-        args += ["--gzh-html", payload.gzh_html]
-    if payload.images:
-        args += ["--images"] + payload.images
-    if payload.tags:
-        args += ["--tags"] + payload.tags
-    if payload.job_id:
-        args += ["--job-id", payload.job_id]
-    r = run_script(args, timeout=180)
+@app.post("/api/xhs/material")
+def api_xhs_material(payload: XhsMaterialRequest):
+    """生成小红书发布素材文件夹（图片+文案+发布说明），全程人工上传。"""
+    job_id = payload.job_id.strip()
+    if not job_id:
+        raise HTTPException(status_code=400, detail="job_id 不能为空")
+    if not os.path.isdir(os.path.join(OUTPUTS_DIR, job_id)):
+        raise HTTPException(status_code=404, detail=f"任务不存在: {job_id}")
+    r = run_script(["prepare_xhs_material.py", job_id], timeout=60)
+    if not r["ok"]:
+        raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False))
+    return {
+        "ok": True,
+        "folder": f"outputs/{job_id}/小红书发布素材包",
+        "result": r,
+    }
+
+
+@app.post("/api/publish/manual")
+def api_publish_manual(payload: ManualPublishRequest):
+    """人工发布完成后标记记录：追加 mode=manual 的发布动作，保住 48h 回收闭环。"""
+    job_id = payload.job_id.strip()
+    if not job_id:
+        raise HTTPException(status_code=400, detail="job_id 不能为空")
+    if not os.path.isdir(os.path.join(JOBS_DIR, job_id)):
+        raise HTTPException(status_code=404, detail=f"任务不存在: {job_id}")
+    if payload.platform not in ("小红书", "公众号", "短视频"):
+        raise HTTPException(status_code=400, detail=f"平台不合法: {payload.platform}")
+    if len(payload.note) > 200:
+        raise HTTPException(status_code=400, detail="note 过长（≤200 字符）")
+    if len(payload.title) > 120:
+        raise HTTPException(status_code=400, detail="title 过长（≤120 字符）")
+
+    args = ["record_manual_publish.py", job_id, "--platform", payload.platform]
+    if payload.title.strip():
+        args += ["--title", payload.title.strip()]
+    if payload.note.strip():
+        args += ["--note", payload.note.strip()]
+    r = run_script(args, timeout=30)
+    if not r["ok"]:
+        raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False))
     return r
 
 

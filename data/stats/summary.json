@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08 15:55:12",
+  "generated_at": "2026-08-08 20:44:48",
   "jobs_total": 9,
   "by_state": {
     "archive": 7,
@@ -186,7 +186,7 @@
       }
     ],
     "pending_recycle": 0,
-    "external_note": "公众号 datacube 未开通权限、小红书无官方开放 API；当前数据 = 仓库内发布动作（自动） + 人工回填（手动），不依赖第三方抓取。"
+    "external_note": "公众号 datacube 未开通权限、小红书无官方开放 API；当前数据 = 发布动作（公众号草稿自动记录 + 小红书手动标记） + 人工回填，不依赖第三方抓取。"
   },
   "report_path": "data/stats/数据统计报告.md"
 }

@@ -1,6 +1,8 @@
-# NAS 端 n8n + 小红书自动化发布部署指南
+# NAS 端 n8n + 热点雷达部署指南
 
-本目录包含在 NAS（群晖 Synology / 威联通 QNAP / UNRAID / 极空间 / 绿联 / 任意 Linux Docker 环境）部署 **n8n 自动化工作流** 和 **小红书自动发布 Worker** 的完整配置。
+本目录包含在 NAS（群晖 Synology / 威联通 QNAP / UNRAID / 极空间 / 绿联 / 任意 Linux Docker 环境）部署 **n8n 自动化工作流** 的完整配置。
+
+> ⚠️ 小红书账号风控禁止自动化工具写入，**小红书自动发布 Worker（xhs_worker / xhs_publisher）已下线删除**；公众号草稿走官方 `draft/add` API（见项目根 README 4.2），不再依赖 NAS 浏览器自动化。
 
 ---
 
@@ -9,9 +11,8 @@
 nas-n8n/
 ├── docker-compose.yml       # Docker Compose 核心服务配置文件
 ├── .env.example             # 环境变量配置模板
-├── xhs_worker/              # 小红书 Playwright 自动化发布服务
-│   └── main.py              # FastAPI + Playwright 服务端代码
-└── shared_files/            # 跨容器共享目录（存放 Cookie、生成的图片等）
+└── workflows/
+    └── hot_topic_radar.json # 热点雷达工作流（RSSHub 抓取）
 ```
 
 ---
@@ -43,45 +44,17 @@ docker-compose up -d
 
 ---
 
-## 第三步：初始化小红书登录 Cookie
-小红书发布需要保留个人账号登录状态：
-1. 首次使用时，在本地或容器内使用 Playwright 登录一次 `creator.xiaohongshu.com`。
-2. 保存生成的 `xhs_cookies.json` 文件并放置在 NAS 的 `shared_files/xhs_cookies.json` 路径下。
+## 第三步：导入热点雷达工作流
 
----
-
-## 第四步：在 n8n 中配置自动化 Workflow
-
-访问 `http://<NAS_IP>:5678` 注册管理员账号，建立以下 5 步自动化工作流：
-
-```mermaid
-graph LR
-    A[Trigger: 飞书/Notion/Cron] --> B[LLM 节点: 生成文案/标题/标签]
-    B --> C[HTML卡片渲染/图片生成节点]
-    C --> D[HTTP Request 节点: 调起 xhs-publisher API]
-    D --> E[通知节点: 企微/飞书通知发布成功]
+```bash
+python3 scripts/import_n8n_workflow_nas.py   # 导入 hot_topic_radar.json
+python3 scripts/activate_n8n_workflows.py    # 激活全部工作流
 ```
 
-### HTTP Request 节点配置（发布至小红书）
-- **Method**: `POST`
-- **URL**: `http://xhs-publisher:8000/publish`
-- **Header**: `Content-Type: application/json`
-- **Body**:
-  ```json
-  {
-    "title": "={{ $json.title }}",
-    "content": "={{ $json.content }}",
-    "images": [
-      "/data/shared/slide1.png",
-      "/data/shared/slide2.png"
-    ],
-    "tags": ["AI大模型", "自媒体运营", "高效工具"],
-    "cookies_json_path": "/data/shared/xhs_cookies.json"
-  }
-  ```
+访问 `http://<NAS_IP>:5678` 查看热点雷达工作流；发布环节不再位于 NAS（公众号走官方 API、小红书人工上传）。
 
 ---
 
 ## 常见问题处理
 - **n8n 连不上 PostgreSQL**：等待 10-15 秒，PostgreSQL 容器健康检查通过后 n8n 会自动启动。
-- **图片文件传递**：共享目录映射为 `./shared_files` <-> `/data/shared`，可以在 n8n 中通过 Code 节点生成图片并写入此目录。
+- **遗留 xhs_publisher 容器**：旧版本部署过小红书自动发布的 NAS 请执行 `docker compose rm -f xhs-publisher`（或 `docker rm -f xhs_publisher`）并删除 `shared_files/xhs_cookies.json`。

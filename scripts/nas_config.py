@@ -41,7 +41,6 @@ GZH_APP_ID = os.environ.get("GZH_APP_ID", "")
 GZH_APP_SECRET = os.environ.get("GZH_APP_SECRET", "")
 NAS_SHARED_DIR = os.environ.get("NAS_SHARED_DIR", "/volume1/docker/n8n/shared_files")
 N8N_BASE_URL = os.environ.get("WEBHOOK_URL", f"http://{NAS_IP}:5678/")
-XHS_PUBLISHER_PORT = int(os.environ.get("XHS_PUBLISHER_PORT", "5800"))
 
 
 def require_credentials():

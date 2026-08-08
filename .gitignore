@@ -31,5 +31,8 @@ outputs/**/*.mp3
 outputs/**/*.wav
 output_images/
 
+# 小红书发布素材包（人工上传用，图片已忽略，说明文件也不入库）
+outputs/**/小红书发布素材包/
+
 # 历史测试残留
 output_test_flow/

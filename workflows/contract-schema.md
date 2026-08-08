@@ -64,7 +64,7 @@ hook_formula: dbs-xhs-title #26     # 标题/开头公式编号;平台=小红书
 
 ## 四、发布元数据 Schema(jobs/<job_id>/publish_log.json)
 
-发布动作由 `scripts/publish_to_n8n.py --job-id <job_id>` 写入,数据回收由 `scripts/collect_post_stats.py` 追加 `records`,两脚本共用同一文件:
+发布动作由 `scripts/gzh_draft_api.py`(公众号官方草稿)与 `scripts/record_manual_publish.py`(小红书手动标记)写入,数据回收由 `scripts/collect_post_stats.py` 追加 `records`,各脚本共用同一文件:
 
 ```json
 {

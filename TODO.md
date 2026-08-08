@@ -14,6 +14,7 @@
 9. [x] **选题与热点雷达架构设计**：完成 RSSHub NAS 部署配置 [docker-compose-rsshub.yml](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/docker-compose-rsshub.yml)、飞书多维表格选题库结构规范 [FEISHU_TABLE_SCHEMA.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/FEISHU_TABLE_SCHEMA.md) 以及 n8n 热点雷达工作流 [hot_topic_radar.json](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/workflows/hot_topic_radar.json)。
 10. [x] **小吴聊爆款图文与短视频 Skill 集成**：将 [viral-content-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/viral-content-skill/SKILL.md) 引入 Agent 体系，新增 【硬核拆解】/【商业对话】/【商业观察】 三大爆款视角与 120s 短视频黄金分镜脚本流程 [video-script.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/video-script.md)。
 11. [x] **「自媒体运营工厂」Teamwork 拟真报社岗位架构升级**：将原线性流程全面重构为基于 Teamwork 多 Agent 协同的「自媒体运营工厂」[自媒体运营工厂.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/自媒体运营工厂.md)，确立了总编、资深采编、小红书主编、公众号主编、短视频导演、美术总监、资深校对排版、归档发布员 8 大岗位分工，并引入定稿后强制自动清扫 process_* 中间过程临时文件的清理机制。
+12. [x] **小红书自动化发布下线（风控合规）**：账号提示禁止自动化工具写入，本地自动化/半自动化脚本归档至 `scripts/_archive/`，NAS `xhs_publisher` 与三个小红书 n8n 工作流删除；发布改为「小红书发布素材包 + 手动标记」（`prepare_xhs_material.py` / `record_manual_publish.py`），公众号草稿统一走官方 `draft/add` API。
 
 ---
 
@@ -22,5 +23,4 @@
   - **目标**：在 Agent 对话中触发创作 ➔ 生成 3:4 视觉卡片/AI 封面与公众号 HTML ➔ 人工确认 ➔ 输入“确认发布”一键分发到小红书。
 - [ ] **【待办 2】全网热点聚合替代方案探索** (暂跳过)
   - **说明**：暂时跳过泛快讯抓取，后续根据需求评估寻找更契合的头部源或自动化热点方案。
-
 

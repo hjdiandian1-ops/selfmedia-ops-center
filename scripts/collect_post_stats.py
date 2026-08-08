@@ -14,7 +14,7 @@
     python3 scripts/collect_post_stats.py <job_id> --show
 
 爆款阈值（可用参数覆盖）：阅读 ≥ 5000 或 点赞 ≥ 200
-说明：自动抓取（xhs_publisher /stats 接口）为后续迭代，当前以人工回填为准——
+说明：自动抓取为后续迭代（公众号 datacube 需开通权限、小红书无官方 API），当前以人工回填为准——
 真实数据 > 自动但不可靠的抓取。
 """
 import argparse
