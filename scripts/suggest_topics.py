@@ -24,6 +24,13 @@ from datetime import datetime
 
 MATERIALS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "materials"))
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from fetch_hot_topics import COMPLIANCE_BLOCK, OVERSEAS_SOURCES
+except ImportError:
+    COMPLIANCE_BLOCK = []
+    OVERSEAS_SOURCES = ()
+
 # IP 相关关键词权重（对齐「小吴聊」AI/科技实战操盘手人设）
 IP_KEYWORDS = {
     "AI": 3, "人工智能": 3, "大模型": 3, "Agent": 3, "智能体": 3, "模型": 2, "算力": 3,
@@ -123,10 +130,17 @@ def main():
         print(f"❌ 热点雷达 {radar_path} 无有效条目。", file=sys.stderr)
         sys.exit(1)
 
+    # 合规初筛：命中关键词的条目不进候选（与采集器同规则）
+    before = len(rows)
+    rows = [r for r in rows if not any(kw in r[0] for kw in COMPLIANCE_BLOCK)]
+    if len(rows) < before:
+        print(f"⚠️ 合规初筛剔除 {before - len(rows)} 条", file=sys.stderr)
+
     # 评分 + 排序
     scored = sorted(
         ({"title": normalize_title(t), "source": s, "link": l, "rank": r,
-          "score": score_item(t), "view": suggest_view(t), "formulas": suggest_formulas(t)}
+          "score": score_item(t), "view": suggest_view(t), "formulas": suggest_formulas(t),
+          "compliance": "海外源·需人工复核（国内可发布性）" if s in OVERSEAS_SOURCES else ""}
          for t, s, l, r in rows),
         key=lambda x: (-x["score"], x["rank"]),
     )
@@ -159,7 +173,8 @@ def main():
         f"# 🎯 选题推荐（{today}）",
         "",
         f"> 依据：{os.path.basename(radar_path)}｜排序：IP 相关度 + 标题冲击力 + 跨源热度",
-        "> 用法：总编/资深采编从候选挑选 1-3 个进入 `topic` 态；📕 封面套路观察由采编在创作前按 `guizang-social-card-skill`/小红书对标补充。",
+        "> 用法：候选必须由用户（老板）拍板后进入 `topic` 态，禁止自动选第 1 条；海外源候选需人工复核国内可合规发布。",
+        "> 📕 封面套路观察由采编在创作前按 `guizang-social-card-skill`/小红书对标补充。",
         "",
     ]
     for i, it in enumerate(picks, 1):
@@ -169,6 +184,7 @@ def main():
             f"- 命中热点：{it['source']}（rank {it['rank']}）",
             f"- 建议视角：{it['view']}",
             f"- 建议标题公式：{' + '.join(it['formulas'])}（对照 dbs-xhs-title 公式库）",
+            f"- 合规：{it['compliance'] or '国内源·正常'}",
             "- 📕 封面套路观察：（采编补充：参考同类爆款封面的构图/钩子/配色）",
             f"- 原文链接：{it['link'] or '无'}",
             "",
@@ -178,7 +194,8 @@ def main():
         f.write("\n".join(lines))
     print(f"📁 选题推荐已落盘：{out_path}（{len(picks)} 个候选）")
     for it in picks:
-        print(f"   ⭐{it['score']:.1f} [{it['view']}] {it['title']} ← {it['source']}")
+        flag = "⚠️海外" if it["compliance"] else ""
+        print(f"   ⭐{it['score']:.1f} [{it['view']}] {it['title']} ← {it['source']} {flag}")
 
 
 if __name__ == "__main__":

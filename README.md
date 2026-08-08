@@ -156,6 +156,13 @@ python3 scripts/record_manual_publish.py <job_id> --platform 小红书
   python3 scripts/activate_n8n_workflows.py
   ```
 
+### 4.5 海外热度源与代理（谷歌趋势 / X 热点）
+
+- 谷歌趋势走官方趋势 RSS（`scripts/fetch_hot_topics.py` 内置），X 热点复用 personal-website 的 NAS `x_scraper` 容器（twikit + clash 代理 + cookie）。
+- 代理配置与 personal-website 的 `X_SCRAPER_PROXY` 同模式：`nas-n8n/.env` 可设 `SELFMEDIA_PROXY=http://127.0.0.1:7897`（本机 clash 混合端口；未设时自动回退 `X_SCRAPER_PROXY` → `HTTPS_PROXY` → `HTTP_PROXY`）。
+- 海外源条目自动打「海外源·需人工复核」标记并做关键词合规初筛；**入选选题前必须人工确认国内可合规发布**。
+- X 热点依赖 NAS 在线且 `x_scraper` 容器可达；失败时自动跳过，不影响国内源。
+
 ---
 
 ## 5. 标准工作流程 (SOP) 与操作命令
@@ -178,7 +185,8 @@ python3 scripts/record_manual_publish.py <job_id> --platform 小红书
 ### 5.2 常用自然语言指令速查表
 | 需求描述 | 对话指令示例 |
 | :--- | :--- |
-| **自媒体运营工厂全套** | `/自媒体运营工厂` 或 `启动自媒体运营工厂，主题「DeepSeek R1 零成本搭建」` |
+| **每日开工** | `开工`（主触发词；采集热点 → 推荐选题 → 等用户拍板 → 三平台创作） |
+| **指定主题开工** | `开工，主题「XXX」` 或 `启动自媒体运营工厂，主题「DeepSeek R1 零成本搭建」` |
 | **【硬核拆解】专栏** | `主题「问界 M9 智能化配置」，使用【硬核拆解】视角拆解 BOM 成本并生成短视频脚本` |
 | **【商业对话】专栏** | `主题「对话新茶饮创业者」，使用【商业对话】视角灵魂拷问单店模型与现金流` |
 | **【商业观察】专栏** | `主题「蜜雪冰城出海」，使用【商业观察】视角进行硬核底层拆解与反常识升华` |

@@ -8,7 +8,7 @@ Agent 定时任务只需调用本脚本，减少人工步骤、保证无人值�
 
 用法：
     python3 scripts/run_daily_pipeline.py --topics               # 定时生产(8/12/20点)：热点→选题推荐→(可选)自动建 Job
-    python3 scripts/run_daily_pipeline.py --topics --auto-select # 决策超时自动选热度第 1 建 Job（对齐 30 分钟无人回复规则）
+    python3 scripts/run_daily_pipeline.py --topics --auto-select # 可选：用户明确要求时才自动选热度第 1 建 Job（默认由用户拍板选题）
     python3 scripts/run_daily_pipeline.py --qa outputs/YYYY-MM-DD_主题名/   # 质检链：契约校验 + harsh-critic 机器评分
     python3 scripts/run_daily_pipeline.py --recycle              # 48h 回收(21:30)：扫描发布 ≥48h 且未回收的 Job
     python3 scripts/run_daily_pipeline.py --weekly               # 周度复盘(周日21点)：生成质量周报
@@ -170,7 +170,7 @@ def main():
     ap = argparse.ArgumentParser(description="每日流水线编排器")
     ap.add_argument("--topics", action="store_true", help="热点→选题→(可选)建 Job")
     ap.add_argument("--auto-select", dest="auto_select", action="store_true",
-                    help="与 --topics 联用：决策超时自动选热度第 1 建 Job（单独用时等同 --topics --auto-select）")
+                    help="与 --topics 联用：仅当用户明确要求自动选题时自动选热度第 1 建 Job（默认流程由用户拍板；单独用时等同 --topics --auto-select）")
     ap.add_argument("--qa", metavar="OUTPUT_DIR", help="质检链（契约校验 + 机器评分）")
     ap.add_argument("--recycle", action="store_true", help="48h 回收检查")
     ap.add_argument("--weekly", action="store_true", help="周度质量复盘")
