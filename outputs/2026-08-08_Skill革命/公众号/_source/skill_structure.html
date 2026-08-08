@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #FFFFFF; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .wrap { width: 760px; padding: 48px 40px; }
+  .title { font-size: 30px; font-weight: 900; color: #1C1917; margin-bottom: 8px; }
+  .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 32px; }
+  .row { display: flex; align-items: stretch; gap: 14px; margin-bottom: 20px; }
+  .card { flex: 1; border: 2px solid #FCA5A5; background: #FEF2F2; border-radius: 18px; padding: 22px 20px; }
+  .card h3 { font-size: 20px; font-weight: 900; color: #DC2626; margin-bottom: 10px; }
+  .card p { font-size: 15px; color: #57534E; line-height: 1.7; }
+  .card .meta { font-size: 13px; color: #9CA3AF; margin-top: 8px; }
+  .arrow { font-size: 30px; color: #DC2626; font-weight: 900; align-self: center; }
+  .box { border: 2px solid #1C1917; border-radius: 18px; padding: 24px 22px; background: #FFFFFF; margin-bottom: 14px; }
+  .box .label { font-size: 16px; color: #6B7280; font-weight: 700; margin-bottom: 8px; }
+  .box .big { font-size: 22px; font-weight: 900; color: #1C1917; line-height: 1.6; }
+  .foot { margin-top: 26px; font-size: 14px; color: #9CA3AF; border-top: 1px dashed #F3E2E2; padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="title">一份 SKILL.md，就是一个可复用的经验包</div>
+  <div class="subtitle">Skill 的结构：元数据 + 操作手册 + 可选脚本资源</div>
+
+  <div class="row">
+    <div class="card">
+      <h3>frontmatter（约 100 tokens）</h3>
+      <p>名称 + 描述：什么时候该用它。AI 启动时只扫这一层。</p>
+      <div class="meta">渐进式加载 · 平时几乎不占上下文</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="card">
+      <h3>SKILL.md 正文（约 3000 tokens）</h3>
+      <p>步骤、检查清单、错误规避、质量红线。被触发时才完整加载。</p>
+    </div>
+    <div class="arrow">→</div>
+    <div class="card">
+      <h3>可选脚本 / 模板 / 数据</h3>
+      <p>Python 脚本、格式模板、品牌规范、参考样例，按需调用。</p>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="label">编排层（Meta Skill）</div>
+    <div class="big">多个原子 Skill 拼接成「超级白皮书」：谁并行、谁串行、谁喂给谁，全写成调度手册</div>
+  </div>
+  <div class="box">
+    <div class="label">资产层（私有技能库）</div>
+    <div class="big">每次返工修正追加进检查清单 → 迭代版本 → 成为别人抄不走的数字资产</div>
+  </div>
+
+  <div class="foot">Skill 教你做饭，MCP 给你厨具。｜ 小吴聊 · Skill 革命（2026-08-08）</div>
+</div>
+</body>
+</html>

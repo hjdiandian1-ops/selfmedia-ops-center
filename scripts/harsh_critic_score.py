@@ -34,7 +34,7 @@ FIRST_PERSON = re.compile(r"[我咱本]")
 REAL_NAME = re.compile(
     r"\b(?:NAS|n8n|ComfyUI|MoneyPrinter|Remotion|FLUX|DALL[ -]?E|Midjourney|ChatGPT|Claude|Gemini|"
     r"RSSHub|Playwright|FastAPI|Docker|Postgres|Redis|Kubernetes|微信|小红书|抖音|视频号)\b|"
-    r"\b[A-Za-z][A-Za-z0-9\-]*(?:\s*[A-Za-z0-9]+)*\s*\d+(?:\.\d+)?\s*(?:型|代|版|G|GB|TB)\b"
+    r"\b[A-Za-z][A-Za-z0-9\-]*(?:\s+[A-Za-z0-9]+){0,3}\s*\d+(?:\.\d+)?\s*(?:型|代|版|G|GB|TB)\b"
 )
 # 正向·Hook 冲击力（六维的机器可算近似）：
 #   A 开头非禁用句式；B 首句含数字或问号；C 首句 ≤40 字(口播友好)；D 标题含数字/问号/悬念词；

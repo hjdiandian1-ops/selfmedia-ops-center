@@ -1,0 +1,70 @@
+{
+  "output_dir": "outputs/2026-08-08_Skill革命",
+  "materials": "materials/2026-08/2026-08-08_Skill革命素材包.md",
+  "validated_at": "2026-08-08 21:59:18",
+  "verdict": "PASSED",
+  "fails": 0,
+  "warns": 0,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-08_Skill革命素材包.md（14 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜复旦团队把科研经验封装成 Skill：机械臂 16 分钟完成 96 个样本高通量实验**：复旦大学科研团队将「脂质…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M2「M2｜Meta Skill：Skill 的 Skill，OpenSquilla 发布 9 个封装好的 Meta Skil…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜reverse-skill：GitHub 日榜第一，17.7k 星、单日 +2258**：2026-08-04 G…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜Skills 标准化时间线：Claude 2025-10-16 发布，12-18 Anthropic 转开放标准，…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜渐进式加载：100 个技能平时几乎不占上下文；Skill 与 MCP 是互补不是替代**：Anthropic 设计…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 10 处（要求 ≥2）：['16 分钟', '96 个', '16 分钟', '96 个', '100 token', '3000 token']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 53 处（要求 ≥2）：['16 分钟', '16 分钟', '96 个', '16 分钟', '96 个', '16 分钟']"
+    }
+  ]
+}
