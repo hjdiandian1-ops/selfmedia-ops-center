@@ -49,6 +49,17 @@ def test_stats_empty(isolated_dirs):
     assert len(d["trend"]) == 7
 
 
+def test_themes_endpoint():
+    d = server.api_themes()
+    assert d["count"] == 6
+    assert len(d["themes"]) == 6
+    for t in d["themes"]:
+        for key in ("id", "name", "emoji", "slogan", "audience",
+                    "hooks", "samples", "traffic", "formulas"):
+            assert key in t, f"主题缺少字段: {key}"
+        assert len(t["samples"]) >= 2
+
+
 def test_stats_aggregation(isolated_dirs):
     yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
     three_days_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")

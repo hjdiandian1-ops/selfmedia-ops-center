@@ -61,6 +61,7 @@ function stateBadge(state) {
 const PAGE_META = {
   overview: ["概览", "数据大盘 · 结果优先"],
   topics: ["选题", "热点雷达 → 选题推荐 → 采纳建 Job"],
+  themes: ["主题库", "6 个引流内容主题 · 一键复制出题指令"],
   pipeline: ["流水线", "Agent 角色职责与 Job 状态机"],
   outputs: ["成品库", "小红书 / 公众号 / 短视频成品预览"],
   data: ["数据", "平台数据回填与发布表现"],
@@ -74,6 +75,7 @@ function switchView(name) {
   $("#page-sub").textContent = PAGE_META[name][1];
   if (name === "overview") loadOverview();
   if (name === "topics") loadTopics();
+  if (name === "themes") loadThemes();
   if (name === "pipeline") loadPipeline();
   if (name === "outputs") loadOutputsView();
   if (name === "data") loadData();
@@ -181,6 +183,66 @@ async function adopt(title) {
   }
 }
 window.adopt = adopt;
+
+// ---------- 主题库 ----------
+let themesCache = [];
+
+async function loadThemes() {
+  try {
+    const d = await api("/api/themes");
+    themesCache = d.themes || [];
+    $("#theme-cards").innerHTML = themesCache.map((t) => `
+      <div class="agent-card theme-card">
+        <div class="head">
+          <span class="emoji">${t.emoji}</span>
+          <div>
+            <div class="role">${esc(t.name)}</div>
+            <div class="en">${esc(t.traffic)}</div>
+          </div>
+        </div>
+        <div class="resp">${esc(t.slogan)}</div>
+        <div class="kv" style="margin:6px 0">受众：<b>${esc(t.audience)}</b></div>
+        <div class="jobs" style="margin-bottom:8px">
+          ${(t.hooks || []).map((h) => `<span class="badge primary">${esc(h)}</span>`).join("")}
+        </div>
+        <div class="samples">
+          ${(t.samples || []).map((s) => `<div class="kv">• ${esc(s)}</div>`).join("")}
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn small filled" onclick="copyThemePrompt('${esc(t.id)}')">复制出题指令</button>
+        </div>
+      </div>`).join("");
+  } catch (e) {
+    toast("主题库加载失败: " + e.message, false);
+  }
+}
+
+async function copyThemePrompt(id) {
+  const t = themesCache.find((x) => x.id === id);
+  if (!t) return;
+  const prompt = [
+    `请用【${t.name}】主题，按「小吴聊」IP 风格创作一期引流内容。`,
+    `定位：${t.slogan}`,
+    `受众：${t.audience}`,
+    `钩子参考：${(t.hooks || []).join("、")}`,
+    "示例选题（可选用或扩展）：",
+    ...(t.samples || []).map((s, i) => `${i + 1}. ${s}`),
+    "要求：硬核拆解 + 数据可视化（公众号 ≥2 个 data-viz 组件、小红书关键数字可视化），质检通过后同步公众号草稿箱，完成后汇报成品。",
+  ].join("\n");
+  try {
+    await navigator.clipboard.writeText(prompt);
+    toast("出题指令已复制，粘贴到 Codex 对话框即可");
+  } catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = prompt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    toast("出题指令已复制（降级方式）");
+  }
+}
+window.copyThemePrompt = copyThemePrompt;
 
 async function runPipeline(action) {
   const labels = { topics: "采集热点+选题推荐", recycle: "48h 回收检查", weekly: "质量周报" };

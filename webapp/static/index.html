@@ -25,6 +25,10 @@
         <svg viewBox="0 0 24 24"><path d="M5 3v18M5 5h12l-2 4 2 4H5"/></svg>
         选题
       </button>
+      <button class="nav-item" data-view="themes">
+        <svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2H22l-6 4.4 2.3 7.4-6.3-4.5-6.3 4.5L8 13.6 2 9.2h7.6z"/></svg>
+        主题库
+      </button>
       <button class="nav-item" data-view="pipeline">
         <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/></svg>
         流水线
@@ -92,6 +96,17 @@
             <div class="card-head"><h3>热点雷达</h3><span class="muted" id="radar-path"></span></div>
             <div id="radar-list" class="stack"></div>
           </div>
+        </div>
+      </section>
+
+      <!-- 主题库 -->
+      <section id="view-themes" class="view">
+        <div class="card">
+          <div class="card-head">
+            <h3>引流内容主题库</h3>
+            <span class="muted">6 个为“小吴聊”IP 预设的选题方向 · 一键复制出题指令给 Codex</span>
+          </div>
+          <div id="theme-cards" class="agent-grid"></div>
         </div>
       </section>
 

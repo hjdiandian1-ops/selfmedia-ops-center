@@ -77,6 +77,100 @@ AGENTS_ROSTER = [
     },
 ]
 
+# ---------- 引流内容主题库（选题方向预设） ----------
+CONTENT_THEMES = [
+    {
+        "id": "ai-frontier",
+        "name": "AI 前沿拆解",
+        "emoji": "🤖",
+        "slogan": "把最新模型、工具、价格战翻译成人话",
+        "audience": "技术从业者 / AI 兴趣者 / 效率党",
+        "hooks": ["新品发布", "价格对比", "能力实测"],
+        "samples": [
+            "MiniMax H3 把 2K 视频价格打到主流 1/3",
+            "DeepSeek V4 Flash 实测：Agent 场景到底够不够用",
+            "开源模型一周三个新版本，该追还是该等",
+        ],
+        "traffic": "时效热点 + 搜索流量",
+        "formulas": ["dbs-hook", "数字冲击", "悬念好奇"],
+    },
+    {
+        "id": "one-person-company",
+        "name": "一人公司实战",
+        "emoji": "🏢",
+        "slogan": "一个人用系统替代团队的落地案例",
+        "audience": "自由职业 / 副业者 / 小团队",
+        "hooks": ["成本账", "自动化流水线", "真实工作流"],
+        "samples": [
+            "我的 NAS 内容工厂：每天三档无人值守怎么跑",
+            "一个人运营双平台：从选题到草稿箱的 8 个环节",
+            "用 n8n 把重复工作交给机器人后，我多出来 3 小时",
+        ],
+        "traffic": "共鸣强 + 收藏率高",
+        "formulas": ["身份代入", "冲突对比", "干货清单"],
+    },
+    {
+        "id": "cost-account",
+        "name": "成本账本",
+        "emoji": "🧮",
+        "slogan": "把行业新闻拆成能算的账",
+        "audience": "商业观察者 / 创业者 / 投资者",
+        "hooks": ["30元 vs 500万", "95%渗透率 vs 10%存活率"],
+        "samples": [
+            "30 块钱、5 小时、500 万播放：AI 视频门槛拆了",
+            "95% 的微短剧是 AI 做的，为什么赚钱的还是少数",
+            "AI 算力剪刀差：降价到底利好谁",
+        ],
+        "traffic": "数字冲击 + 转发率高",
+        "formulas": ["数字冲击", "反常识", "冲突对比"],
+    },
+    {
+        "id": "tool-field-test",
+        "name": "工具实测避坑",
+        "emoji": "🛠️",
+        "slogan": "真实部署与使用记录，不吹不黑",
+        "audience": "开发者 / 数码爱好者 / 效率党",
+        "hooks": ["踩坑清单", "部署实录", "性能对比"],
+        "samples": [
+            "RSSHub 路由实测：哪些源稳定、哪些被风控",
+            "本地部署 LLM 的真实成本与显存账",
+            "n8n 搭自媒体工作流：我从零到跑通的 6 个坑",
+        ],
+        "traffic": "搜索流量 + 长尾持久",
+        "formulas": ["干货清单", "避坑实战", "身份代入"],
+    },
+    {
+        "id": "data-storytelling",
+        "name": "数据可视化拆解",
+        "emoji": "📊",
+        "slogan": "把枯燥数据变成图表和故事",
+        "audience": "内容创作者 / 运营 / 分析师",
+        "hooks": ["一张图看懂", "数据背后的真相"],
+        "samples": [
+            "公众号文章如何用 4 个数据组件提升说服力",
+            "小红书卡片的数据可视化规范：条形图怎么用",
+            "从 AI 视频成本数据里读出的三个信号",
+        ],
+        "traffic": "收藏 + 转载",
+        "formulas": ["干货清单", "数字冲击", "实操教学"],
+    },
+    {
+        "id": "viral-autopsy",
+        "name": "爆款解剖",
+        "emoji": "🔬",
+        "slogan": "拆解爆款为什么火、钱归谁",
+        "audience": "自媒体从业者 / 营销人",
+        "hooks": ["为什么偏偏是它", "生产与分发分离"],
+        "samples": [
+            "中式天庭 34 秒爆火：景观 vs 故事",
+            "作者没账号，500 万播放的钱被谁赚走了",
+            "“AI 全民制作人”如何从梗变成产业现实",
+        ],
+        "traffic": "蹭热点 + 行业讨论",
+        "formulas": ["悬念好奇", "反常识", "社会证明"],
+    },
+]
+
 
 # ---------- 子进程封装 ----------
 def run_script(args: List[str], timeout: int = 60) -> dict:
@@ -299,6 +393,12 @@ def api_agents():
             } for j in active[-3:]],
         })
     return {"agents": agents}
+
+
+@app.get("/api/themes")
+def api_themes():
+    """返回引流内容主题库（选题方向预设）。"""
+    return {"themes": CONTENT_THEMES, "count": len(CONTENT_THEMES)}
 
 
 @app.get("/api/topics")
