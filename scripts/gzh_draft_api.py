@@ -107,6 +107,28 @@ def add_draft(access_token, title, content, thumb_media_id, author, digest):
     return data
 
 
+def extract_viz_components(content):
+    """提取正文中的 data-viz 组件块（单层结构，按出现顺序）。"""
+    return re.findall(r'<section data-viz="[^"]+"[^>]*>.*?</section>', content, flags=re.S)
+
+
+def replace_viz_with_images(content, uploader):
+    """
+    把每个 data-viz 组件替换为图片标签。
+    uploader(html_block, index) -> 微信图 URL（调用方负责渲染 PNG 并上传）。
+    返回 (new_content, replaced_count)。
+    """
+    blocks = extract_viz_components(content)
+    for i, blk in enumerate(blocks, 1):
+        url = uploader(blk, i)
+        content = content.replace(
+            blk,
+            f'<img src="{url}" style="max-width:100%;display:block;'
+            'margin:16px auto;border-radius:12px;" />',
+        )
+    return content, len(blocks)
+
+
 def write_publish_log(job_id, title, media_id, detail):
     if not job_id:
         return None
@@ -163,6 +185,25 @@ def main():
     print("② 上传封面 ...")
     thumb_media_id = upload_cover(token, args.cover)
     print(f"   封面 media_id: {thumb_media_id[:12]}...")
+    # ②.3 数据组件 → PNG 图卡（微信对自定义 HTML 还原不可靠，图卡 100% 还原设计稿）
+    import tempfile
+    import shutil
+    from generate_data_viz import render_html_block_to_png
+
+    viz_tmp = tempfile.mkdtemp(prefix="gzh_viz_")
+
+    def _viz_uploader(blk, idx):
+        png = os.path.join(viz_tmp, f"viz_{idx}.png")
+        render_html_block_to_png(blk, png)
+        print(f"   上传图表图卡：{png}")
+        return upload_image_url(token, png)
+
+    try:
+        content, viz_count = replace_viz_with_images(content, _viz_uploader)
+        if viz_count:
+            print(f"   （{viz_count} 个数据组件已转为 PNG 图卡）")
+    finally:
+        shutil.rmtree(viz_tmp, ignore_errors=True)
     # ②.5 替换正文 [[IMG:路径]] 占位符为微信图 URL
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     placeholders = re.findall(r"\[\[IMG:([^\]]+)\]\]", content)

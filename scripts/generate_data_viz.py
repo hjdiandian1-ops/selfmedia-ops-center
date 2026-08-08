@@ -219,6 +219,38 @@ def render_complex_png(spec, out_path):
     print(f"🖼 复杂图 PNG 已生成：{out_path}")
 
 
+def render_html_block_to_png(html_block, out_path, width=680):
+    """
+    把单个 data-viz 组件 HTML 渲染为 2x PNG 图卡（微信推送用）。
+    微信对自定义 HTML 的还原不可靠（实测多次错乱），图卡可 100% 还原设计稿。
+    采用元素截图（body > div），不会产生视口空白。
+    """
+    page = (
+        '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><style>'
+        'body{margin:0;background:#fff;font-family:-apple-system,"PingFang SC",'
+        '"Microsoft YaHei",sans-serif;color:#1C1917;line-height:1.85;}</style>'
+        '</head><body>'
+        f'<div style="max-width:{width}px;margin:0 auto;padding:12px 10px;background:#fff;">'
+        f"{html_block}</div></body></html>"
+    )
+    tmp_html = pathlib.Path(out_path).with_suffix(".html")
+    tmp_html.write_text(page, encoding="utf-8")
+    from playwright.sync_api import sync_playwright
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            pg = browser.new_page(viewport={"width": width + 40, "height": 900},
+                                  device_scale_factor=2)
+            pg.goto(tmp_html.resolve().as_uri())
+            pg.wait_for_timeout(400)
+            pg.locator("body > div").screenshot(path=out_path)
+            browser.close()
+    finally:
+        if tmp_html.exists():
+            tmp_html.unlink()
+    print(f"🖼 组件 PNG 图卡已生成：{out_path}")
+
+
 def main():
     ap = argparse.ArgumentParser(description="数据可视化组件生成器")
     ap.add_argument("--spec", required=True, help="JSON spec 文件")
