@@ -22,6 +22,10 @@
     X_SCRAPER_PROXY / HTTP(S)_PROXY  代理备选链（未设 SELFMEDIA_PROXY 时使用）
     X_TRENDS_URL                 可选：X 趋势 HTTP 端点（返回 {"success":true,"trends":[...]}）
     X_TRENDS_ENABLED=1           显式启用 X 热点（默认尝试，失败自动跳过）
+    X_TRENDS_MODE=zh             默认中文热议（中文推文 Top 搜索聚合，过滤营销话术）
+                                 可改 region 用地区趋势榜（X 无中国内地/港台趋势区）
+    X_TRENDS_WOEID=23424977      region 模式下的地区 WOEID（US；JP=23424856）
+    X_ZH_QUERIES                 中文热议搜索词，用 ;; 分隔（默认覆盖 AI/创业/自媒体/算力）
 
 退出码：0 = 至少一个源成功；1 = 全部失败（此时采编应降级用 WebSearch 搜集热点）。
 """
@@ -51,6 +55,15 @@ GOOGLE_TRENDS_URL = os.environ.get(
 GOOGLE_TRENDS_GEO = os.environ.get("GOOGLE_TRENDS_GEO", "US")
 X_TRENDS_URL = os.environ.get("X_TRENDS_URL", "")
 X_TRENDS_ENABLED = os.environ.get("X_TRENDS_ENABLED", "1") == "1"
+# X 趋势模式：zh = 中文热议（中文推文搜索聚合，X 无中国内地/港台趋势区时的最近方案）；
+# region = 地区趋势榜（用 X_TRENDS_WOEID 指定，如 US 23424977 / JP 23424856）
+X_TRENDS_MODE = os.environ.get("X_TRENDS_MODE", "zh")
+X_TRENDS_WOEID = int(os.environ.get("X_TRENDS_WOEID", "23424977") or "23424977")
+X_ZH_QUERIES = os.environ.get(
+    "X_ZH_QUERIES",
+    "AI OR 大模型 OR 人工智能 lang:zh;;创业 OR 副业 OR 出海 lang:zh;;"
+    "自媒体 OR 内容创作 OR 短视频 lang:zh;;DeepSeek OR OpenAI OR 算力 lang:zh",
+).split(";;")
 
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
 HT_NS = "{https://trends.google.com/trending/rss}"
@@ -152,25 +165,66 @@ def fetch_x_trends_via_nas(top):
         raise RuntimeError("缺少 paramiko，无法取 X 热点")
 
     script = '''
-import asyncio, json, os
+import asyncio, json, os, re
+from urllib.parse import quote
 from twikit import Client
+
+MODE = %(mode)r
+WOEID = %(woeid)d
+QUERIES = %(queries)r
+TOP = %(top)d
+SPAM = ("征集", "投稿", "舍不得删", "超燃", "兄弟们", "点赞", "关注我", "转发抽奖", "评论区", "私信我")
+
+def qurl(text):
+    return "https://x.com/search?q=" + quote(text[:40])
+
 async def main():
     c = Client("zh-CN", proxy=os.environ.get("HTTP_PROXY") or None)
     cf = os.environ.get("X_COOKIES_FILE") or "/app/cookies.json"
     if os.path.exists(cf):
         c.load_cookies(cf)
-    tr = await c.get_trends("trending")
-    items = getattr(tr, "trends", None) or tr or []
     out = []
-    for t in list(items)[:20]:
-        name = getattr(t, "name", None) or (t.get("name") if isinstance(t, dict) else None)
-        url = getattr(t, "url", None) or (t.get("url") if isinstance(t, dict) else None)
-        cnt = getattr(t, "tweet_count", None) or getattr(t, "tweetCount", None) or (t.get("tweet_count") if isinstance(t, dict) else None)
-        if name:
-            out.append({"name": name, "url": url, "tweet_count": cnt})
+    if MODE == "region":
+        tr = await c.get_place_trends(WOEID)
+        items = (tr.get("trends", []) if isinstance(tr, dict) else getattr(tr, "trends", [])) or []
+        for t in list(items)[:TOP]:
+            name = getattr(t, "name", None) or (t.get("name") if isinstance(t, dict) else None)
+            if name:
+                out.append({"name": name, "url": qurl(name),
+                            "tweet_count": getattr(t, "tweet_count", None)})
+    else:
+        seen = {}
+        for q in QUERIES:
+            try:
+                tweets = await c.search_tweet(q, "Top", count=50)
+                for t in tweets:
+                    text = getattr(t, "text", "") or ""
+                    tid = str(getattr(t, "id", ""))
+                    if not text or not tid or tid in seen:
+                        continue
+                    if any(s in text for s in SPAM):
+                        continue
+                    likes = int(getattr(t, "like_count", 0) or 0)
+                    rts = int(getattr(t, "retweet_count", 0) or 0)
+                    reps = int(getattr(t, "reply_count", 0) or 0)
+                    clean = re.sub(r"\\s+", " ", text).strip()
+                    seen[tid] = {
+                        "name": clean[:80],
+                        "url": qurl(clean),
+                        "tweet_count": likes + rts * 2 + reps * 3,
+                    }
+            except Exception:
+                continue
+        for item in sorted(seen.values(), key=lambda x: x["tweet_count"], reverse=True)[:TOP]:
+            out.append(item)
     print(json.dumps({"success": True, "trends": out}, ensure_ascii=False))
 asyncio.run(main())
-'''
+''' % {
+        "mode": X_TRENDS_MODE,
+        "woeid": X_TRENDS_WOEID,
+        "queries": X_ZH_QUERIES,
+        "top": top,
+    }
     import base64
 
     ssh = paramiko.SSHClient()
@@ -196,12 +250,19 @@ asyncio.run(main())
     data = json.loads(out)
     if not data.get("success"):
         raise RuntimeError(f"X 趋势接口返回失败: {str(data)[:120]}")
+    return x_items_to_radar(data.get("trends", []), top)
+
+
+def x_items_to_radar(raw_trends, top):
+    """把 X 返回的 trends 归一化为雷达条目（mode 感知的合规标记）。"""
+    label = ("海外源·需人工复核（X热点·中文热议）" if X_TRENDS_MODE == "zh"
+             else "海外源·需人工复核（X热点·地区趋势）")
     return [{
         "title": re.sub(r"\s+", " ", str(t.get("name") or "")),
         "link": str(t.get("url") or ""),
         "tweet_count": t.get("tweet_count"),
-        "compliance": "海外源·需人工复核（X热点）",
-    } for t in data.get("trends", [])[:top] if t.get("name")]
+        "compliance": label,
+    } for t in raw_trends[:top] if t.get("name")]
 
 
 def fetch_x_trends_http(top):
@@ -210,12 +271,7 @@ def fetch_x_trends_http(top):
     data = json.loads(raw.decode("utf-8"))
     if not data.get("success"):
         raise RuntimeError(f"X 趋势接口返回失败: {str(data)[:120]}")
-    return [{
-        "title": re.sub(r"\s+", " ", str(t.get("name") or "")),
-        "link": str(t.get("url") or ""),
-        "tweet_count": t.get("tweet_count"),
-        "compliance": "海外源·需人工复核（X热点）",
-    } for t in data.get("trends", [])[:top] if t.get("name")]
+    return x_items_to_radar(data.get("trends", []), top)
 
 
 def fetch_x_trends(top):
