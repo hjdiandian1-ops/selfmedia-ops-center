@@ -1,6 +1,29 @@
 {
   "job_id": "2026-08-08_Skill革命",
-  "records": [],
+  "records": [
+    {
+      "platform": "小红书",
+      "source": "xhs_export",
+      "note_id": "复旦96个实验老师傅经验被ai打包|2026年08月08日22时37分27秒",
+      "first_published_at": "2026年08月08日22时37分27秒",
+      "collected_at": "2026-08-08 23:45:41",
+      "reads": 18,
+      "likes": 1,
+      "collects": 2,
+      "comments": 0,
+      "exposure": 0,
+      "ctr": 0.0,
+      "followers_gained": 0,
+      "shares": 0,
+      "avg_watch_seconds": 0,
+      "format": "图文",
+      "danmaku": 0,
+      "url": "",
+      "engagement": 0.1667,
+      "follower_rate": 0.0,
+      "hit": false
+    }
+  ],
   "publish": [
     {
       "platform": "公众号",
@@ -49,11 +72,28 @@
         ]
       },
       "at": "2026-08-08 22:55:29"
+    },
+    {
+      "platform": "公众号",
+      "status": "success",
+      "mode": "draft_api",
+      "draft_media_id": "vIAA2pLNaNvLtfZFI4quuvjHPQaxnQVeF7yZ0cABQjXD29k6a9NrGDkAZOYsJG1z",
+      "detail": {
+        "media_id": "vIAA2pLNaNvLtfZFI4quuvjHPQaxnQVeF7yZ0cABQjXD29k6a9NrGDkAZOYsJG1z",
+        "item": [
+          {
+            "index": 0,
+            "ad_count": 2
+          }
+        ]
+      },
+      "at": "2026-08-08 23:52:29"
     }
   ],
   "published_at": "2026-08-08 22:17:03",
   "title": "16 分钟做完 96 个实验：AI 的下一个风口，是把老师傅的经验打包成 Skill",
   "platforms": [
-    "公众号"
+    "公众号",
+    "小红书"
   ]
 }
