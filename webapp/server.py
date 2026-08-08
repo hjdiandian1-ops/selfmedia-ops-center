@@ -460,7 +460,7 @@ def api_jobs():
 def api_job(job_id: str):
     jdir = os.path.join(JOBS_DIR, job_id)
     if not os.path.isdir(jdir):
-        raise HTTPException(status_code=404, detail=f"Job 不存在: {job_id}")
+        raise HTTPException(status_code=404, detail=f"任务不存在: {job_id}")
     return {
         "state": read_json(os.path.join(jdir, "state.json")),
         "validate_report": read_json(os.path.join(OUTPUTS_DIR, job_id, "validate_report.json")),
@@ -569,7 +569,7 @@ def api_stats_backfill(payload: StatsBackfill):
     if not job_id:
         raise HTTPException(status_code=400, detail="job_id 不能为空")
     if not os.path.isdir(os.path.join(JOBS_DIR, job_id)):
-        raise HTTPException(status_code=404, detail=f"Job 不存在: {job_id}")
+        raise HTTPException(status_code=404, detail=f"任务不存在: {job_id}")
     if payload.platform not in ("小红书", "公众号", "短视频"):
         raise HTTPException(status_code=400, detail=f"平台不合法: {payload.platform}")
     for name, val in (("reads", payload.reads), ("likes", payload.likes),

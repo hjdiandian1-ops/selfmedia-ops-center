@@ -60,9 +60,9 @@ function stateBadge(state) {
 // ---------- 视图切换 ----------
 const PAGE_META = {
   overview: ["概览", "数据大盘 · 结果优先"],
-  topics: ["选题", "热点雷达 → 选题推荐 → 采纳建 Job"],
+  topics: ["选题", "热点雷达 → 选题推荐 → 采纳建任务"],
   themes: ["主题库", "6 个引流内容主题 · 一键复制出题指令"],
-  pipeline: ["流水线", "Agent 角色职责与 Job 状态机"],
+  pipeline: ["流水线", "Agent 角色职责与任务状态机"],
   outputs: ["成品库", "小红书 / 公众号 / 短视频成品预览"],
   data: ["数据", "平台数据回填与发布表现"],
 };
@@ -91,7 +91,7 @@ async function loadOverview() {
     const d = await api("/api/stats");
     $("#topbar-meta").textContent = "更新于 " + (d.generated_at || "");
     const kpis = [
-      ["Job 总数", d.jobs_total], ["已发布 Job", d.published_jobs],
+      ["任务总数", d.jobs_total], ["已发布任务", d.published_jobs],
       ["爆款数", d.hits], ["总阅读", fmtNum(d.total_reads)],
       ["平均互动率", d.total_reads ? pct(d.avg_engagement) : "—"],
       ["待回收", d.pending_recycle],
@@ -108,7 +108,7 @@ async function loadOverview() {
           <div class="track"><div class="fill" style="width:${(n / total * 100).toFixed(0)}%"></div></div>
           <span class="cnt">${n}</span>
         </div>`).join("")
-      : '<span class="muted">暂无 Job</span>';
+      : '<span class="muted">暂无任务</span>';
 
     const maxReads = Math.max(1, ...d.trend.map((t) => t.reads));
     $("#trend-chart").innerHTML = d.trend.map((t) => `
@@ -155,7 +155,7 @@ async function loadTopics() {
           <div class="meta">${esc(c.source || "")} · ${esc(c.view || "")}</div>
           <div class="meta">公式：${esc(c.formulas || "—")}</div>
           <div class="actions">
-            <button class="btn small filled" onclick="adopt('${esc(c.title).replace(/'/g, "\\'")}')">采纳 → 建 Job</button>
+            <button class="btn small filled" onclick="adopt('${esc(c.title).replace(/'/g, "\\'")}')">采纳 → 建任务</button>
           </div>
         </div>`).join("")
       : '<span class="muted">暂无选题推荐（先运行“采集热点 + 推荐”）</span>';
@@ -170,16 +170,16 @@ async function loadTopics() {
 }
 
 async function adopt(title) {
-  if (!confirm("采纳选题并创建 Job：\n" + title)) return;
+  if (!confirm("采纳选题并创建任务：\n" + title)) return;
   try {
     const d = await api("/api/topics/adopt", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title }),
     });
-    toast("已创建 Job: " + d.job_id);
+    toast("已创建任务: " + d.job_id);
     loadTopics();
   } catch (e) {
-    toast("建 Job 失败: " + e.message, false);
+    toast("建任务失败: " + e.message, false);
   }
 }
 window.adopt = adopt;
@@ -313,7 +313,7 @@ function renderAgents(agents) {
         ${a.active_jobs.length ? a.active_jobs.map((j) => `
           <button class="chip" title="${esc(j.theme || "")}" onclick="goOutputs('${esc(j.job_id)}')">
             ${esc(j.job_id)} <span class="state">${esc(STATE_LABELS[j.state] || j.state)}</span>
-          </button>`).join("") : '<span class="muted">当前无活跃 Job</span>'}
+          </button>`).join("") : '<span class="muted">当前无活跃任务</span>'}
       </div>
       ${a.active_jobs.flatMap((j) => j.outputs).slice(0, 3).map((o) => `
         <div class="kv" style="margin-top:6px">
@@ -356,7 +356,7 @@ async function renderOutputs() {
   const jobId = $("#outputs-job-select").value;
   artifactState = { jobId, files: [], tab: artifactState.tab || "xhs", imgIdx: 0 };
   if (!jobId) {
-    $("#artifact-frame").innerHTML = '<span class="muted">请选择 Job</span>';
+    $("#artifact-frame").innerHTML = '<span class="muted">请选择任务</span>';
     return;
   }
   try {
@@ -382,7 +382,7 @@ function switchArtifact(tab) {
   const carousel = $("#carousel");
   carousel.classList.add("hidden");
   if (!artifactState.files.length) {
-    box.innerHTML = '<span class="muted">该 Job 暂无产出文件</span>';
+    box.innerHTML = '<span class="muted">该任务暂无产出文件</span>';
     return;
   }
   const prefix = tab === "xhs" ? "小红书" : tab === "gzh" ? "公众号" : "短视频";
@@ -526,7 +526,7 @@ $("#backfill-form").addEventListener("submit", async (e) => {
     comments: parseInt($("#bf-comments").value, 10) || 0,
     url: $("#bf-url").value.trim(),
   };
-  if (!payload.job_id) return toast("请选择 Job", false);
+  if (!payload.job_id) return toast("请选择任务", false);
   try {
     const d = await api("/api/stats/backfill", {
       method: "POST", headers: { "Content-Type": "application/json" },

@@ -60,7 +60,7 @@
         <div class="kpi-grid" id="kpi-cards"></div>
         <div class="grid-2">
           <div class="card">
-            <div class="card-head"><h3>Job 状态分布</h3></div>
+            <div class="card-head"><h3>任务状态分布</h3></div>
             <div id="state-bars" class="state-bars"></div>
           </div>
           <div class="card">
@@ -72,7 +72,7 @@
           <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 20 条回填记录</span></div>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>时间</th><th>Job</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th></tr></thead>
+              <thead><tr><th>时间</th><th>任务</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th></tr></thead>
               <tbody id="recent-table"></tbody>
             </table>
           </div>
@@ -113,7 +113,7 @@
       <!-- 流水线 -->
       <section id="view-pipeline" class="view">
         <div class="toolbar">
-          <label class="field-label" for="pipeline-job-select">选择 Job</label>
+          <label class="field-label" for="pipeline-job-select">选择任务</label>
           <select id="pipeline-job-select" class="select" onchange="renderPipelineJob()"></select>
         </div>
         <div class="card">
@@ -129,7 +129,7 @@
       <!-- 成品库 -->
       <section id="view-outputs" class="view">
         <div class="toolbar">
-          <label class="field-label" for="outputs-job-select">选择 Job</label>
+          <label class="field-label" for="outputs-job-select">选择任务</label>
           <select id="outputs-job-select" class="select" onchange="renderOutputs()"></select>
         </div>
         <div class="tabs" id="artifact-tabs">
@@ -143,7 +143,7 @@
             <div id="artifact-frame"></div>
           </div>
           <div class="card artifact-side">
-            <h3>Job 状态</h3>
+            <h3>任务状态</h3>
             <div id="artifact-meta" class="stack"></div>
             <h3 style="margin-top:20px">质检报告</h3>
             <div id="artifact-qa" class="stack"></div>
@@ -159,7 +159,7 @@
           <div class="card">
             <div class="card-head"><h3>回填平台数据</h3><span class="muted">阅读 / 赞 / 藏 / 评</span></div>
             <form id="backfill-form" class="form">
-              <label class="field-label">Job</label>
+              <label class="field-label">任务</label>
               <select id="bf-job" class="select"></select>
               <label class="field-label">平台</label>
               <select id="bf-platform" class="select">
@@ -189,7 +189,7 @@
           <div class="card-head"><h3>发布表现明细</h3><span class="muted">全部回填记录</span></div>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>时间</th><th>Job</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th></tr></thead>
+              <thead><tr><th>时间</th><th>任务</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th></tr></thead>
               <tbody id="perf-table"></tbody>
             </table>
           </div>

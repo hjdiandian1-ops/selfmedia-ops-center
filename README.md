@@ -237,11 +237,11 @@ bash webapp/start.sh 9000     # 指定端口
 
 | 视图 | 内容 | 一键操作 |
 |---|---|---|
-| 概览 | Job 总数/已发布/爆款/总阅读/平均互动率/待回收；状态分布、近 7 天趋势、最近发布表现 | — |
-| 选题 | 热点雷达 + 选题推荐 | 采纳选题 → 建 Job；采集热点；48h 回收；生成周报 |
+| 概览 | 任务总数/已发布/爆款/总阅读/平均互动率/待回收；状态分布、近 7 天趋势、最近发布表现 | — |
+| 选题 | 热点雷达 + 选题推荐 | 采纳选题 → 建任务；采集热点；48h 回收；生成周报 |
 | 主题库 | 6 个引流内容主题（定位/受众/钩子/示例选题） | 一键复制出题指令给 Codex |
-| 流水线 | 8 个 Agent 角色职责、活跃 Job、最近产出；生产状态机步骤条 | 点击 Job 跳转成品库 |
-| 成品库 | 小红书卡片轮播 + slides HTML、公众号排版预览（桌面/移动）、短视频分镜脚本 | 按 Job 查看质检与发布状态 |
+| 流水线 | 8 个 Agent 角色职责、活跃任务、最近产出；生产状态机步骤条 | 点击任务跳转成品库 |
+| 成品库 | 小红书卡片轮播 + slides HTML、公众号排版预览（桌面/移动）、短视频分镜脚本 | 按任务查看质检与发布状态 |
 | 数据 | 发布表现明细 + 回填表单（阅读/赞/藏/评/链接） | 保存回填 → 落盘 publish_log.json |
 
 ### 7.3 与 NAS 的关系
@@ -258,10 +258,10 @@ GET  /api/stats               # 大盘指标（KPI/趋势/最近发布表现/待
 GET  /api/agents              # Agent 职责 + 活跃 Job + 最近产出
 GET  /api/themes              # 引流内容主题库
 GET  /api/topics              # 热点雷达 + 选题推荐
-GET  /api/jobs                # Job 列表
-GET  /api/jobs/{job_id}       # Job 详情（state/质检/发布日志）
+GET  /api/jobs                # 任务列表
+GET  /api/jobs/{job_id}       # 任务详情（state/质检/发布日志）
 GET  /api/outputs/{job_id}    # 产出文件树
-POST /api/topics/adopt        # 采纳选题建 Job
+POST /api/topics/adopt        # 采纳选题建任务
 POST /api/qa                  # 跑质检链（需 output_dir）
 POST /api/pipeline/run        # 触发流水线（action: topics|recycle|weekly|qa）
 POST /api/publish             # 一键发布到 NAS
