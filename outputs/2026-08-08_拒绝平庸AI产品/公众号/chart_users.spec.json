@@ -1,0 +1,13 @@
+{
+  "type": "complex",
+  "title": "AI 原生 App 月活结构（2026-06）",
+  "center": "3.82亿",
+  "center_label": "豆包月活",
+  "segments": [
+    {"label": "豆包", "value": 3.82, "color": "#DC2626"},
+    {"label": "通义千问", "value": 1.67, "color": "#F59E0B"},
+    {"label": "DeepSeek", "value": 1.30, "color": "#64748B"},
+    {"label": "其他 AI 原生 App", "value": 0.82, "color": "#E5E7EB"}
+  ],
+  "source": "QuestMobile 2026 上半年报告"
+}

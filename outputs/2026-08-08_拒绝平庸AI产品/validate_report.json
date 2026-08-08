@@ -1,0 +1,70 @@
+{
+  "output_dir": "outputs/2026-08-08_拒绝平庸AI产品",
+  "materials": "materials/2026-08/2026-08-08_拒绝平庸AI产品素材包.md",
+  "validated_at": "2026-08-08 21:34:52",
+  "verdict": "PASSED",
+  "fails": 0,
+  "warns": 0,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-08_拒绝平庸AI产品素材包.md（13 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜ChatGPT 周活即将突破 10 亿，增长却在放缓**：The Information 7 月 28 日披露，O…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M2「M2｜订阅价格锚点：Claude Pro = $20/月（约 145 元）**：Anthropic 官方 Help Ce…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜API 账本：DeepSeek V4-Flash 输出 2 元/百万 token，V4-Pro 输出 6 元/百万…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜工具公司收入证明需求：Cursor 年化收入突破 20 亿美元**：据彭博社 2026 年 3 月报道，AI 编程…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜国内 AI 应用渗透率：豆包 3.82 亿 MAU 断层第一**：QuestMobile 2026 年上半年报告显…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 22 处（要求 ≥2）：['10 亿', '10 倍', '3600 万', '834 万', '10 亿', '9 亿']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 56 处（要求 ≥2）：['10 亿', '10 亿', '10 亿', '10 亿', '4 亿', '9 亿']"
+    }
+  ]
+}

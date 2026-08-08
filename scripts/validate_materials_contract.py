@@ -435,10 +435,10 @@ def main():
         report(lvl, code, msg)
 
     # ---------- C11/C12: 数据可视化硬门 ----------
-    for code, msg in gzh_data_viz_issues(args.output_dir):
-        report("FAIL", code, msg)
-    for code, msg in xhs_data_viz_issues(args.output_dir):
-        report("FAIL", code, msg)
+    for lvl, code, msg in gzh_data_viz_issues(args.output_dir):
+        report(lvl, code, msg)
+    for lvl, code, msg in xhs_data_viz_issues(args.output_dir):
+        report(lvl, code, msg)
 
     # ---------- 汇总 ----------
     fails = [r for r in results if r["level"] == "FAIL"]
