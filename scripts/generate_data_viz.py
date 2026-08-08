@@ -41,41 +41,38 @@ def _src_block(source):
 
 def render_table(spec):
     """
-    表格组件（微信安全版）：纯 div/span + inline-block，禁止 <table>——
-    微信编辑器会把 <table> 拆成文本框导致排版错乱（2026-08-08 数据飞轮沉淀）。
+    表格组件（微信安全版 · 单层 table）：
+    - 用**单层** <table>（前几日文章实测可准确还原；微信不支持在 inline-block
+      百分比宽度上直接加 padding，div 版会挤到换行）；
+    - 禁止嵌套 table；单元格文字要短，禁止 → 等符号（2026-08-08 数据飞轮沉淀）。
     """
     headers = spec.get("headers", ["项目", "数据"])
-    cols = ["width:34%", "width:33%", "width:30%"]
+    widths = ["width:34%", "width:33%", "width:30%"] + ["width:auto"] * max(0, len(headers) - 3)
     head_html = "".join(
-        f'<span style="display:inline-block;box-sizing:border-box;{cols[i]};'
-        f'color:#9CA3AF;font-size:12px;padding:0 6px;">{h}</span>'
+        f'<td style="padding:9px 10px;font-size:12px;color:#9CA3AF;{widths[i]}">{h}</td>'
         for i, h in enumerate(headers)
     )
     rows_html = ""
     for it in spec.get("items", []):
         vals = [it.get("label", ""), it.get("col2", ""), it.get("display", it.get("value", ""))]
-        cells = []
+        tds = []
         for i, v in enumerate(vals):
-            style = f"display:inline-block;box-sizing:border-box;{cols[i]};font-size:14px;padding:0 6px;"
+            style = f"padding:9px 10px;font-size:14px;line-height:1.5;{widths[i]}"
             if i == 0:
-                style += "color:#6B7280;"
+                style += ";color:#6B7280;"
             elif i == len(vals) - 1:
-                style += f"color:{spec.get('primary', DEFAULT_PRIMARY)};font-weight:800;text-align:right;"
+                style += f";color:{spec.get('primary', DEFAULT_PRIMARY)};font-weight:800;text-align:right;"
             else:
-                style += "color:#1C1917;"
-            cells.append(f'<span style="{style}">{v}</span>')
-        rows_html += (
-            f'<div style="padding:10px 4px;border-top:1px solid #F5F5F5;line-height:1.6;">'
-            f'{"".join(cells)}</div>'
-        )
+                style += ";color:#1C1917;"
+            tds.append(f'<td style="{style}">{v}</td>')
+        rows_html += f'<tr style="border-top:1px solid #F5F5F5;">{"".join(tds)}</tr>'
     return (
         '<section data-viz="table" '
         'style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;overflow:hidden;">'
         f'<div style="padding:14px 18px;background:#FEF2F2;font-size:15px;font-weight:800;color:#1C1917;">'
         f'{spec.get("title", "")}</div>'
-        f'<div style="padding:12px 14px;">'
-        f'<div style="background:#FAFAFA;border-radius:8px;padding:9px 0;">{head_html}</div>'
-        f'{rows_html}</div>'
+        f'<table style="width:100%;border-collapse:collapse;font-size:14px;">'
+        f'<tr style="background:#FAFAFA;">{head_html}</tr>{rows_html}</table>'
         f'{_src_block(spec.get("source"))}</section>'
     )
 
@@ -83,27 +80,26 @@ def render_table(spec):
 def render_bar(spec):
     items = spec.get("items", [])
     max_val = max((it.get("value", 0) for it in items), default=1) or 1
-    rows = []
+    rows = ""
     for it in items:
         pct = max(2, round(it.get("value", 0) / max_val * 100))
-        rows.append(
-            '<div style="margin-bottom:14px;">'
-            '<div style="margin-bottom:6px;">'
-            f'<span style="display:inline-block;box-sizing:border-box;width:64%;'
-            f'color:#6B7280;font-size:13px;">{it["label"]}</span>'
-            f'<span style="display:inline-block;box-sizing:border-box;width:34%;text-align:right;'
-            f'font-weight:800;color:{spec.get("primary", DEFAULT_PRIMARY)};font-size:13px;">'
-            f'{it.get("display", it.get("value"))}</span></div>'
-            '<div style="background:#F5F5F5;border-radius:999px;height:8px;overflow:hidden;">'
-            f'<div style="width:{pct}%;height:8px;background:'
-            f'{spec.get("primary", DEFAULT_PRIMARY)};border-radius:999px;"></div></div>'
-            "</div>"
+        rows += (
+            f'<tr><td style="padding:9px 10px 2px;font-size:13px;color:#6B7280;width:64%;">'
+            f'{it["label"]}</td>'
+            f'<td style="padding:9px 10px 2px;text-align:right;font-size:13px;font-weight:800;'
+            f'color:{spec.get("primary", DEFAULT_PRIMARY)};width:36%;">'
+            f'{it.get("display", it.get("value"))}</td></tr>'
+            f'<tr><td colspan="2" style="padding:0 10px 10px;">'
+            f'<div style="background:#F5F5F5;border-radius:999px;height:8px;overflow:hidden;">'
+            f'<div style="width:{pct}%;height:8px;background:{spec.get("primary", DEFAULT_PRIMARY)};'
+            f'border-radius:999px;"></div></div></td></tr>'
         )
     return (
         '<section data-viz="bar" '
         'style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;padding:18px;">'
         f'<div style="font-size:15px;font-weight:800;color:#1C1917;margin-bottom:14px;">'
-        f'{spec.get("title", "")}</div>{"".join(rows)}'
+        f'{spec.get("title", "")}</div>'
+        f'<table style="width:100%;border-collapse:collapse;">{rows}</table>'
         f'{_src_block(spec.get("source"))}</section>'
     )
 
@@ -116,43 +112,42 @@ def render_ratio(spec):
         '<section data-viz="ratio" '
         'style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;padding:18px;">'
         f'<div style="font-size:15px;font-weight:800;color:#1C1917;margin-bottom:14px;">'
-        f'{spec.get("title", "")}</div>'
-        '<div style="background:#F5F5F5;border-radius:999px;height:14px;overflow:hidden;">'
-        f'<div style="width:{pct_txt}%;height:14px;background:'
-        f'{spec.get("primary", DEFAULT_PRIMARY)};border-radius:999px;"></div></div>'
-        '<div style="margin-top:8px;">'
-        f'<span style="display:inline-block;box-sizing:border-box;width:70%;'
-        f'font-size:13px;color:#6B7280;">{item.get("label", "")}</span>'
-        f'<span style="display:inline-block;box-sizing:border-box;width:28%;text-align:right;'
-        f'font-weight:800;color:{spec.get("primary", DEFAULT_PRIMARY)};font-size:13px;">'
-        f'{item.get("display", item.get("value"))}（{pct_txt}%）</span></div>'
-        f'{_src_block(spec.get("source"))}</section>'
+         f'{spec.get("title", "")}</div>'
+         '<div style="background:#F5F5F5;border-radius:999px;height:14px;overflow:hidden;">'
+         f'<div style="width:{pct_txt}%;height:14px;background:'
+         f'{spec.get("primary", DEFAULT_PRIMARY)};border-radius:999px;"></div></div>'
+         '<table style="width:100%;border-collapse:collapse;margin-top:8px;"><tr>'
+         f'<td style="padding:0;font-size:13px;color:#6B7280;">{item.get("label", "")}</td>'
+         f'<td style="padding:0;text-align:right;font-size:13px;font-weight:800;white-space:nowrap;'
+         f'color:{spec.get("primary", DEFAULT_PRIMARY)};">'
+         f'{item.get("display", item.get("value"))}（{pct_txt}%）</td></tr></table>'
+         f'{_src_block(spec.get("source"))}</section>'
     )
 
 
 def render_kpi(spec):
     items = spec.get("items", [])
-    tds = []
+    tds = ""
     for it in items:
         delta = it.get("delta", "")
         delta_style = "color:#059669;"
         if str(delta).startswith("-"):
             delta_style = "color:#DC2626;"
-        tds.append(
-            f'<div style="display:inline-block;box-sizing:border-box;width:32%;'
-            f'padding:8px 2px;text-align:center;vertical-align:top;">'
+        tds += (
+            f'<td style="width:33%;padding:8px 4px;text-align:center;">'
             f'<div style="font-size:24px;font-weight:900;color:'
             f'{spec.get("primary", DEFAULT_PRIMARY)};">{it.get("display", it.get("value"))}</div>'
             f'<div style="font-size:12px;color:#6B7280;margin-top:4px;">{it["label"]}</div>'
             f'<div style="font-size:12px;{delta_style}font-weight:700;margin-top:2px;">{delta}</div>'
-            "</div>"
+            "</td>"
         )
     return (
         '<section data-viz="kpi" '
         'style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;padding:18px;">'
         f'<div style="font-size:15px;font-weight:800;color:#1C1917;margin-bottom:8px;">'
         f'{spec.get("title", "")}</div>'
-        f'<div style="margin:10px 0 4px;">{"".join(tds)}</div>'
+        f'<table style="width:100%;border-collapse:collapse;margin:10px 0 4px;">'
+        f'<tr>{tds}</tr></table>'
         f'{_src_block(spec.get("source"))}</section>'
     )
 

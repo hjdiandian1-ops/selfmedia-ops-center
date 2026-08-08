@@ -27,7 +27,8 @@ def test_bar_has_marker_and_width():
     html = GDV.render_component(_spec("bar"))
     assert 'data-viz="bar"' in html
     assert "width:100%" in html
-    assert "inline-block" in html
+    assert "<table" in html
+    assert "<td colspan=" in html
 
 
 def test_ratio_has_marker_and_pct():

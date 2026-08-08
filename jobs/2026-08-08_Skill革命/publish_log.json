@@ -33,6 +33,22 @@
         ]
       },
       "at": "2026-08-08 22:41:39"
+    },
+    {
+      "platform": "公众号",
+      "status": "success",
+      "mode": "draft_api",
+      "draft_media_id": "vIAA2pLNaNvLtfZFI4quuntxM8OoS05r7qR1Np7aJzBGQQ8H2LA6BCvIWuEWLIQy",
+      "detail": {
+        "media_id": "vIAA2pLNaNvLtfZFI4quuntxM8OoS05r7qR1Np7aJzBGQQ8H2LA6BCvIWuEWLIQy",
+        "item": [
+          {
+            "index": 0,
+            "ad_count": 2
+          }
+        ]
+      },
+      "at": "2026-08-08 22:55:29"
     }
   ],
   "published_at": "2026-08-08 22:17:03",
