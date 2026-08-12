@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>xAI Grok Bot · 云端 AI 同事 · 小红书卡片</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #F5F5F5; font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+  .poster {
+    width: 1080px; height: 1440px; background: #FFFFFF;
+    margin: 24px auto; padding: 72px 64px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .kicker { font-size: 28px; color: #9CA3AF; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
+  .body { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding-bottom: 96px; }
+  h1 { font-size: 64px; line-height: 1.28; color: #1C1917; font-weight: 900; }
+  .big { font-size: 148px; line-height: 1; color: #DC2626; font-weight: 900; letter-spacing: -2px; }
+  .big-unit { font-size: 44px; color: #1C1917; font-weight: 800; }
+  .sub { font-size: 31px; color: #57534E; line-height: 1.68; margin-top: 22px; }
+  .tip { background: #1C1917; color: #FFFFFF; border-radius: 28px; padding: 34px 40px; font-size: 32px; line-height: 1.65; margin-top: 30px; font-weight: 700; }
+  .card-title { font-size: 48px; font-weight: 900; color: #1C1917; line-height: 1.35; }
+  .box { background: #FEF2F2; border: 2px solid #FEE2E2; border-radius: 24px; padding: 30px 34px; margin-bottom: 22px; }
+  .box .t { font-size: 31px; font-weight: 900; color: #DC2626; margin-bottom: 10px; }
+  .box .d { font-size: 27px; color: #57534E; line-height: 1.7; }
+  .row { display: flex; align-items: center; margin-bottom: 28px; }
+  .lbl { width: 360px; font-size: 28px; color: #57534E; font-weight: 700; line-height: 1.4; }
+  .track { flex: 1; background: #F5F5F5; border-radius: 999px; height: 34px; overflow: hidden; }
+  .fill { height: 34px; border-radius: 999px; background: #DC2626; }
+  .val { width: 300px; text-align: right; font-size: 30px; font-weight: 900; color: #DC2626; }
+  .note { font-size: 24px; color: #9CA3AF; line-height: 1.6; }
+  .src { position: absolute; bottom: 46px; left: 64px; right: 64px; font-size: 22px; color: #9CA3AF; }
+  .num-row { display: flex; justify-content: space-between; margin-top: 34px; }
+  .num-box { width: 300px; background: #FEF2F2; border-radius: 24px; padding: 32px 26px; text-align: center; }
+  .num-box .n { font-size: 58px; font-weight: 900; color: #DC2626; line-height: 1.1; }
+  .num-box .d { font-size: 24px; color: #6B7280; margin-top: 10px; font-weight: 700; line-height: 1.45; }
+  .steps { background: #FEF2F2; border-radius: 24px; padding: 34px 38px; font-size: 30px; line-height: 1.9; font-weight: 700; color: #1C1917; }
+  .cta { background: #DC2626; color: #fff; border-radius: 999px; text-align: center; font-size: 36px; font-weight: 900; padding: 30px 0; margin-top: 30px; }
+</style>
+</head>
+<body>
+
+<section class="poster" id="xhs-01">
+  <span class="kicker">小吴聊 · 商业观察 01/04</span>
+  <div class="body">
+    <div style="margin-top:36px">
+      <span class="big">120 美元</span><span class="big-unit"> / 月起</span>
+    </div>
+    <div>
+      <h1>马斯克开始卖<br>「云端 AI 同事」</h1>
+      <p class="sub">600 亿美元收购 Cursor 后，xAI 发布 Grok Bot：<br>登录你的工具，24 小时替你干活。</p>
+    </div>
+    <div class="tip">AI 替执行，人守判断。</div>
+  </div>
+  <div class="src">数据来源：The Verge / VentureBeat / IT之家（2026-08）</div>
+</section>
+
+<section class="poster" id="xhs-02">
+  <span class="kicker">小吴聊 · 商业观察 02/04</span>
+  <div class="body">
+    <div>
+      <div class="card-title">三档订阅账本<br>先算钱，再谈同事</div>
+      <div class="h-bar-chart" data-viz="bar" style="margin-top:44px;">
+        <div class="row">
+          <div class="lbl">Cursor Premium Teams</div>
+          <div class="track"><div class="fill" style="width:40%"></div></div>
+          <div class="val">120 美元/席</div>
+        </div>
+        <div class="row">
+          <div class="lbl">Cursor Ultra（个人）</div>
+          <div class="track"><div class="fill" style="width:67%"></div></div>
+          <div class="val">200 美元/月</div>
+        </div>
+        <div class="row">
+          <div class="lbl">SuperGrok Heavy</div>
+          <div class="track"><div class="fill" style="width:100%"></div></div>
+          <div class="val">300 美元/月</div>
+        </div>
+      </div>
+      <p class="note" style="margin-top:36px;">已订用户不另付费；套餐含每周额度，超量按 token 计费。</p>
+    </div>
+    <div class="num-row">
+      <div class="num-box"><div class="n">24 小时</div><div class="d">云端在线<br>合盖照跑</div></div>
+      <div class="num-box"><div class="n">8 类</div><div class="d">内部岗位 Bot<br>销售/招聘/报销</div></div>
+      <div class="num-box"><div class="n">2 / 6 美元</div><div class="d">Grok 4.6 API<br>每百万 token</div></div>
+    </div>
+  </div>
+  <div class="src">数据来源：VentureBeat / 搜狐·网易智能 / 界面新闻（2026-08）</div>
+</section>
+
+<section class="poster" id="xhs-03">
+  <span class="kicker">小吴聊 · 商业观察 03/04</span>
+  <div class="body">
+    <div class="card-title">它和聊天机器人<br>差在哪？三个机制</div>
+    <div style="margin-top:40px;">
+      <div class="box">
+        <div class="t">① 云端电脑，24 小时在线</div>
+        <div class="d">能看、能点、能打字；没有 API 的旧软件，它照用。你的笔记本关了，它还在干。</div>
+      </div>
+      <div class="box">
+        <div class="t">② 演示一次，记住流程</div>
+        <div class="d">示范一遍完整操作，它存成 routine 下次自己跑；你纠正，它吸收修正。</div>
+      </div>
+      <div class="box">
+        <div class="t">③ Bot 之间会交接</div>
+        <div class="d">互传上下文、群聊分工、干完转给下一个——你管的不是助手，是一支队。</div>
+      </div>
+    </div>
+    <div class="tip">不用先学会写脚本，<br>先学会把活示范清楚。</div>
+  </div>
+  <div class="src">数据来源：The Verge / VentureBeat / IT之家（2026-08）</div>
+</section>
+
+<section class="poster" id="xhs-04">
+  <span class="kicker">小吴聊 · 商业观察 04/04</span>
+  <div class="body">
+    <div class="card-title">用之前，<br>先想清楚这三件事</div>
+    <div style="margin-top:36px;">
+      <div class="steps">
+        1️⃣ 共享登录状态：权限按用户分，不按 Bot 分。<br>
+        2️⃣ 支付、敏感操作：会弹 Auto-review 卡，最终点头的必须是人。<br>
+        3️⃣ 别把全部账号交给它：先定「哪些能进云电脑」。
+      </div>
+      <div class="tip">AI 同事越便宜，<br>人的判断越贵。</div>
+      <div class="cta">关注我，下期拆 AI 同事的安全账本</div>
+    </div>
+  </div>
+  <div class="src">数据来源：搜狐·网易智能 / News18（2026-08）</div>
+</section>
+
+</body>
+</html>
