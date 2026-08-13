@@ -1,0 +1,13 @@
+{
+  "type": "table",
+  "title": "旗舰模型 API 定价对比（每百万 token）",
+  "primary": "#DC2626",
+  "headers": ["模型", "输入", "输出"],
+  "items": [
+    {"label": "Grok 4.6", "col2": "2 美元", "display": "6 美元"},
+    {"label": "GPT-5.6 Sol", "col2": "5 美元", "display": "30 美元"},
+    {"label": "Claude Opus 5", "col2": "5 美元", "display": "25 美元"},
+    {"label": "Claude Fable 5", "col2": "10 美元", "display": "50 美元"}
+  ],
+  "source": "VentureBeat / 界面新闻（2026-08）"
+}

@@ -1,0 +1,11 @@
+{
+  "type": "kpi",
+  "title": "长程 Agent 任务：Grok 4.6 vs Claude Opus 5",
+  "primary": "#DC2626",
+  "items": [
+    {"label": "Grok 4.6 回合数", "display": "53 回合", "delta": "任务输入约 5 亿 token"},
+    {"label": "Opus 5 回合数", "display": "103 回合", "delta": "任务输入约 20 亿 token"},
+    {"label": "Grok 每任务成本", "display": "0.84 美元", "delta": "智能 vs 成本 Pareto 前沿"}
+  ],
+  "source": "Artificial Analysis / The Decoder（2026-08）"
+}

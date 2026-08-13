@@ -1,0 +1,80 @@
+{
+  "output_dir": "outputs/2026-08-13_Grok 4.6性价比炸/",
+  "materials": "materials/2026-08/2026-08-13_Grok 4.6性价比炸素材包.md",
+  "validated_at": "2026-08-13 12:58:37",
+  "verdict": "PASSED",
+  "fails": 0,
+  "warns": 0,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-13_Grok 4.6性价比炸素材包.md（12 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[短视频] 120s黄金分镜脚本.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜智能指数 61 分追平 GPT-5.6 Sol，单月涨 5 分**：第三方 Artificial Analysis…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M2「M2｜API 定价 2/6 美元，比 GPT-5.6 Sol 便宜 60% 以上**：Grok 4.6 API 起步价每…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜Agent 任务效率：53 回合完成 vs Claude Opus 5 的 103 回合**：Artificial…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜上线渠道与首周双倍额度：Cursor、Grok Build、API、OpenRouter、Vercel、Cloud…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜性价比真相：并非全胜 + 20 万 token 翻倍暗坑**：分项基准上 Grok 4.6 有赢有输——Curso…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 11 处（要求 ≥2）：['69.9%', '57.5%', '65.9%', '73.0%', '26.0%', '34.6%']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 31 处（要求 ≥2）：['60%', '20 万', '8 个', '76%', '80%', '60%']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[短视频] 120s黄金分镜脚本.md 具体数字 23 处（要求 ≥1）：['20 万', '4 倍', '120 秒', '20 万', '4 倍', '60%']"
+    }
+  ]
+}
