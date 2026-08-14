@@ -1973,3 +1973,22 @@ async function testLlm() {
   }
 }
 window.testLlm = testLlm;
+
+async function refreshLicense() {
+  const st = $("#settings-status");
+  st.textContent = "正在刷新授权状态…";
+  try {
+    await loadLicenseStatus();
+    const d = await api("/api/license/status");
+    const tierTxt = {
+      owner: "Pro · 卖家模式",
+      pro: "Pro 已激活" + (d.exp ? " · 到期 " + d.exp : ""),
+      free: "免费版",
+    }[d.tier] || d.tier;
+    const eng = d.engine.mode === "codex" ? "引擎 Codex" : d.engine.mode === "api" ? "引擎 API" : "引擎未配置";
+    st.textContent = "授权状态已刷新：" + tierTxt + " · " + eng;
+  } catch (e) {
+    st.textContent = "刷新失败: " + e.message;
+  }
+}
+window.refreshLicense = refreshLicense;
