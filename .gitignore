@@ -10,11 +10,36 @@ __pycache__/
 *.key
 *cookies*
 
-# 真实数据（本仓库只允许 demo/）
-jobs/
-outputs/
-materials/
-data/
+# 真实数据目录：仅允许 .gitkeep 占位（工作台运行时按需创建）
+jobs/*
+!jobs/.gitkeep
+outputs/*
+!outputs/.gitkeep
+materials/*
+!materials/.gitkeep
+data/*
+!data/.gitkeep
+!data/stats/
+data/stats/*
+!data/stats/.gitkeep
+!data/stats/dashboard/
+data/stats/dashboard/*
+!data/stats/dashboard/.gitkeep
+!data/flywheel/
+data/flywheel/*
+!data/flywheel/.gitkeep
+!data/flywheel/breakdowns/
+data/flywheel/breakdowns/*
+!data/flywheel/breakdowns/.gitkeep
+!data/flywheel/pipeline_feedback.md
+!data/production/
+data/production/*
+!data/production/.gitkeep
+!data/compliance/
+data/compliance/*
+!data/compliance/words/
+data/compliance/words/*
+!data/compliance/words/.gitkeep
 nas-n8n/
 skills/范文库/
 
@@ -22,13 +47,9 @@ skills/范文库/
 .DS_Store
 
 # 发布加固：防止误提交真实数据/凭据
-.env*
+.env
 *.pem
 *.key
 *cookies*
-jobs/
-outputs/
-materials/
-data/
 nas-n8n/
 skills/范文库/

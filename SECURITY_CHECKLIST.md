@@ -7,7 +7,7 @@
 - [ ] `detect-secrets scan .`：无真实凭据
 - [ ] `rg` 兜底：`sk-` / `AKIA` / `AIza` / `ghp_` / `Bearer` / `BEGIN PRIVATE KEY` / 手机号 / 邮箱 / 内网 IP 零命中
 - [ ] 本地绝对路径零命中：`rg '/Users/|/home/[a-z]+/|C:\\Users\\'`（防报告/日志把本机目录结构写入仓库）
-- [ ] `git ls-files` 不含 jobs/outputs/materials/data/nas-n8n 真实文件
+- [ ] `git ls-files` 中 jobs/outputs/materials/data 仅含 .gitkeep 占位，不含真实文件；nas-n8n 零文件
 
 ## 2. 依赖漏洞
 - [ ] `python3 scripts/security/osv_audit.py -r requirements.lock`：0 已知漏洞
