@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
-<link rel="stylesheet" href="/static/style.css?v=3.22">
+<link rel="stylesheet" href="/static/style.css?v=3.23">
 </head>
 <body>
 <div class="app">
@@ -46,7 +46,10 @@
         数据
       </button>
     </nav>
-    <div class="sidebar-footer" id="license-badge">授权状态加载中…</div>
+    <div class="sidebar-footer" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <span id="license-badge">授权状态加载中…</span>
+      <button class="btn small tonal" onclick="openSettings()" title="API 与公众号配置">⚙ 设置</button>
+    </div>
   </aside>
 
   <div class="main">
@@ -343,6 +346,33 @@
             <div id="agent-doc-body" class="markdown-body"></div>
           </div>
         </div>
+        <div id="settings-modal" class="modal hidden" onclick="if(event.target===this)closeSettings()">
+          <div class="modal-box">
+            <div class="modal-head">
+              <h3>⚙ 配置</h3>
+              <button class="btn small tonal" onclick="closeSettings()">关闭</button>
+            </div>
+            <div class="form">
+              <p class="muted" style="margin-top:0">配置保存在本机 .env，不会上传。留空的输入框表示保持原值。</p>
+              <label class="field-label">LLM API Key（DeepSeek / OpenAI 等）</label>
+              <input id="set-llm-key" type="password" placeholder="sk-..." autocomplete="off">
+              <span class="muted" id="set-key-mask"></span>
+              <label class="field-label">API 地址</label>
+              <input id="set-llm-base" placeholder="https://api.deepseek.com/v1">
+              <label class="field-label">模型名</label>
+              <input id="set-llm-model" placeholder="deepseek-chat">
+              <label class="field-label">公众号 AppID（可选，认证号自动推草稿用）</label>
+              <input id="set-gzh-id" placeholder="wx..." autocomplete="off">
+              <label class="field-label">公众号 AppSecret（可选）</label>
+              <input id="set-gzh-secret" type="password" placeholder="..." autocomplete="off">
+              <div class="toolbar" style="margin-top:12px">
+                <button class="btn filled" onclick="saveSettings()">保存配置</button>
+                <button class="btn tonal" onclick="testLlm()">测试 AI 连接</button>
+              </div>
+              <p class="muted" id="settings-status"></p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- 成品库 -->
@@ -384,6 +414,8 @@
               </select>
               <div class="toolbar" style="margin:10px 0 0">
                 <button class="btn tonal small" id="btn-mark-publish">标记已手动发布</button>
+                <button class="btn tonal small" id="btn-gzh-draft">推送到公众号草稿箱</button>
+                <button class="btn tonal small" onclick="viewPublishGuide()">发布指引</button>
               </div>
             </div>
           </div>
@@ -472,6 +504,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.22"></script>
+    <script src="/static/app.js?v=3.23"></script>
 </body>
 </html>

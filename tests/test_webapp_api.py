@@ -293,6 +293,33 @@ def test_flywheel_regenerate(isolated_dirs, isolated_flywheel):
         assert section in text
 
 
+def test_settings_save_mask_and_clear(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    monkeypatch.setattr(server, "ENV_FILE", str(env_file))
+    dummy_key = "sk-" + "1234567890abcdef"
+    d = server.api_save_settings(server.SettingsRequest(
+        llm_api_key=dummy_key, llm_model="deepseek-chat"))
+    assert d["llm"]["configured"] is True
+    assert d["llm"]["api_key_masked"] == "sk-1****"
+    text = env_file.read_text(encoding="utf-8")
+    assert dummy_key in text and "LLM_API_KEY" in text
+    d2 = server.api_save_settings(server.SettingsRequest(llm_api_key="", gzh_app_id=""))
+    assert d2["llm"]["configured"] is False
+    assert "LLM_API_KEY" in env_file.read_text(encoding="utf-8")
+    os.environ.pop("LLM_API_KEY", None)
+    os.environ.pop("LLM_MODEL", None)
+
+
+def test_gzh_draft_requires_credentials(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    env_file.write_text("LLM_API_KEY=\nGZH_APP_ID=\nGZH_APP_SECRET=\n", encoding="utf-8")
+    monkeypatch.setattr(server, "ENV_FILE", str(env_file))
+    with pytest.raises(HTTPException) as exc:
+        server.api_gzh_draft(server.GzhDraftRequest(job_id="2026-08-01_A"))
+    assert exc.value.status_code == 400
+    assert "未配置公众号" in str(exc.value.detail)
+
+
 # ---------- 小红书式看板 ----------
 
 
