@@ -241,7 +241,7 @@ python3 scripts/license/license_gate.py check --feature production
 
 ### 第七步：想用完整工作台怎么办
 
-开源核心只包含质检和授权模块。完整的选题、自动生产、数据飞轮、爆款跟踪工作台属于 Pro Skill 包，购买与激活方式见第九节。
+开源核心只包含质检和授权模块。完整的选题、自动生产、数据飞轮、爆款跟踪工作台属于 Pro Skill 包，购买与激活方式见第八节。
 
 ## 七、安全与隐私
 
@@ -250,19 +250,7 @@ python3 scripts/license/license_gate.py check --feature production
 - CI 六道闸门：gitleaks / pip-audit / bandit / semgrep / CodeQL / pytest；
 - 漏洞报告请走 [SECURITY.md](SECURITY.md) 的流程。
 
-## 八、文档与协议
-
-- [WHITEPAPER.md](WHITEPAPER.md)：22 条去 AI 味规则判定逻辑、授权密码学设计、安全覆盖与 FAQ
-- [SECURITY_CHECKLIST.md](SECURITY_CHECKLIST.md)：发布前逐项扫描清单
-- [MIT](LICENSE)：开源核心；第三方 skill（gzh-design / guizang / dbskill / xiaowan-wechat-layout 等）不属于本仓库，使用时遵守各自 LICENSE
-
-### 开源核心和第三方 skill 的关系
-
-本仓库（开源核心）不包含、也不调用任何第三方 skill：去 AI 味、合规、授权、安全工具全部自包含，clone 下来就能跑。
-
-Pro 付费包里的 Agent 流水线会引用 gzh-design、xiaowan-wechat-layout、guizang-social-card、dbskill 等第三方 skill。按这些 skill 各自的 LICENSE，Pro 包不打包它们，安装 Pro 包时会引导你从原作者仓库自行安装。
-
-## 九、购买与激活（付费版）
+## 八、购买与激活（付费版）
 
 ### 9.1 价格
 
