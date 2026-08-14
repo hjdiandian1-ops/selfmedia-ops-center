@@ -320,6 +320,29 @@ def test_gzh_draft_requires_credentials(tmp_path, monkeypatch):
     assert "未配置公众号" in str(exc.value.detail)
 
 
+def test_license_activate_flow(tmp_path, monkeypatch):
+    LL = server.LG.LL
+    monkeypatch.setattr(LL, "LICENSE_DIR", str(tmp_path))
+    monkeypatch.setattr(LL, "PRIVATE_KEY_FILE", str(tmp_path / "p.pem"))
+    monkeypatch.setattr(LL, "PUBLIC_KEY_FILE", str(tmp_path / "pub.pem"))
+    LL.generate_keypair()
+    monkeypatch.setattr(server.LG, "LICENSE_FILE", str(tmp_path / "license.json"))
+    monkeypatch.setattr(LL, "device_fingerprint", lambda: "fp_test")
+    token = LL.sign_payload({
+        "ver": LL.TOKEN_VERSION, "uid": "o1", "tier": "pro",
+        "exp": "2030-01-01", "bind": "fp_test", "features": [], "iat": LL.iso_today(),
+    })
+    d = server.api_license_activate(server.LicenseActivateRequest(token=token))
+    assert d["ok"] and d["tier"] == "pro"
+    monkeypatch.setattr(LL, "device_fingerprint", lambda: "fp_other")
+    with pytest.raises(HTTPException) as exc:
+        server.api_license_activate(server.LicenseActivateRequest(token=token))
+    assert exc.value.status_code == 403
+    with pytest.raises(HTTPException) as exc2:
+        server.api_license_activate(server.LicenseActivateRequest(token="bad.token"))
+    assert exc2.value.status_code == 400
+
+
 # ---------- 小红书式看板 ----------
 
 

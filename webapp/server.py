@@ -1445,6 +1445,10 @@ class GzhDraftRequest(BaseModel):
     digest: str = ""
 
 
+class LicenseActivateRequest(BaseModel):
+    token: str
+
+
 @app.get("/api/settings")
 def api_settings():
     """读取配置状态（密钥只显示掩码，不返回明文）。"""
@@ -1487,6 +1491,27 @@ def api_save_settings(payload: SettingsRequest):
         for k, v in updates.items():
             os.environ[k] = v
     return api_settings()
+
+
+@app.post("/api/license/activate")
+def api_license_activate(payload: LicenseActivateRequest):
+    """粘贴 token 即激活：验签 + 设备绑定校验，写入本地授权文件。"""
+    token = payload.token.strip()
+    pl = LG.LL.verify_token(token)
+    if pl is None:
+        raise HTTPException(status_code=400, detail="token 无效或验签失败，请检查是否复制完整")
+    bind = pl.get("bind", "")
+    if pl.get("tier") != "owner" and bind and bind != LG.LL.device_fingerprint():
+        fp = LG.LL.device_fingerprint()
+        raise HTTPException(
+            status_code=403,
+            detail=f"该 token 绑定的是其他设备（本机指纹 {fp} 不匹配）；请把本机指纹发给卖家重签",
+        )
+    LG._save(LG.LICENSE_FILE, {
+        "mode": "token", "token": token, "installed_at": LG.LL.iso_today(),
+    })
+    return {"ok": True, "tier": pl.get("tier"), "exp": pl.get("exp", ""),
+            "message": f"授权激活成功（{pl.get('tier')}，到期 {pl.get('exp')}）"}
 
 
 @app.post("/api/settings/llm-test")
