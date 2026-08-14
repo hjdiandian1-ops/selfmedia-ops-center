@@ -48,6 +48,15 @@ def isolated_dirs(tmp_path, monkeypatch):
     return jobs_dir, outputs_dir, data_dir
 
 
+@pytest.fixture(autouse=True)
+def _allow_license_in_tests(monkeypatch):
+    """测试环境默认放行授权门禁（门禁逻辑本身由 test_license_system 覆盖）。"""
+    monkeypatch.setattr(
+        server.LG, "check_feature",
+        lambda feature, consume=False: (True, "test", {"mode": "test"}),
+    )
+
+
 def test_stats_empty(isolated_dirs):
     d = server.api_stats()
     assert d["jobs_total"] == 0
