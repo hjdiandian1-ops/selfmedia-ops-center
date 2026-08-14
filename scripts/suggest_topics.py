@@ -53,7 +53,7 @@ def _load_lexicon():
         if isinstance(data, dict) and all(k in data for k in ("ip", "emotion", "search", "durable", "unique", "identity")):
             return data
     except Exception:
-        pass
+        return GENERIC_LEXICON
     return GENERIC_LEXICON
 
 
