@@ -100,6 +100,7 @@ def _read_env():
                     k, v = line.split("=", 1)
                     out[k.strip()] = v.strip().strip('"').strip("'")
     except OSError:
+        # .env 不存在时按空配置处理（首次运行）
         pass
     return out
 
@@ -111,6 +112,7 @@ def _write_env(updates):
         with open(ENV_FILE, encoding="utf-8") as f:
             lines = f.readlines()
     except OSError:
+        # .env 不存在时从空行开始写入（首次运行）
         lines = []
     keys = set(updates)
     written = set()
