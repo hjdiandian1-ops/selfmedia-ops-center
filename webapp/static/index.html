@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
-<link rel="stylesheet" href="/static/style.css?v=3.24">
+<link rel="stylesheet" href="/static/style.css?v=3.25">
 </head>
 <body>
 <div class="app">
@@ -365,6 +365,12 @@
               <input id="set-gzh-id" placeholder="wx..." autocomplete="off">
               <label class="field-label">公众号 AppSecret（可选）</label>
               <input id="set-gzh-secret" type="password" placeholder="..." autocomplete="off">
+              <label class="field-label" style="margin-top:14px">Pro 授权 token（付款后由卖家发放）</label>
+              <div class="toolbar" style="gap:8px">
+                <input id="set-license-token" type="password" placeholder="粘贴 token 即可激活为会员" autocomplete="off" style="flex:1">
+                <button class="btn filled" onclick="activateLicense()">激活授权</button>
+              </div>
+              <span class="muted">激活后立即生效：左下角会显示「Pro 已激活 · 到期日期」；到期后自动拦截，续费后粘贴新 token 即可恢复。</span>
               <details class="card" style="margin-top:10px;padding:10px">
                 <summary style="cursor:pointer;font-weight:600">💡 公众号配置温馨提示（需要你手动操作）</summary>
                 <div class="stack" style="margin-top:8px;font-size:13px;line-height:1.7">
@@ -516,6 +522,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.24"></script>
+    <script src="/static/app.js?v=3.25"></script>
 </body>
 </html>

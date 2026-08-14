@@ -1992,3 +1992,25 @@ async function refreshLicense() {
   }
 }
 window.refreshLicense = refreshLicense;
+
+async function activateLicense() {
+  const st = $("#settings-status");
+  const token = $("#set-license-token").value.trim();
+  if (!token) return toast("请先粘贴授权 token", false);
+  st.textContent = "正在激活授权…";
+  try {
+    const d = await api("/api/license/activate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    $("#set-license-token").value = "";
+    st.textContent = "✅ " + d.message;
+    loadLicenseStatus();
+    toast("授权激活成功，已是 Pro 会员");
+  } catch (e) {
+    st.textContent = "激活失败: " + e.message;
+    toast("激活失败: " + e.message, false);
+  }
+}
+window.activateLicense = activateLicense;
