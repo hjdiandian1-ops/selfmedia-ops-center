@@ -31,6 +31,33 @@ from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
 MATERIALS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "materials"))
+ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+LEXICON_FILE = os.path.join(ROOT, "data", "topics", "lexicon.json")
+
+# 公开仓库兜底词库（完整精选词库在私有 data/topics/lexicon.json，不进公开仓库）
+GENERIC_LEXICON = {
+    "ip": {"AI": 1, "工具": 1, "创业": 1, "效率": 1},
+    "emotion": ["暴涨", "暴跌", "震惊", "突破", "新高"],
+    "search": ["教程", "怎么", "如何", "对比", "价格"],
+    "durable": ["清单", "步骤", "案例", "指南", "报告"],
+    "unique": ["风险", "争议", "警告", "真相", "没想到"],
+    "identity": ["普通人", "年轻人", "创业者", "打工人", "学生"],
+}
+
+
+def _load_lexicon():
+    """优先加载私有精选词库；缺失时用通用兜底词库（保证公开仓库可运行）。"""
+    try:
+        with open(LEXICON_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict) and all(k in data for k in ("ip", "emotion", "search", "durable", "unique", "identity")):
+            return data
+    except Exception:
+        return GENERIC_LEXICON
+    return GENERIC_LEXICON
+
+
+_LEXICON = _load_lexicon()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
@@ -56,15 +83,8 @@ WEEKLY_HEAT_GATE = 5.0
 DAILY_FRESH_W, DAILY_HEAT_W, DAILY_QUALITY_W = 1.2, 1.2, 0.4
 WEEKLY_QUALITY_W, WEEKLY_HEAT_W, WEEKLY_FRESH_W = 1.2, 0.5, 0.3
 
-# IP 相关关键词权重（对齐「小吴聊」AI/科技实战操盘手人设）
-IP_KEYWORDS = {
-    "AI": 3, "人工智能": 3, "大模型": 3, "Agent": 3, "智能体": 3, "模型": 2, "算力": 3,
-    "芯片": 2, "GPU": 2, "机器人": 2, "自动驾驶": 2, "创业": 2, "副业": 2, "赚钱": 2,
-    "变现": 2, "工具": 1, "自媒体": 2, "视频": 1, "直播": 1, "ETF": 2, "基金": 1,
-    "投资": 1, "银行": 1, "电池": 2, "光伏": 2, "AI应用": 3, "裁员": 2, "就业": 2,
-    "效率": 1, "NAS": 2, "Obsidian": 1, "公司": 1, "钱包": 2, "收入": 2, "市场": 1,
-    "行业": 1, "产业": 1, "企业": 1, "增长": 1, "规模": 1,
-}
+# IP 相关关键词权重（完整版来自私有 data/topics/lexicon.json）
+IP_KEYWORDS = _LEXICON["ip"]
 
 # 标题冲击力：具体数字/问号/悬念/情绪词
 IMPACT_RE = re.compile(
@@ -73,40 +93,12 @@ IMPACT_RE = re.compile(
 )
 # 对比冲突：从…到 / vs / 却 / 但 / 还是
 CONTRAST_RE = re.compile(r"从.*到|vs|对比|还是|却|但|而|反")
-# 情绪词：强表达势能（抖音完播/停留、小红书封面点击率的表达侧）
-EMOTION_WORDS = [
-    "震惊", "震撼", "离谱", "疯狂", "暴跌", "暴涨", "崩了", "炸了", "杀疯了",
-    "慌了", "疯抢", "暴雷", "翻车", "封神", "破纪录", "血亏", "暴赚", "断崖",
-    "炸裂", "碾压", "狂飙", "秒杀", "血洗", "狂欢", "惨淡", "崩盘", "新高",
-    "里程碑", "突破", "首个", "最快", "最强",
-]
-# 搜索价值关键词（抖音搜索联动 / 小红书搜推互通 / 公众号搜一搜长尾）
-SEARCH_KEYWORDS = [
-    "教程", "指南", "攻略", "怎么", "如何", "为什么", "是什么", "对比", "测评",
-    "排行", "推荐", "价格", "多少钱", "区别", "原理", "技巧", "方法", "选择",
-    "发布", "上线", "降价", "涨价", "融资", "收购", "估值", "上市", "招股",
-    "订单", "财报", "定价", "收费", "参数", "规格", "评测", "实测", "体验",
-]
-# 持久/收藏价值关键词（抖音收藏权重提升、小红书收藏权重、公众号收藏）
-DURABLE_KEYWORDS = [
-    "清单", "模板", "步骤", "公式", "源码", "案例", "避坑", "框架", "工作流",
-    "SOP", "实操", "经验", "总结", "复盘", "工具", "合集",
-    "模型", "基准", "报告", "开源", "API", "代码", "架构", "协议", "数据集",
-    "白皮书", "路线图", "方法论", "指标", "性能", "评测", "低延迟",
-]
-# 观点独特性/共鸣：反常识、悬念、身份代入（公众号转发欲、小红书评论话题）
-UNIQUE_WORDS = [
-    "观点", "我认为", "我说", "别", "不该", "应该", "警惕", "警告", "真相",
-    "争议", "反常识", "颠覆", "没想到", "竟然", "居然", "意外", "爆冷",
-    "潜规则", "内幕", "独家", "首发", "错了", "骗局",
-    "风险", "泄露", "越权", "监管", "安全", "隐私", "合规", "质疑", "反对",
-    "批评", "担忧", "隐患", "垄断",
-]
-IDENTITY_WORDS = [
-    "打工人", "程序员", "创业者", "自媒体", "学生", "老板", "普通人",
-    "年轻人", "中年人", "宝妈", "自由职业", "独立开发者", "创作者",
-    "工程师", "产品经理", "运营", "设计师", "投资人", "股民", "散户", "玩家",
-]
+# 情绪/搜索/持久/独特/身份词（完整版来自私有 data/topics/lexicon.json）
+EMOTION_WORDS = _LEXICON["emotion"]
+SEARCH_KEYWORDS = _LEXICON["search"]
+DURABLE_KEYWORDS = _LEXICON["durable"]
+UNIQUE_WORDS = _LEXICON["unique"]
+IDENTITY_WORDS = _LEXICON["identity"]
 
 # 钱/成本 → 硬核拆解；公司/创业/创始人 → 商业对话；其余 → 商业观察
 DECONSTRUCT_RE = re.compile(r"钱|赚|成本|价|利润|收益|收入|融资|规模|订单")
