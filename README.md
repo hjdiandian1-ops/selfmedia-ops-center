@@ -245,6 +245,7 @@ WorkBuddy 负责对话与调度，工作台与数据仍在本仓库内，两者�
 - 报告/日志中的路径一律相对化；发布前必须通过 [SECURITY_CHECKLIST.md](SECURITY_CHECKLIST.md) 全部检查；
 - CI 六道闸门：gitleaks / pip-audit / bandit / semgrep / CodeQL / pytest；
 - 漏洞报告请走 [SECURITY.md](SECURITY.md) 的流程。
+- 使用约定：开源核心遵循 MIT；请勿使用本项目代码或文档训练/蒸馏 AI 模型，或直接打包转售。Pro 授权协议另行明确禁止对授权内容做 AI 训练/蒸馏。
 
 ## 八、购买与激活（付费版）
 
