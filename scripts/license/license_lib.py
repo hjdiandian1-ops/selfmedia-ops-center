@@ -16,7 +16,7 @@ import base64
 import hashlib
 import json
 import os
-import subprocess
+import subprocess  # nosec B404  # 仅用于读取本机设备指纹（固定命令 ioreg）
 import uuid
 from datetime import datetime
 
@@ -108,7 +108,7 @@ def device_fingerprint():
     """设备指纹：macOS IOPlatformUUID 优先，降级 uuid.getnode()+hostname 哈希。"""
     if os.path.isdir("/System/Library/CoreServices"):
         try:
-            out = subprocess.run(
+            out = subprocess.run(  # nosec B603 B607  # 固定命令+参数列表，无用户输入
                 ["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
                 capture_output=True, text=True, timeout=10,
             )
@@ -119,7 +119,7 @@ def device_fingerprint():
                     if val:
                         return "mac_" + hashlib.sha256(val.encode("utf-8")).hexdigest()[:24]
         except Exception:
-            pass
+            pass  # nosec B110  # 指纹读取失败时降级到通用哈希，属预期兜底
     raw = f"{uuid.getnode()}|{os.uname().nodename}".encode("utf-8")
     return "dev_" + hashlib.sha256(raw, usedforsecurity=False).hexdigest()[:24]
 

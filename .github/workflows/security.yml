@@ -49,7 +49,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: returntocorp/semgrep-action@v2
+      - uses: actions/setup-python@v5
         with:
-          config: auto
-          publishDeploy: false
+          python-version: "3.13"
+      - run: pip install semgrep
+      - run: semgrep scan --config auto --error --quiet scripts/

@@ -46,7 +46,7 @@ def query_osv(pkgs):
         headers={"Content-Type": "application/json", "User-Agent": "selfmedia-ops-security/1.0"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=60) as resp:  # nosec B310  # 固定官方 OSV API 地址
+    with urllib.request.urlopen(req, timeout=60) as resp:  # nosec B310  # nosemgrep: dynamic-urllib-use-detected  # 固定官方 OSV API 常量地址
         data = json.loads(resp.read().decode("utf-8"))
     out = {}
     for i, item in enumerate(data.get("results", [])):
