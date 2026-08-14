@@ -1506,6 +1506,35 @@ $("#btn-mark-publish").addEventListener("click", async () => {
   }
 });
 
+$("#btn-gzh-draft").addEventListener("click", async () => {
+  const jobId = artifactState.jobId;
+  if (!jobId) return toast("请先选择一个任务", false);
+  if (!confirm("把当前任务推送到公众号草稿箱？\n（需已认证公众号并配置 AppID/Secret）")) return;
+  toast("正在推送草稿…");
+  try {
+    const d = await api("/api/publish/gzh-draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ job_id: jobId }),
+    });
+    toast("草稿已推送到公众号草稿箱，请到公众平台检查后群发");
+  } catch (e) {
+    toast("推送失败: " + e.message, false);
+  }
+});
+
+async function viewPublishGuide() {
+  try {
+    const d = await api("/api/docs/publish-guide");
+    $("#agent-doc-title").textContent = d.title;
+    $("#agent-doc-body").innerHTML = renderMarkdown(d.content);
+    $("#agent-doc-modal").classList.remove("hidden");
+  } catch (e) {
+    toast("读取发布指引失败: " + e.message, false);
+  }
+}
+window.viewPublishGuide = viewPublishGuide;
+
 function renderCarousel(imgs) {
   const jobId = artifactState.jobId;
   const url = (f) => "/assets/outputs/" + encodeURIComponent(jobId) + "/" + f.rel;
@@ -1869,3 +1898,78 @@ async function loadLicenseStatus() {
   }
 }
 window.loadLicenseStatus = loadLicenseStatus;
+
+// ---------- 配置（API Key / 公众号凭据） ----------
+function openSettings() {
+  loadSettings();
+  $("#settings-modal").classList.remove("hidden");
+}
+window.openSettings = openSettings;
+
+function closeSettings() {
+  $("#settings-modal").classList.add("hidden");
+}
+window.closeSettings = closeSettings;
+
+async function loadSettings() {
+  const st = $("#settings-status");
+  try {
+    const d = await api("/api/settings");
+    $("#set-llm-key").value = "";
+    $("#set-llm-base").value = d.llm.base_url || "";
+    $("#set-llm-model").value = d.llm.model || "";
+    $("#set-gzh-id").value = "";
+    $("#set-gzh-secret").value = "";
+    $("#set-key-mask").textContent = d.llm.configured
+      ? "当前已配置：" + d.llm.api_key_masked
+      : "未配置（免费功能不需要 AI Key）";
+    const gzhTxt = d.gzh.configured ? "公众号已配置：" + d.gzh.app_id_masked : "公众号未配置（手动发布也能用）";
+    st.textContent = (d.llm.status_ok ? "AI 引擎就绪（" + d.engine.mode + "）" : "AI 引擎：" + d.llm.status_reason) + " · " + gzhTxt;
+  } catch (e) {
+    st.textContent = "读取配置失败: " + e.message;
+  }
+}
+window.loadSettings = loadSettings;
+
+async function saveSettings(silent) {
+  const st = $("#settings-status");
+  const body = {};
+  const val = (id) => $(id).value.trim();
+  if (val("#set-llm-key")) body.llm_api_key = val("#set-llm-key");
+  if (val("#set-llm-base")) body.llm_base_url = val("#set-llm-base");
+  if (val("#set-llm-model")) body.llm_model = val("#set-llm-model");
+  if (val("#set-gzh-id")) body.gzh_app_id = val("#set-gzh-id");
+  if (val("#set-gzh-secret")) body.gzh_app_secret = val("#set-gzh-secret");
+  try {
+    const d = await api("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    $("#set-llm-key").value = "";
+    $("#set-gzh-secret").value = "";
+    $("#set-key-mask").textContent = d.llm.configured ? "当前已配置：" + d.llm.api_key_masked : "未配置";
+    if (!silent) {
+      st.textContent = "已保存。" + (d.llm.status_ok ? " AI 引擎就绪（" + d.engine.mode + "）" : " " + d.llm.status_reason);
+    }
+    loadLicenseStatus();
+    return d;
+  } catch (e) {
+    if (!silent) st.textContent = "保存失败: " + e.message;
+    throw e;
+  }
+}
+window.saveSettings = saveSettings;
+
+async function testLlm() {
+  const st = $("#settings-status");
+  st.textContent = "正在保存并测试连接…";
+  try {
+    await saveSettings(true);
+    const d = await api("/api/settings/llm-test", { method: "POST" });
+    st.textContent = d.ok ? "✅ " + d.message : "❌ " + d.message;
+  } catch (e) {
+    st.textContent = "测试失败: " + e.message;
+  }
+}
+window.testLlm = testLlm;

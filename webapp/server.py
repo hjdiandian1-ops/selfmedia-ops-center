@@ -43,6 +43,7 @@ LESSONS_FILE = os.path.join(FLYWHEEL_DIR, "lessons.json")
 FEEDBACK_FILE = os.path.join(FLYWHEEL_DIR, "pipeline_feedback.md")
 PRODUCTION_FILE = os.path.join(ROOT, "data", "production", "queue.json")
 AGENTS_DIR = os.path.join(ROOT, "agents")
+ENV_FILE = os.path.join(ROOT, ".env")
 RUN_PRODUCTION = os.path.join(SCRIPTS, "run_production.py")
 RUN_VIRAL_ANALYSIS = os.path.join(SCRIPTS, "run_viral_analysis.py")
 COLLECT_VIRAL = os.path.join(SCRIPTS, "collect_viral_candidates.py")
@@ -86,6 +87,57 @@ def _engine_status():
     api_ok, api_reason, _ = llm_engine.engine_status()
     mode = "codex" if codex else ("api" if api_ok else "none")
     return {"codex": codex, "api": api_ok, "api_reason": api_reason, "mode": mode}
+
+
+def _read_env():
+    """读取项目根 .env（不存在返回 {}）。"""
+    out = {}
+    try:
+        with open(ENV_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    out[k.strip()] = v.strip().strip('"').strip("'")
+    except OSError:
+        pass
+    return out
+
+
+def _write_env(updates):
+    """把更新项写入 .env（保留其他行与注释；文件权限 600）。"""
+    lines = []
+    try:
+        with open(ENV_FILE, encoding="utf-8") as f:
+            lines = f.readlines()
+    except OSError:
+        lines = []
+    keys = set(updates)
+    written = set()
+    out = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            k = stripped.split("=", 1)[0].strip()
+            if k in keys:
+                out.append(f"{k}={updates[k]}\n" if updates[k] else f"{k}=\n")
+                written.add(k)
+                continue
+        out.append(line)
+    for k, v in updates.items():
+        if k not in written:
+            out.append(f"{k}={v}\n" if v else f"{k}=\n")
+    os.makedirs(ROOT, exist_ok=True)
+    with open(ENV_FILE, "w", encoding="utf-8") as f:
+        os.chmod(ENV_FILE, 0o600)
+        f.writelines(out)
+
+
+def _mask(value):
+    value = (value or "").strip()
+    if not value:
+        return ""
+    return value[:4] + "****" if len(value) > 8 else "****"
 
 app = FastAPI(title="自媒体运营中心看板", version="2.1.0")
 
@@ -1375,6 +1427,145 @@ def api_license_status():
         },
         "fingerprint": LG.LL.device_fingerprint(),
     }
+
+
+class SettingsRequest(BaseModel):
+    llm_api_key: Optional[str] = None
+    llm_base_url: Optional[str] = None
+    llm_model: Optional[str] = None
+    gzh_app_id: Optional[str] = None
+    gzh_app_secret: Optional[str] = None
+
+
+class GzhDraftRequest(BaseModel):
+    job_id: str
+    title: str = ""
+    digest: str = ""
+
+
+@app.get("/api/settings")
+def api_settings():
+    """读取配置状态（密钥只显示掩码，不返回明文）。"""
+    env = _read_env()
+    api_ok, api_reason, _ = llm_engine.engine_status()
+    return {
+        "llm": {
+            "configured": bool(env.get("LLM_API_KEY", "").strip()),
+            "api_key_masked": _mask(env.get("LLM_API_KEY", "")),
+            "base_url": env.get("LLM_BASE_URL", llm_engine.DEFAULT_BASE_URL),
+            "model": env.get("LLM_MODEL", llm_engine.DEFAULT_MODEL),
+            "status_ok": api_ok,
+            "status_reason": api_reason,
+        },
+        "gzh": {
+            "configured": bool(env.get("GZH_APP_ID", "").strip() and env.get("GZH_APP_SECRET", "").strip()),
+            "app_id_masked": _mask(env.get("GZH_APP_ID", "")),
+            "secret_masked": _mask(env.get("GZH_APP_SECRET", "")),
+        },
+        "engine": _engine_status(),
+    }
+
+
+@app.post("/api/settings")
+def api_save_settings(payload: SettingsRequest):
+    """保存配置到项目根 .env（本地单机文件，权限 600）。"""
+    updates = {}
+    if payload.llm_api_key is not None:
+        updates["LLM_API_KEY"] = payload.llm_api_key.strip()
+    if payload.llm_base_url is not None:
+        updates["LLM_BASE_URL"] = payload.llm_base_url.strip()
+    if payload.llm_model is not None:
+        updates["LLM_MODEL"] = payload.llm_model.strip()
+    if payload.gzh_app_id is not None:
+        updates["GZH_APP_ID"] = payload.gzh_app_id.strip()
+    if payload.gzh_app_secret is not None:
+        updates["GZH_APP_SECRET"] = payload.gzh_app_secret.strip()
+    if updates:
+        _write_env(updates)
+        for k, v in updates.items():
+            os.environ[k] = v
+    return api_settings()
+
+
+@app.post("/api/settings/llm-test")
+def api_llm_test():
+    """测试 LLM 连接：发一条极短消息，返回模型回复。"""
+    ok, reason, _ = llm_engine.engine_status()
+    if not ok:
+        return {"ok": False, "message": reason}
+    try:
+        reply = llm_engine.chat(
+            [{"role": "user", "content": "请只回复两个字：正常"}],
+            max_tokens=16, timeout=30,
+        )
+        return {"ok": True, "message": "连接成功，模型回复：" + (reply or "")[:50]}
+    except Exception as e:
+        return {"ok": False, "message": str(e)}
+
+
+def _gzh_artifacts(job_id):
+    """返回该任务公众号排版 HTML 与封面图片路径（无则 None）。"""
+    gzh_dir = os.path.join(OUTPUTS_DIR, job_id, "公众号")
+    html, preview = None, None
+    if os.path.isdir(gzh_dir):
+        for n in sorted(os.listdir(gzh_dir)):
+            if n.lower().endswith(".html"):
+                if "_预览" in n or "_preview" in n.lower():
+                    preview = os.path.join(gzh_dir, n)
+                elif html is None:
+                    html = os.path.join(gzh_dir, n)
+    cover = None
+    xhs_dir = os.path.join(OUTPUTS_DIR, job_id, "小红书")
+    if os.path.isdir(xhs_dir):
+        for n in sorted(os.listdir(xhs_dir)):
+            if n.lower().startswith("封面") and n.lower().endswith((".png", ".jpg", ".jpeg")):
+                cover = os.path.join(xhs_dir, n)
+                break
+        if cover is None:
+            for n in sorted(os.listdir(xhs_dir)):
+                if n.lower().endswith(".png"):
+                    cover = os.path.join(xhs_dir, n)
+                    break
+    return html or preview, cover
+
+
+@app.post("/api/publish/gzh-draft")
+def api_gzh_draft(payload: GzhDraftRequest):
+    """把公众号排版 HTML 推送到已认证公众号的草稿箱（需配置 AppID/Secret）。"""
+    _license_guard("gzh_push")
+    job_id = _require_job_id(payload.job_id)
+    env = _read_env()
+    if not env.get("GZH_APP_ID", "").strip() or not env.get("GZH_APP_SECRET", "").strip():
+        raise HTTPException(
+            status_code=400,
+            detail="未配置公众号 AppID/Secret：请先在左下角 ⚙ 设置 中填写（需要已认证的公众号，个人订阅号暂不支持 API）",
+        )
+    html, cover = _gzh_artifacts(job_id)
+    if not html:
+        raise HTTPException(status_code=400, detail="该任务没有公众号排版产物（.html），无法推送草稿")
+    title = payload.title.strip() or (read_json(os.path.join(JOBS_DIR, job_id, "state.json")) or {}).get("theme", job_id)
+    args = [
+        "gzh_draft_api.py", "--title", title[:64],
+        "--content-file", html, "--job-id", job_id,
+    ]
+    if cover:
+        args += ["--cover", cover]
+    if payload.digest.strip():
+        args += ["--digest", payload.digest.strip()[:120]]
+    r = run_script(args, timeout=180)
+    if not r["ok"]:
+        raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False)[:1000])
+    return {"ok": True, "job_id": job_id, "output": r.get("stdout", "")[-500:]}
+
+
+@app.get("/api/docs/publish-guide")
+def api_publish_guide():
+    """发布操作手册全文（成品库弹窗查看）。"""
+    path = os.path.join(ROOT, "docs", "发布与后台配置.md")
+    text = read_text(path)
+    if not text:
+        raise HTTPException(status_code=404, detail="发布手册不存在")
+    return {"title": "发布与后台配置手册", "path": "docs/发布与后台配置.md", "content": text}
 
 
 class QaRequest(BaseModel):
