@@ -1,6 +1,6 @@
 {
   "output_dir": "outputs/2026-08-14_自媒体运营工作台",
-  "checked_at": "2026-08-14 19:53:16",
+  "checked_at": "2026-08-14 20:19:00",
   "verdict": "WARN",
   "summary": {
     "platforms": [
@@ -10,7 +10,7 @@
     ],
     "high": 0,
     "medium": 2,
-    "total_hits": 3
+    "total_hits": 5
   },
   "hits": [
     {
@@ -18,9 +18,9 @@
       "severity": "medium",
       "source": "[L]",
       "pattern": "——",
-      "count": 2,
+      "count": 4,
       "examples": [
-        "正文出现 2 处修辞破折号"
+        "正文出现 4 处修辞破折号"
       ],
       "suggestion": "破折号作修辞标点禁用；技术标识中的连字符例外。",
       "platform": "公众号",
