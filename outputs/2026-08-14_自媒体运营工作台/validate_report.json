@@ -1,0 +1,80 @@
+{
+  "output_dir": "outputs/2026-08-14_自媒体运营工作台",
+  "materials": "materials/2026-08/2026-08-14_自媒体运营工作台素材包.md",
+  "validated_at": "2026-08-14 19:51:25",
+  "verdict": "PASSED",
+  "fails": 0,
+  "warns": 0,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-14_自媒体运营工作台素材包.md（10 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[短视频] 120s黄金分镜脚本.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜停更 7 天，从 0 到 1 搭出自媒体运营中心 v2.2，和 workbuddy 一键导入生成的 HTML 模板…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜数据底盘：25 次发布动作、33 条回填/导入、总阅读 2.5 万、平均互动率 2.2%、爆款 2 条、累计涨粉 …」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜选题评分：8 条日选题 + 10 条周选题，按时效×1.2 + 热度×1.2 + 质量×0.4 排序，点【采纳生产…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜爆款跟踪：三平台今日榜在库 99 条、已拆解 23 条、拆解中 2 条，覆盖小红书/抖音/公众号…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M6「M6｜数据飞轮：写稿发布 → 账户反馈 → 市场学习 → 总结经验 → 反哺 Agent；已沉淀 6 条经验、已应用 1…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 13 处（要求 ≥2）：['7 天', '6 个', '15.72%', '8 条', '10 条', '99 条']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 18 处（要求 ≥2）：['2.5万', '2.2%', '25 次', '33 条', '2.5 万', '2.2%']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[短视频] 120s黄金分镜脚本.md 具体数字 14 处（要求 ≥1）：['8 条', '8 条', '10 条', '8 条', '10 条', '25 次']"
+    }
+  ]
+}

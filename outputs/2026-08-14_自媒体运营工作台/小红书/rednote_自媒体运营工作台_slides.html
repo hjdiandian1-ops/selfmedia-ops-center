@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自媒体运营工作台 · 小红书卡片</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #F5F5F5; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .poster {
+    width: 1080px; height: 1440px; background: #FFFFFF;
+    margin: 24px auto; padding: 64px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .kicker { font-size: 26px; color: #9CA3AF; font-weight: 700; letter-spacing: 3px; }
+  .kicker b { color: #DC2626; }
+  .big { font-size: 168px; line-height: 1; color: #DC2626; font-weight: 900; margin-top: 34px; }
+  h1 { font-size: 62px; line-height: 1.28; color: #1C1917; font-weight: 900; margin-top: 30px; }
+  .sub { font-size: 30px; color: #57534E; line-height: 1.65; margin-top: 24px; }
+  .tip { background: #1C1917; color: #FFFFFF; border-radius: 26px; padding: 32px 38px; font-size: 30px; line-height: 1.7; margin-top: 36px; font-weight: 700; }
+  .bar-title { font-size: 34px; font-weight: 900; color: #1C1917; margin: 46px 0 22px; }
+  .row { display: flex; align-items: center; margin-bottom: 22px; }
+  .lbl { width: 250px; font-size: 27px; color: #57534E; font-weight: 700; }
+  .track { flex: 1; background: #F5F5F5; border-radius: 999px; height: 32px; overflow: hidden; }
+  .fill { height: 32px; border-radius: 999px; background: #DC2626; }
+  .val { width: 230px; text-align: right; font-size: 30px; font-weight: 900; color: #DC2626; }
+  .footer { margin-top: auto; border-top: 1px dashed #F3E2E2; padding-top: 18px; font-size: 22px; color: #9CA3AF; }
+  h2 { font-size: 50px; line-height: 1.3; color: #1C1917; font-weight: 900; margin-top: 22px; }
+  .screen {
+    display: block; margin: 30px auto 0; max-width: 952px; max-height: 680px;
+    border-radius: 18px; border: 1px solid #E5E7EB; box-shadow: 0 14px 34px rgba(0,0,0,.10);
+  }
+  .points { margin-top: 28px; }
+  .point { font-size: 27px; line-height: 1.7; color: #57534E; margin-bottom: 10px; }
+  .point b { color: #DC2626; }
+  .page-cta { display: inline-block; margin-top: 18px; background: #FEE2E2; color: #991B1B; font-size: 26px; font-weight: 800; border-radius: 999px; padding: 14px 30px; }
+</style>
+</head>
+<body>
+
+<section class="poster" id="xhs-01">
+  <span class="kicker">小吴聊 · 一人内容工厂</span>
+  <div class="big">停更一周</div>
+  <h1>我搭了个能自己跑内容的<br>自媒体工作台</h1>
+  <p class="sub">8 态状态机 · 5 段数据飞轮 · 7 大模块<br>一键导入模板做不到 · 真实运营环境 v2.2</p>
+  <div class="bar-title">工作台数据底盘（截至 08-14）</div>
+  <div data-viz="bar">
+    <div class="row"><span class="lbl">发布动作</span><div class="track"><div class="fill" style="width:76%"></div></div><span class="val">25 次</span></div>
+    <div class="row"><span class="lbl">数据回填</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">33 条</span></div>
+    <div class="row"><span class="lbl">爆款命中</span><div class="track"><div class="fill" style="width:10%"></div></div><span class="val">2 条</span></div>
+  </div>
+  <div class="tip">工具可以一键生成，<br>能自转的内容系统不能。</div>
+  <div class="footer">v2.2 · 选题→生产→分析→学习闭环 · 2026-08-14</div>
+</section>
+
+<section class="poster" id="xhs-02">
+  <span class="kicker">01/08 · 运营中心</span>
+  <h2>概览页：数据大盘，结果优先</h2>
+  <img class="screen" src="../_source/01-概览-运营中心.png" alt="运营中心概览">
+  <div class="points">
+    <p class="point"><b>曝光 1123 → 观看 570</b>，封面点击率 15.72%</p>
+    <p class="point">近 7 日 / 近 30 日一键切换，小红书数据后台导出导入即用</p>
+    <p class="point">涨粉率 0.00%、断档 4 天这类薄弱点，自动给建议，一键沉淀为经验</p>
+  </div>
+  <span class="page-cta">数据入口 = 官方后台导出，不碰抓取</span>
+  <div class="footer">截图：工作台概览页 · 2026-08-14 16:56</div>
+</section>
+
+<section class="poster" id="xhs-03">
+  <span class="kicker">02/08 · 选题+筛选推荐</span>
+  <h2>选题不再拍脑袋，机器先筛一遍</h2>
+  <img class="screen" src="../_source/02-选题-评分推荐.png" alt="选题评分推荐">
+  <div class="points">
+    <p class="point"><b>8 条日选题 + 10 条周选题</b>，按时效×1.2 + 热度×1.2 + 质量×0.4 排序</p>
+    <p class="point">点【采纳生产】，小红书、小绿信、视频脚本自动开跑</p>
+    <p class="point">右边栏实时看生产进度，人只在关键卡点拍板</p>
+  </div>
+  <span class="page-cta">评分公式可解释，不靠玄学</span>
+  <div class="footer">截图：工作台选题页 · 2026-08-14</div>
+</section>
+
+<section class="poster" id="xhs-04">
+  <span class="kicker">03/08 · 爆款跟踪</span>
+  <h2>三平台今日榜，拆成可复用经验</h2>
+  <img class="screen" src="../_source/03-爆款跟踪.png" alt="爆款跟踪">
+  <div class="points">
+    <p class="point">小红书、某音、某信今日榜全覆盖，<b>在库 99 条、已拆解 23 条</b></p>
+    <p class="point">热门原因拆成标题公式、结构、钩子，生成周经验包</p>
+    <p class="point">自家爆款自动复盘，发布 48h 数据命中就进解剖队列</p>
+  </div>
+  <span class="page-cta">跟踪 → 拆解 → 应用，闭环才算数</span>
+  <div class="footer">截图：工作台爆款跟踪页 · 2026-08-14</div>
+</section>
+
+<section class="poster" id="xhs-05">
+  <span class="kicker">04/08 · 数据飞轮</span>
+  <h2>写稿发布 → 账户反馈 → 市场学习 → 总结经验 → 反哺 Agent</h2>
+  <img class="screen" src="../_source/04-数据飞轮.png" alt="数据飞轮">
+  <div class="points">
+    <p class="point"><b>25 次发布动作、33 条回填、2.5 万阅读、2.2% 互动率</b></p>
+    <p class="point">6 条经验已沉淀、1 条已应用，反哺指令包一键复制喂给 Agent</p>
+    <p class="point">每跑一轮，下一轮生产的起点就高一点</p>
+  </div>
+  <span class="page-cta">数据不回流，等于没发生</span>
+  <div class="footer">截图：工作台数据飞轮页 · 2026-08-14</div>
+</section>
+
+<section class="poster" id="xhs-06">
+  <span class="kicker">05/08 · 流水线</span>
+  <h2>8 态状态机，每个 Agent 都在岗</h2>
+  <img class="screen" src="../_source/05-流水线-状态机.png" alt="流水线状态机">
+  <div class="points">
+    <p class="point">选题→素材→成稿→视觉→质检→归档→发布→回收，断点可续跑</p>
+    <p class="point">总编、采编、小红书主编、公众号主编的 <b>SOP 文档版本号可见</b></p>
+    <p class="point">经验反哺后版本从 v1.0.4 升到 v1.0.5，进化有痕迹</p>
+  </div>
+  <span class="page-cta">生产状态机 + 队列 + 日志，全透明</span>
+  <div class="footer">截图：工作台流水线页 · 2026-08-14</div>
+</section>
+
+<section class="poster" id="xhs-07">
+  <span class="kicker">06/08 · 成品库</span>
+  <h2>生产完不散场，成品和质检一起验收</h2>
+  <img class="screen" src="../_source/06-成品库-质检.png" alt="成品库质检">
+  <div class="points">
+    <p class="point">小红书图文卡片、小绿信排版、视频脚本，<b>一个页面全预览</b></p>
+    <p class="point">契约校验 PASSED、Harsh Critic <b>98/100</b>，质检证据链可查</p>
+    <p class="point">合规审核、发布记录、数据回填状态一屏看全</p>
+  </div>
+  <span class="page-cta">成品 ≠ 发完，验收完才归档</span>
+  <div class="footer">截图：工作台成品库页 · 2026-08-14</div>
+</section>
+
+<section class="poster" id="xhs-08">
+  <span class="kicker">07/08 · 数据页</span>
+  <h2>自有数据统计：发布动作自动记录 + 人工回填</h2>
+  <img class="screen" src="../_source/07-数据-统计回填.png" alt="数据统计与回填">
+  <div class="points">
+    <p class="point">25 次发布动作、33 条回填、2.5 万阅读、2.2% 互动率、14 人涨粉</p>
+    <p class="point">平台对比一眼看：小红书已跑出 2 条爆款，公众号 24 次草稿推送</p>
+    <p class="point">不依赖第三方接口，口径写在界面上，数据来路可查</p>
+  </div>
+  <span class="page-cta">关注我，下期拆数据飞轮怎么反哺 Agent</span>
+  <div class="footer">截图：工作台数据页 · 2026-08-14</div>
+</section>
+
+</body>
+</html>
