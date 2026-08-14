@@ -4,7 +4,7 @@
 
 ![MIT](https://img.shields.io/badge/license-MIT-blue) ![CI](https://github.com/hjdiandian1-ops/selfmedia-ops-center/actions/workflows/security.yml/badge.svg) ![Python 3.13](https://img.shields.io/badge/python-3.13-green)
 
-**本仓库** = 开源核心（内容质检 + 授权基础设施，可直接运行）。**完整 Pro 工作台**（选题/生产/飞轮/爆款跟踪等全部模块）通过付费 Skill 包获得，购买见文末。
+**本仓库 = 免费版完整工作台**：clone 下来一键启动，浏览器打开 http://127.0.0.1:8787 即可使用（选题、爆款榜单、质检、成品库）。免费版与付费版功能有区别，付费解锁全部功能，见第五节对比表与第八节购买方式。
 
 ---
 
@@ -178,15 +178,17 @@ flowchart LR
 
 ---
 
-## 六、从零开始使用（约 5 分钟）
+## 六、从零开始使用（约 5 分钟，小白版）
 
 ### 第一步：确认电脑环境（只做一次）
 
-需要一台 macOS 或 Linux 电脑，装有 Python 3.11 以上。在终端里运行下面命令，能打印出版本号就说明没问题：
+需要一台 macOS 或 Linux 电脑，装有 Python 3.11 以上。在终端里运行：
 
 ```bash
 python3 --version
 ```
+
+能打印出版本号就说明没问题。
 
 ### 第二步：下载本仓库
 
@@ -195,53 +197,47 @@ git clone https://github.com/hjdiandian1-ops/selfmedia-ops-center.git
 cd selfmedia-ops-center
 ```
 
-### 第三步：安装依赖（只做一次）
+### 第三步：一键安装（只做一次）
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.lock
+python3 scripts/workbench_install.py
 ```
 
-### 第四步：跑一次演示，看看检查器长什么样
+安装器会自动创建虚拟环境、安装依赖、生成 `.env` 配置文件。全程不需要你手动敲任何别的命令。
 
-仓库里自带一篇样例文章（故意包含几处 AI 腔），对它跑一次去 AI 味检查：
+### 第四步：启动工作台
 
 ```bash
-python3 scripts/ai_flavor_check.py demo/样例文章/ --out demo/ai_flavor_report.json
+./start.sh
 ```
 
-终端会打印一份报告：哪些句子像 AI 写的、命中了几次、建议怎么改。同样内容的完整 JSON 在 `demo/ai_flavor_report.json`，用文本编辑器打开即可查看。
+浏览器会自动打开 http://127.0.0.1:8787 ，这就是你的工作台：左侧七个模块（概览/选题/爆款跟踪/数据飞轮/流水线/成品库/数据）全部可用。
 
-### 第五步：检查你自己的文章
+### 第五步：解锁 AI 能力（可选，2 分钟）
 
-把你的一篇文章放进一个文件夹，文件夹里再建 `公众号` 子目录（检查器按平台目录读取），例如：
+免费版不用配任何东西就能用：选题雷达、三平台爆款榜单、质检、成品库。想用 AI 拆解和一键生产时，编辑仓库根目录的 `.env`：
 
 ```text
-~/my_article/公众号/我的文章.md
+LLM_API_KEY=sk-你的key
+LLM_BASE_URL=https://api.deepseek.com/v1
+LLM_MODEL=deepseek-chat
 ```
 
-然后运行：
+支持任何 OpenAI 兼容接口（DeepSeek / OpenAI / Moonshot / 本地 Ollama 等），填完重启 `./start.sh` 即可。机器上装了 Codex CLI 时优先用 Codex，没装就用 API Key，两种都不需要你对接平台。
 
-```bash
-python3 scripts/ai_flavor_check.py ~/my_article/公众号/ --out ~/my_article/report.json
-python3 scripts/compliance_check.py ~/my_article/公众号/
+### 第六步：了解免费/付费怎么切
+
+免费版直接使用；点击生产、数据飞轮、自动拆解等 Pro 功能时，页面会提示升级，左侧底部也常驻显示你的授权状态（免费版/Pro 已激活）。
+
+### 在 WorkBuddy 中部署
+
+把本仓库作为工作区加载到 WorkBuddy（或任何 Codex/Claude 兼容环境），同样先运行 `workbench_install.py` 并在 `.env` 填好 `LLM_API_KEY`。之后可以在 WorkBuddy 对话里直接指挥本仓库的脚本：
+
+```text
+运行 python3 scripts/run_daily_pipeline.py --topics
 ```
 
-第一条检查 AI 腔，第二条检查平台合规风险（广告法用语、医疗金融承诺、导流等）。打开 `report.json` 就能看到每条命中的位置和修改建议。
-
-### 第六步：体验授权门禁（了解付费版怎么工作）
-
-```bash
-python3 scripts/license/install.py --show-fingerprint
-python3 scripts/license/license_gate.py check --feature production
-```
-
-第二条命令会显示「未授权，需要 Pro 订阅」。这是付费功能在正式包里的拦截方式：免费功能直接放行，Pro 功能必须用 token 激活。
-
-### 第七步：想用完整工作台怎么办
-
-开源核心只包含质检和授权模块。完整的选题、自动生产、数据飞轮、爆款跟踪工作台属于 Pro Skill 包，购买与激活方式见第九节。
+WorkBuddy 负责对话与调度，工作台与数据仍在本仓库内，两者共用同一套产物和质检链。
 
 ## 七、安全与隐私
 
@@ -250,19 +246,7 @@ python3 scripts/license/license_gate.py check --feature production
 - CI 六道闸门：gitleaks / pip-audit / bandit / semgrep / CodeQL / pytest；
 - 漏洞报告请走 [SECURITY.md](SECURITY.md) 的流程。
 
-## 八、文档与协议
-
-- [WHITEPAPER.md](WHITEPAPER.md)：22 条去 AI 味规则判定逻辑、授权密码学设计、安全覆盖与 FAQ
-- [SECURITY_CHECKLIST.md](SECURITY_CHECKLIST.md)：发布前逐项扫描清单
-- [MIT](LICENSE)：开源核心；第三方 skill（gzh-design / guizang / dbskill / xiaowan-wechat-layout 等）不属于本仓库，使用时遵守各自 LICENSE
-
-### 开源核心和第三方 skill 的关系
-
-本仓库（开源核心）不包含、也不调用任何第三方 skill：去 AI 味、合规、授权、安全工具全部自包含，clone 下来就能跑。
-
-Pro 付费包里的 Agent 流水线会引用 gzh-design、xiaowan-wechat-layout、guizang-social-card、dbskill 等第三方 skill。按这些 skill 各自的 LICENSE，Pro 包不打包它们，安装 Pro 包时会引导你从原作者仓库自行安装。
-
-## 九、购买与激活（付费版）
+## 八、购买与激活（付费版）
 
 ### 9.1 价格
 

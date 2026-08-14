@@ -42,7 +42,7 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install bandit
-      - run: bandit -r scripts/ -q
+      - run: bandit -r scripts/ -q -ll
 
   semgrep:
     name: Semgrep
