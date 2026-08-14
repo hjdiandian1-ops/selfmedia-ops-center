@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
-<link rel="stylesheet" href="/static/style.css?v=3.23">
+<link rel="stylesheet" href="/static/style.css?v=3.24">
 </head>
 <body>
 <div class="app">
@@ -365,9 +365,21 @@
               <input id="set-gzh-id" placeholder="wx..." autocomplete="off">
               <label class="field-label">公众号 AppSecret（可选）</label>
               <input id="set-gzh-secret" type="password" placeholder="..." autocomplete="off">
+              <details class="card" style="margin-top:10px;padding:10px">
+                <summary style="cursor:pointer;font-weight:600">💡 公众号配置温馨提示（需要你手动操作）</summary>
+                <div class="stack" style="margin-top:8px;font-size:13px;line-height:1.7">
+                  <div>1. 只有<b>已认证</b>的公众号才能用 API 推草稿；个人订阅号不支持，只能手动发布。</div>
+                  <div>2. 登录公众号后台：<a href="https://mp.weixin.qq.com" target="_blank" rel="noopener">mp.weixin.qq.com</a> → 设置与开发 → 基本配置。</div>
+                  <div>3. 开发者ID(AppID) 直接复制；开发者密码(AppSecret) 需点「重置」后才会完整显示一次，务必当场保存。</div>
+                  <div>4. 同一页面把「IP白名单」改成你电脑的<b>公网 IP</b>（浏览器搜索"我的IP"即可查到），保存后 1-5 分钟生效。</div>
+                  <div>5. 平台无法代替你完成以上操作；配好后保存，再到成品库点「推送到公众号草稿箱」。</div>
+                  <div>6. 详细图文步骤见「发布指引」（成品库页）。</div>
+                </div>
+              </details>
               <div class="toolbar" style="margin-top:12px">
                 <button class="btn filled" onclick="saveSettings()">保存配置</button>
                 <button class="btn tonal" onclick="testLlm()">测试 AI 连接</button>
+                <button class="btn tonal" onclick="refreshLicense()">刷新授权状态</button>
               </div>
               <p class="muted" id="settings-status"></p>
             </div>
@@ -504,6 +516,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.23"></script>
+    <script src="/static/app.js?v=3.24"></script>
 </body>
 </html>

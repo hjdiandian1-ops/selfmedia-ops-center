@@ -1540,7 +1540,7 @@ def api_gzh_draft(payload: GzhDraftRequest):
     if not env.get("GZH_APP_ID", "").strip() or not env.get("GZH_APP_SECRET", "").strip():
         raise HTTPException(
             status_code=400,
-            detail="未配置公众号 AppID/Secret：请先在左下角 ⚙ 设置 中填写（需要已认证的公众号，个人订阅号暂不支持 API）",
+            detail="未配置公众号 AppID/Secret：请先在左下角 ⚙ 设置 中填写（需要已认证的公众号，个人订阅号暂不支持 API；获取与 IP 白名单步骤见成品库『发布指引』）",
         )
     html, cover = _gzh_artifacts(job_id)
     if not html:
