@@ -107,6 +107,18 @@ def test_parallel_structure_warn(tmp_path):
     assert hit["count"] >= 4
 
 
+def test_markdown_tables_not_parallel(tmp_path):
+    text = "\n".join([
+        "| 功能 | 免费版 | Pro |",
+        "| 选题雷达 | ✅ | ✅ 全源 |",
+        "| 自动生产 | ❌ | ✅ |",
+        "| 数据飞轮 | ❌ | ✅ |",
+        "| 合规套件 | 仅提示 | ✅ |",
+    ])
+    r = AFC.run(_write(tmp_path, "公众号", text))
+    assert "parallel_structure" not in _rules(r)
+
+
 def test_teacher_qa_warn_then_reject(tmp_path):
     one = "那么，这意味着什么？答案是显而易见的。"
     r1 = AFC.run(_write(tmp_path / "a", "小红书", one))

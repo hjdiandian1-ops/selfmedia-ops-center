@@ -97,8 +97,16 @@ def _snippet(text, match, width=42):
 
 
 def _parallel_run(text):
-    """连续 ≥4 行以同一 2 字前缀开头 → 排比结构；返回最长连续行数。"""
+    """连续 ≥4 行以同一 2 字前缀开头 → 排比结构；返回最长连续行数。
+    Markdown 结构化行（列表/表格/引用/标题）不属于正文排比，跳过。"""
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    lines = [
+        ln for ln in lines
+        if not (
+            ln.startswith(("- ", "* ", "+ ", "| ", "> ", "#", "```"))
+            or (len(ln) >= 3 and ln[0].isdigit() and ln[1] in ".、)）")
+        )
+    ]
     best, run, prev = 0, 0, None
     for ln in lines:
         head = ln[:2]
