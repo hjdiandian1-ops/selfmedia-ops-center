@@ -168,7 +168,15 @@ code { background: #f1f3f4; border-radius: 6px; padding: 2px 6px; font-size: 12p
 /* 工具栏 / 表单 */
 .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 .field-label { display: block; font-size: 12px; color: var(--on-surface-variant); margin: 8px 0 4px; }
-.select, input[type="number"], input[type="url"], input[type="text"], textarea {
+.select,
+input:not([type]),
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+input[type="email"],
+input[type="date"],
+textarea {
   width: 100%; padding: 10px 12px; border: 1px solid var(--outline);
   border-radius: var(--radius-sm); background: var(--surface);
   font-size: 14px; font-family: inherit; color: var(--on-surface);
