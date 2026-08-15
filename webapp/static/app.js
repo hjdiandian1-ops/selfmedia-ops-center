@@ -334,6 +334,12 @@ function renderPlatformPane(name) {
   const funnelHtml = funnel.map(([l, v]) =>
     `<div class="fstep"><div class="fnum">${esc(String(v))}</div><div class="flbl">${esc(l)}</div></div>`).join('<div class="farrow">→</div>');
   const xhsExtra = name === "小红书" ? xhsDashCardHtml() : "";
+  const trendCard = name === "小红书" ? "" : `
+    <div class="card">
+      <div class="card-head"><h3>趋势</h3></div>
+      <div id="pf-trend" class="line-chart-wrap"></div>
+      <div class="series-tabs" id="pf-series"></div>
+    </div>`;
   $("#ov-platform").innerHTML = `
     <div class="grid-2">
       <div class="card">
@@ -357,11 +363,7 @@ function renderPlatformPane(name) {
       <div class="card-head"><h3>转化链路</h3></div>
       <div class="funnel">${funnelHtml}</div>
     </div>
-    <div class="card">
-      <div class="card-head"><h3>趋势</h3></div>
-      <div id="pf-trend" class="line-chart-wrap"></div>
-      <div class="series-tabs" id="pf-series"></div>
-    </div>
+    ${trendCard}
     <div class="card">
       <div class="card-head"><h3>薄弱点诊断 · 提升方向</h3></div>
       <div id="pf-weak" class="stack"></div>
@@ -377,7 +379,7 @@ function renderPlatformPane(name) {
     </div>
     ${xhsExtra}`;
   svgRadar($("#pf-radar"), p.radar);
-  renderPlatformTrend(name, p.trend);
+  if (name !== "小红书") renderPlatformTrend(name, p.trend);
   renderWeakList($("#pf-weak"), p.weak_points || [], name);
   renderRecentRows($("#pf-recent"), p.recent || []);
   if (name === "小红书") {
