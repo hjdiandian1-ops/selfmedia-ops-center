@@ -3409,7 +3409,7 @@ window.loadSettings = loadSettings;
 
 const THEME_NAMES = {
   default: "蓝白默认", "brand-red": "红白小吴聊", midnight: "深空暗黑",
-  pink: "粉漾少女", doraemon: "哆啦A梦（蓝胖）",
+  pink: "粉漾少女", doraemon: "哆啦A梦（蓝胖）", cyberpunk: "赛博朋克·霓虹风暴",
 };
 
 function applyTheme(name) {

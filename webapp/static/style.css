@@ -198,6 +198,98 @@
   --aurora-2: #e8f5ff;
   --aurora-3: #eef7ff;
 }
+
+:root[data-theme="cyberpunk"] {
+  --primary: #00e5ff;
+  --primary-strong: #00c8e8;
+  --on-primary: #00181e;
+  --primary-container: #0e2a3a;
+  --on-primary-container: #baf3ff;
+  --surface: #0b0f1e;
+  --surface-dim: #060912;
+  --on-surface: #e9f6ff;
+  --on-surface-variant: #a6b8e0;
+  --outline: #3b5b7a;
+  --outline-variant: #1d2a45;
+  --error: #ff4d6d;
+  --success: #00ff9f;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --border-width: 1px;
+  --font-stack: Roboto, "Google Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, sans-serif;
+  --shadow-1: 0 0 0 1px rgba(0, 229, 255, .12), 0 0 16px rgba(0, 229, 255, .16), 0 8px 28px rgba(0, 0, 0, .5);
+  --shadow-2: 0 0 0 1px rgba(255, 46, 209, .16), 0 0 28px rgba(0, 229, 255, .24), 0 14px 44px rgba(0, 0, 0, .6);
+  --hover-bg: #151b30;
+  --surface-hover: #101627;
+  --code-bg: #070b16;
+  --primary-hover: #12384a;
+  --focus-ring: #00e5ff;
+  --step-ring: #123047;
+  --success-container: #0d2f23;
+  --error-container: #3a1420;
+  --hit-container: #2b0f26;
+  --deco-accent: #ff9df0;
+  --score-text: #ffd166;
+  --score-bg: #241703;
+  --preview-text: #d7f6ff;
+  --toast-text: #170a10;
+  --toast-ok: #00ff9f;
+  --toast-err: #ff4d6d;
+  --applied-border: rgba(0, 255, 159, .45);
+  --applied-bg: #0d1f26;
+  --scrim: rgba(0, 0, 0, .68);
+  --brand-gradient: linear-gradient(135deg, #00e5ff 0%, #7b5cff 55%, #ff2ed1 100%);
+  --brand-logo-bg: var(--brand-gradient);
+  --aurora-1: rgba(0, 229, 255, .30);
+  --aurora-2: rgba(255, 46, 209, .26);
+  --aurora-3: rgba(123, 92, 255, .24);
+}
+
+/* 赛博朋克·霓虹风暴：网格扫描线 + 霓虹光污染 */
+:root[data-theme="cyberpunk"] body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 229, 255, .045) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(255, 46, 209, .035) 0 1px, transparent 1px 5px);
+}
+:root[data-theme="cyberpunk"] .page-title,
+:root[data-theme="cyberpunk"] .kpi .num,
+:root[data-theme="cyberpunk"] .brand-text b {
+  text-shadow: 0 0 12px rgba(0, 229, 255, .55), 0 0 28px rgba(255, 46, 209, .35);
+}
+:root[data-theme="cyberpunk"] .brand-logo {
+  box-shadow: 0 0 18px rgba(0, 229, 255, .6), 0 0 38px rgba(255, 46, 209, .35);
+}
+:root[data-theme="cyberpunk"] .btn.filled {
+  box-shadow: 0 0 14px rgba(0, 229, 255, .4);
+}
+:root[data-theme="cyberpunk"] .btn.filled:hover {
+  box-shadow: 0 0 22px rgba(0, 229, 255, .55), var(--shadow-1);
+}
+:root[data-theme="cyberpunk"] .nav-item.active {
+  box-shadow: inset 0 0 0 1px rgba(0, 229, 255, .25), 0 0 14px rgba(0, 229, 255, .2);
+}
+:root[data-theme="cyberpunk"] .card,
+:root[data-theme="cyberpunk"] .pf-module,
+:root[data-theme="cyberpunk"] .kpi {
+  border: 1px solid rgba(0, 229, 255, .14);
+}
+:root[data-theme="cyberpunk"] .table tbody tr:hover td {
+  background: rgba(0, 229, 255, .055);
+}
+:root[data-theme="cyberpunk"] .select:focus,
+:root[data-theme="cyberpunk"] input:focus,
+:root[data-theme="cyberpunk"] textarea:focus {
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, .18), 0 0 16px rgba(0, 229, 255, .25);
+}
+:root[data-theme="cyberpunk"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+:root[data-theme="cyberpunk"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00e5ff, #7b5cff, #ff2ed1);
+  border-radius: 999px;
+}
+:root[data-theme="cyberpunk"] ::-webkit-scrollbar-track { background: #060912; }
+
 html, body { height: 100%; }
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
