@@ -24,6 +24,7 @@ import os
 import re
 import sys
 import urllib.parse
+import urllib.error
 import urllib.request
 from datetime import datetime
 
@@ -105,15 +106,19 @@ def _fmt_heat(value):
 
 
 def _http_get(url, headers=None, timeout=25):
-    if not safe_http_url(url):
+    # 硬编码公网源：跳过 DNS 解析校验（避免 DNS 抖动导致全部采集失败）
+    if not safe_http_url(url, resolve_dns=False):
         raise ValueError(f"URL 不满足安全策略（仅公网 http/https）: {url[:120]}")
     req = urllib.request.Request(url, headers={
         "User-Agent": TOPHUB_UA,
         **({"Accept": "application/json,text/plain,*/*"} if headers is None else {}),
         **(headers or {}),
     })
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310  # nosemgrep: dynamic-urllib-use-detected  # 已由 safe_http_url 校验公网地址
-        return resp.read().decode("utf-8", "ignore")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310  # nosemgrep: dynamic-urllib-use-detected  # 已由 safe_http_url 校验公网地址
+            return resp.read().decode("utf-8", "ignore")
+    except urllib.error.URLError as e:
+        raise ValueError(f"网络请求失败（请检查网络/代理设置）: {e.reason}") from e
 
 
 def _norm_title(s):
