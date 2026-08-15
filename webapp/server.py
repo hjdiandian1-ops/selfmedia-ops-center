@@ -51,6 +51,7 @@ COLLECT_PLATFORM_VIRALS = os.path.join(SCRIPTS, "collect_platform_virals.py")
 RUN_VIRAL_BREAKDOWN_DAILY = os.path.join(SCRIPTS, "run_viral_breakdown_daily.py")
 AGGREGATE_VIRAL = os.path.join(SCRIPTS, "aggregate_viral_lessons.py")
 RETENTION_LOG = os.path.join(ROOT, "data", "retention_log.json")
+TOPICS_DIR = os.path.join(ROOT, "data", "topics")
 
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
@@ -1219,6 +1220,35 @@ def api_retention_apply():
         "space": r["space"],
         "ran_at": runs[-1]["ran_at"],
     }
+
+
+class PrefPayload(BaseModel):
+    platforms: dict = {}
+
+
+@app.get("/api/topics/preferences")
+def api_topics_preferences():
+    prefs = read_json(os.path.join(TOPICS_DIR, "preferences.json")) or {}
+    niches = read_json(os.path.join(TOPICS_DIR, "niches.json")) or {}
+    return {"preferences": prefs, "niches": niches}
+
+
+@app.post("/api/topics/preferences")
+def api_topics_preferences_save(payload: PrefPayload):
+    """保存选题偏好：平台→赛道列表（无选择=默认模式）。"""
+    niches = read_json(os.path.join(TOPICS_DIR, "niches.json")) or {}
+    cleaned = {}
+    for platform, names in (payload.platforms or {}).items():
+        if platform not in niches:
+            continue
+        valid = [n for n in names if n in niches[platform]]
+        if valid:
+            cleaned[platform] = valid
+    data = {"platforms": cleaned, "updated_at": _now_str()}
+    os.makedirs(TOPICS_DIR, exist_ok=True)
+    with open(os.path.join(TOPICS_DIR, "preferences.json"), "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "preferences": data}
 
 
 @app.get("/api/topics")

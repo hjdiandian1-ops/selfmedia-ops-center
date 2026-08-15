@@ -225,6 +225,79 @@ async function fetchHotTopics(btn) {
 }
 window.fetchHotTopics = fetchHotTopics;
 
+let prefData = { preferences: { platforms: {} }, niches: {} };
+
+async function loadPrefData() {
+  try {
+    prefData = await api("/api/topics/preferences");
+    loadPrefChip();
+  } catch (e) { /* 偏好非必须，失败静默 */ }
+}
+
+function loadPrefChip() {
+  const sel = (prefData.preferences && prefData.preferences.platforms) || {};
+  const n = Object.values(sel).reduce((a, b) => a + (b ? b.length : 0), 0);
+  const chip = $("#pref-chip");
+  if (chip) chip.textContent = n ? `偏好：${n} 个赛道` : "";
+}
+
+function openPrefModal() {
+  renderPrefNiches();
+  $("#pref-modal").classList.remove("hidden");
+}
+window.openPrefModal = openPrefModal;
+
+function closePrefModal() {
+  $("#pref-modal").classList.add("hidden");
+}
+window.closePrefModal = closePrefModal;
+
+function renderPrefNiches() {
+  const pl = $("#pref-platform").value;
+  const names = Object.keys((prefData.niches || {})[pl] || {});
+  const saved = ((prefData.preferences || {}).platforms || {})[pl] || [];
+  $("#pref-niches").innerHTML = names.length
+    ? names.map((n) => `<label class="field-label"><input type="checkbox" value="${esc(n)}" ${saved.includes(n) ? "checked" : ""}> ${esc(n)}</label>`).join("")
+    : '<span class="muted">该平台暂无赛道词库</span>';
+}
+window.renderPrefNiches = renderPrefNiches;
+
+async function savePrefs() {
+  const pl = $("#pref-platform").value;
+  const names = Array.from(document.querySelectorAll("#pref-niches input:checked")).map((i) => i.value);
+  const platforms = JSON.parse(JSON.stringify((prefData.preferences || {}).platforms || {}));
+  platforms[pl] = names;
+  try {
+    const d = await api("/api/topics/preferences", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platforms }),
+    });
+    prefData.preferences = d.preferences;
+    loadPrefChip();
+    toast("偏好已保存，下次热点采集按偏好过滤");
+    closePrefModal();
+  } catch (e) {
+    toast("保存偏好失败: " + e.message, false);
+  }
+}
+window.savePrefs = savePrefs;
+
+async function clearPrefs() {
+  try {
+    const d = await api("/api/topics/preferences", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platforms: {} }),
+    });
+    prefData.preferences = d.preferences;
+    loadPrefChip();
+    toast("已清除偏好，恢复默认模式");
+    closePrefModal();
+  } catch (e) {
+    toast("清除失败: " + e.message, false);
+  }
+}
+window.clearPrefs = clearPrefs;
+
 // ---------- 概览 ----------
 let ovCache = null;
 let ovStatsCache = null;
@@ -1326,6 +1399,7 @@ function renderSuggestPool(tbodySel, cands, countSel, poolLabel) {
 }
 
 async function loadTopics() {
+  loadPrefData();
   try {
     const [d, jobsRes, prodRes] = await Promise.all([
       api("/api/topics"), api("/api/jobs"), api("/api/production/status"),

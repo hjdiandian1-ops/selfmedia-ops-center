@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-<link rel="stylesheet" href="/static/style.css?v=3.65">
+<link rel="stylesheet" href="/static/style.css?v=3.66">
 </head>
 <body>
 <div class="app">
@@ -125,6 +125,8 @@
         <div class="toolbar">
           <button class="btn tonal" id="btn-fetch-topics" onclick="fetchHotTopics(this)" title="抓取多个信息源热点 → 清洗评分 → 生成日/周选题推荐">热点采集</button>
           <button class="btn" id="btn-refresh-topics" title="重新读取已生成的选题推荐文件（不重新采集）">刷新列表</button>
+          <button class="btn tonal" id="btn-prefs" onclick="openPrefModal()" title="选择平台赛道，热点采集与选题推荐将按偏好过滤">偏好设置</button>
+          <span class="muted" id="pref-chip"></span>
         </div>
         <div id="topics-progress" class="topics-progress hidden">
           <span class="tp-spinner"></span>
@@ -620,7 +622,31 @@
   </div>
 </div>
 
+<div id="pref-modal" class="modal hidden" onclick="if(event.target===this)closePrefModal()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>选题偏好设置</h3>
+      <button class="btn small tonal" onclick="closePrefModal()">关闭</button>
+    </div>
+    <div class="form" style="padding:8px 22px 18px">
+      <p class="muted" style="margin-top:0">先选平台，再勾选赛道；不勾选任何赛道 = 默认模式（当前行为）。热点采集与选题推荐将按偏好过滤。</p>
+      <label class="field-label">平台</label>
+      <select id="pref-platform" class="select" onchange="renderPrefNiches()">
+        <option value="小红书">小红书</option>
+        <option value="公众号">公众号</option>
+        <option value="短视频">短视频</option>
+      </select>
+      <div id="pref-niches" class="stack" style="margin-top:10px"></div>
+      <div class="toolbar" style="margin-top:14px">
+        <button class="btn filled" onclick="savePrefs()">保存偏好</button>
+        <button class="btn tonal" onclick="clearPrefs()">清除偏好（默认模式）</button>
+      </div>
+      <p class="muted" id="pref-status" style="margin-top:8px"></p>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.65"></script>
+    <script src="/static/app.js?v=3.66"></script>
 </body>
 </html>

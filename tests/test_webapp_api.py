@@ -316,6 +316,18 @@ def test_adopt_truncates_long_title(isolated_dirs, monkeypatch):
     assert len(long_title[:60]) == 60
 
 
+def test_topics_preferences_roundtrip(tmp_path, monkeypatch):
+    monkeypatch.setattr(server, "TOPICS_DIR", str(tmp_path))
+    with open(os.path.join(str(tmp_path), "niches.json"), "w", encoding="utf-8") as f:
+        json.dump({"小红书": {"科技数码": ["AI"]}}, f, ensure_ascii=False)
+    r = server.api_topics_preferences_save(server.PrefPayload(
+        platforms={"小红书": ["科技数码", "不存在的赛道"]}))
+    assert r["preferences"]["platforms"]["小红书"] == ["科技数码"]
+    d = server.api_topics_preferences()
+    assert d["niches"]["小红书"]["科技数码"]
+    assert d["preferences"]["platforms"]["小红书"] == ["科技数码"]
+
+
 def test_flywheel_regenerate(isolated_dirs, isolated_flywheel):
     r = server.api_flywheel_regenerate()
     assert r["ok"] is True

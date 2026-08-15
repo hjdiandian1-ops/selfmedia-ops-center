@@ -14,6 +14,15 @@ def test_score_item_keywords():
     assert ST.score_item("今天吃了一碗面") == 0
 
 
+def test_match_niches():
+    prefs = {"platforms": {"小红书": ["科技数码", "美食"]}}
+    niches = {"小红书": {"科技数码": ["AI", "科技"], "美食": ["美食", "食谱"]}}
+    assert ST.match_niches("AI 大模型发布", "", prefs, niches) == ["小红书·科技数码"]
+    assert ST.match_niches("周末探店美食攻略", "", prefs, niches) == ["小红书·美食"]
+    assert ST.match_niches("今天天气不错", "", prefs, niches) == []
+    assert ST.match_niches("今天天气不错", "", {}, niches) == []
+
+
 def test_suggest_view():
     # DECONSTRUCT 优先级高于 DIALOGUE：含「融资/钱」等词的先归硬核拆解
     assert ST.suggest_view("这家公司融资了 1000 万") == "【硬核拆解】"
