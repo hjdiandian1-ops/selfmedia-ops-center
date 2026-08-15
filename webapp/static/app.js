@@ -2377,24 +2377,6 @@ $("#btn-stats-refresh").addEventListener("click", (e) => runWithSpin(e.currentTa
   loadOverview();
 }));
 
-$("#btn-xhs-import").addEventListener("click", () => $("#xhs-import-file").click());
-$("#xhs-import-file").addEventListener("change", async (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-  try {
-    const d = await api(`/api/stats/import-xhs?filename=${encodeURIComponent(file.name)}`, {
-      method: "POST",
-      body: file,
-    });
-    toast(`导入完成：新增 ${d.new_notes ?? 0} / 更新 ${d.updated_notes ?? 0}，匹配 Job ${d.matched_jobs ?? 0} 条`);
-    loadData();
-    loadOverview();
-  } catch (err) {
-    toast("导入失败: " + err.message, false);
-  }
-  e.target.value = "";
-});
-
 $("#btn-dash-import").addEventListener("click", () => $("#dash-import-file").click());
 $("#dash-import-file").addEventListener("change", async (e) => {
   const files = Array.from(e.target.files || []);
