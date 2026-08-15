@@ -5,6 +5,7 @@
       "name": "蓝白默认",
       "desc": "现状基线，Material 3 Light",
       "implemented": true,
+      "scheme": "triadic",
       "tokens": {
         "primary": "#1a73e8",
         "primary-strong": "#1967d2",
@@ -54,6 +55,7 @@
       "name": "红白小吴聊",
       "desc": "品牌红白系，贴合 cover-design-skill 主色",
       "implemented": true,
+      "scheme": "analogous+complementary",
       "tokens": {
         "primary": "#dc2626",
         "primary-strong": "#b91c1c",
@@ -94,8 +96,8 @@
         "brand-gradient": "linear-gradient(135deg, #dc2626, #f87171)",
         "palette-1": "#dc2626",
         "palette-2": "#f59e0b",
-        "palette-3": "#92400e",
-        "palette-4": "#0f766e"
+        "palette-3": "#0ea5e9",
+        "palette-4": "#8b5cf6"
       }
     },
     {
@@ -103,6 +105,7 @@
       "name": "深空暗黑",
       "desc": "Tokyo Night / Catppuccin Mocha 风格，专注夜间使用",
       "implemented": true,
+      "scheme": "split-complementary",
       "tokens": {
         "primary": "#7aa2f7",
         "primary-strong": "#5d8fe0",
@@ -152,6 +155,7 @@
       "name": "粉漾少女",
       "desc": "粉色系圆润主题，圆角更大、阴影更柔和",
       "implemented": true,
+      "scheme": "triadic",
       "tokens": {
         "primary": "#d81b60",
         "primary-strong": "#ad1457",
@@ -202,6 +206,7 @@
       "name": "哆啦A梦（蓝胖）",
       "desc": "QQ音乐式卡通皮肤：蓝白红黄配色 + 原创蓝胖机器人猫吉祥物",
       "implemented": true,
+      "scheme": "analogous+triadic",
       "tokens": {
         "primary": "#0b72b9",
         "primary-strong": "#0a5f9e",
@@ -250,8 +255,9 @@
     {
       "id": "cyberpunk",
       "name": "赛博朋克·霓虹风暴",
-      "desc": "深空蓝黑 + 霓虹青/品红/荧光绿，光污染风",
+      "desc": "深空蓝黑 + 霓虹青/品红/紫/荧光黄，光污染风",
       "implemented": true,
+      "scheme": "triadic+neon",
       "tokens": {
         "primary": "#00e5ff",
         "primary-strong": "#00c8e8",
@@ -297,14 +303,15 @@
         "palette-1": "#00e5ff",
         "palette-2": "#ff2ed1",
         "palette-3": "#7b5cff",
-        "palette-4": "#00ff9f"
+        "palette-4": "#f2ff00"
       }
     },
     {
       "id": "hermes",
       "name": "爱马仕橙奢侈风",
-      "desc": "爱马仕橙 + 金色/深茶/墨绿，轻奢暖调",
+      "desc": "爱马仕橙 + 金色/墨绿/酒红，轻奢暖调",
       "implemented": true,
+      "scheme": "analogous+complementary",
       "tokens": {
         "primary": "#e8680a",
         "primary-strong": "#c95309",
@@ -350,7 +357,7 @@
         "palette-1": "#e8680a",
         "palette-2": "#d4a72c",
         "palette-3": "#2f6f5e",
-        "palette-4": "#8a5a2b"
+        "palette-4": "#9d174d"
       }
     },
     {

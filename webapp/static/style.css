@@ -74,8 +74,8 @@
   --aurora-3: #fff3ec;
   --palette-1: #dc2626;
   --palette-2: #f59e0b;
-  --palette-3: #92400e;
-  --palette-4: #0f766e;
+  --palette-3: #0ea5e9;
+  --palette-4: #8b5cf6;
 }
 
 :root[data-theme="midnight"] {
@@ -267,7 +267,7 @@
   --palette-1: #00e5ff;
   --palette-2: #ff2ed1;
   --palette-3: #7b5cff;
-  --palette-4: #00ff9f;
+  --palette-4: #f2ff00;
 }
 
 /* 赛博朋克·霓虹风暴：网格扫描线 + 霓虹光污染 */
@@ -362,7 +362,7 @@
   --palette-1: #e8680a;
   --palette-2: #d4a72c;
   --palette-3: #2f6f5e;
-  --palette-4: #8a5a2b;
+  --palette-4: #9d174d;
 }
 :root[data-theme="hermes"] .brand-logo {
   box-shadow: 0 4px 16px rgba(232, 104, 10, .35), 0 0 0 1px rgba(212, 167, 44, .35);

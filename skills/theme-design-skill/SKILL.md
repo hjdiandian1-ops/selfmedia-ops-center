@@ -41,7 +41,7 @@ description: 为自媒体运营工作台（及同类原生 HTML/CSS 应用）设
 
 ### 3. 定色板
 
-把新主题写入 `references/palettes.json`（机器可读，唯一事实源），格式见文件内示例。每个主题至少覆盖：背景（surface/surface-dim）、正文（on-surface/on-surface-variant）、主色与容器色（primary 系列）、边框（outline 系列）、成功/错误、品牌渐变。
+先用 `skills/color-system-skill`（色彩设计规范）生成主色 + 3 协调色（palette-1..4）并校验色相差，再写入 `references/palettes.json`（机器可读，唯一事实源），格式见文件内示例。每个主题至少覆盖：背景（surface/surface-dim）、正文（on-surface/on-surface-variant）、主色与容器色（primary 系列）、边框（outline 系列）、成功/错误、品牌渐变、palette-1..4。
 
 ### 4. 对比度检查
 

@@ -1,0 +1,6 @@
+interface:
+  display_name: "色彩设计规范"
+  short_description: "设计流行配色体系：主色+协调色、色阶与对比度校验工具"
+  default_prompt: "Use $color-system-skill 为工作台设计或校验一套主题配色。"
+policy:
+  allow_implicit_invocation: true

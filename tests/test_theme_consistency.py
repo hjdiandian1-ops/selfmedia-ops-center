@@ -53,3 +53,13 @@ def test_theme_switcher_present():
     assert "function applyTheme" in js
     for theme_id in ("default", "brand-red", "midnight", "pink", "doraemon", "cyberpunk", "hermes"):
         assert f'value="{theme_id}"' in html
+
+
+def test_implemented_themes_have_palette_and_scheme():
+    data = json.loads(_read(PALETTES))
+    for theme in data["themes"]:
+        if not theme.get("implemented", False):
+            continue
+        assert theme.get("scheme"), f"主题 {theme['id']} 缺少配色方案 scheme"
+        for k in ("palette-1", "palette-2", "palette-3", "palette-4"):
+            assert k in theme["tokens"], f"主题 {theme['id']} 缺少 {k}"
