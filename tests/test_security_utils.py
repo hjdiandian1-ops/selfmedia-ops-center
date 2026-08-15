@@ -13,6 +13,8 @@ import security_utils as SU  # noqa: E402
 def test_valid_job_id():
     assert SU.valid_job_id("2026-08-14_测试主题")
     assert SU.valid_job_id("2026-08-14_DeepSeek_V4")
+    assert SU.valid_job_id("2026-08-04_AI产业1.2万亿")
+    assert SU.valid_job_id("2026-08-13_xAI发布Grok Bo")
     assert not SU.valid_job_id("../secret")
     assert not SU.valid_job_id("a/b")
     assert not SU.valid_job_id("")

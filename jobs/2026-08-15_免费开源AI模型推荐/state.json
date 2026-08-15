@@ -3,7 +3,7 @@
   "theme": "免费开源AI模型推荐",
   "state": "archive",
   "created_at": "2026-08-15 12:17:23",
-  "updated_at": "2026-08-15 12:27:20",
+  "updated_at": "2026-08-15 12:29:18",
   "decision_deadline": "2026-08-15 12:47:23",
   "history": [
     {
@@ -36,6 +36,11 @@
       "state": "archive",
       "at": "2026-08-15 12:27:20",
       "note": "质检链通过且评分报告已落盘，自动归档；发布前仍需人工复核评分报告"
+    },
+    {
+      "state": "archive",
+      "at": "2026-08-15 12:29:18",
+      "note": "全流程完成：质检四门全绿（契约 PASSED/Harsh 100/去AI味 PASSED/合规 PASSED），评分报告人工定稿 100 分，Git 提交 3573a05；发布动作待用户确认"
     }
   ],
   "reject_count": 0,
