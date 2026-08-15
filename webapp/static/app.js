@@ -182,7 +182,6 @@ let currentOvTab = "overview";
 let lastStatsTrend = [];
 let dashPeriod = "day";
 let panelEditMode = false;
-let chartMulti = false;
 const ovSeriesSel = { overview: "reads", 小红书: "reads", 公众号: "reads", 短视频: "reads" };
 
 async function loadOverview() {
@@ -310,7 +309,6 @@ function renderOverviewPane(stats, d) {
 }
 
 function renderOverviewTrend() {
-  const key = ovSeriesSel.overview;
   const dates = new Set();
   const byDate = {};
   Object.values(ovCache.platforms || {}).forEach((p) => {
@@ -342,10 +340,10 @@ function renderOverviewTrend() {
     engagement: { label: "互动率%", data: bucketed.engagement },
     followers: { label: "粉丝", data: bucketed.followers },
   };
+  const keys = chartSeriesFor("overview");
   $("#ov-series").innerHTML = Object.entries(series).map(([k, s]) =>
-    `<button class="tab ${k === key && !chartMulti ? "active" : ""}" onclick="setOverviewSeries('${k}')">${s.label}</button>`).join("")
-    + `<button class="tab ${chartMulti ? "active" : ""}" onclick="toggleChartMulti()">多线对比</button>`;
-  svgLineChart($("#ov-trend"), bucketed.labels, series, key, chartMulti);
+    `<button class="tab ${keys.includes(k) ? "active" : ""}" onclick="toggleChartSeries('overview','${k}')">${s.label}</button>`).join("");
+  svgLineChart($("#ov-trend"), bucketed.labels, series, keys);
 }
 
 function setOverviewSeries(k) {
@@ -704,7 +702,6 @@ function xhsDashCardHtml() {
 }
 
 function renderPlatformTrend(name, trend) {
-  const key = ovSeriesSel[name] || "reads";
   const bucketed = bucketTrend({
     dates: trend.dates || [],
     labels: trend.labels || [],
@@ -719,10 +716,10 @@ function renderPlatformTrend(name, trend) {
     engagement: { label: "互动率%", data: bucketed.engagement },
     followers: { label: "粉丝", data: bucketed.followers },
   };
+  const keys = chartSeriesFor(name);
   $("#pf-series").innerHTML = Object.entries(seriesMap).map(([k, s]) =>
-    `<button class="tab ${k === key && !chartMulti ? "active" : ""}" onclick="setPlatformSeries('${esc(name)}','${k}')">${s.label}</button>`).join("")
-    + `<button class="tab ${chartMulti ? "active" : ""}" onclick="toggleChartMulti()">多线对比</button>`;
-  svgLineChart($("#pf-trend"), bucketed.labels, seriesMap, key, chartMulti);
+    `<button class="tab ${keys.includes(k) ? "active" : ""}" onclick="toggleChartSeries('${esc(name)}','${k}')">${s.label}</button>`).join("");
+  svgLineChart($("#pf-trend"), bucketed.labels, seriesMap, keys);
 }
 
 function setPlatformSeries(platform, key) {
@@ -733,36 +730,56 @@ function setPlatformSeries(platform, key) {
 }
 window.setPlatformSeries = setPlatformSeries;
 
-function toggleChartMulti() {
-  chartMulti = !chartMulti;
-  if (currentOvTab === "overview") {
-    renderOverviewTrend();
-  } else if (ovCache && ovCache.platforms && ovCache.platforms[currentOvTab]) {
-    renderPlatformTrend(currentOvTab, ovCache.platforms[currentOvTab].trend);
+function chartSeriesFor(scope) {
+  const all = ["publishes", "reads", "engagement", "followers"];
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_chart_series") || "{}");
+    if (Array.isArray(v[scope]) && v[scope].length) {
+      return v[scope].filter((k) => all.includes(k));
+    }
+  } catch (e) { /* ignore */ }
+  return all;
+}
+
+function saveChartSeries(scope, keys) {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_chart_series") || "{}");
+    v[scope] = keys;
+    localStorage.setItem("selfmedia_chart_series", JSON.stringify(v));
+  } catch (e) { /* ignore */ }
+}
+
+function toggleChartSeries(scope, key) {
+  const cur = chartSeriesFor(scope);
+  const next = cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
+  if (!next.length) return; // 至少保留一条
+  saveChartSeries(scope, next);
+  if (scope === "overview") renderOverviewTrend();
+  else if (ovCache && ovCache.platforms && ovCache.platforms[scope]) {
+    renderPlatformTrend(scope, ovCache.platforms[scope].trend);
   }
 }
-window.toggleChartMulti = toggleChartMulti;
+window.toggleChartSeries = toggleChartSeries;
 
-function svgLineChart(el, labels, seriesMap, activeKey, multi) {
+function svgLineChart(el, labels, seriesMap, selectedKeys) {
   if (!el) return;
-  const s = seriesMap[activeKey] || {};
-  const data = s.data || [];
-  if (!data.length || !data.some((v) => v != null && v > 0)) {
+  const keys = (selectedKeys || []).filter((k) => seriesMap[k] && (seriesMap[k].data || []).some((v) => v != null && v > 0));
+  if (!keys.length) {
     el.innerHTML = '<span class="muted">暂无趋势数据</span>';
     return;
   }
   const W = 600, H = 190, PAD = 34;
   const step = labels.length > 1 ? (W - PAD * 2) / (labels.length - 1) : W - PAD * 2;
-  const useMulti = multi && Object.keys(seriesMap).length > 1;
-  const geoms = Object.entries(seriesMap).map(([k, ss]) => {
-    const arr = ss.data || [];
+  const useMulti = keys.length > 1;
+  const geoms = keys.map((k) => {
+    const arr = seriesMap[k].data || [];
     const max = Math.max(1, ...arr.map((v) => Number(v || 0)));
     return {
-      k, label: ss.label, arr, max,
+      k, label: seriesMap[k].label, arr, max,
       pts: arr.map((v, i) => [PAD + i * step, H - PAD - (Number(v || 0) / max) * (H - PAD * 2)]),
     };
   });
-  const activeGeom = geoms.find((g) => g.k === activeKey) || geoms[0];
+  const activeGeom = geoms[0];
   const grid = [0.25, 0.5, 0.75].map((p) => {
     const y = H - PAD - p * (H - PAD * 2);
     return `<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PAD}" y2="${y.toFixed(1)}" class="chart-grid"/>`;
@@ -812,7 +829,8 @@ function svgLineChart(el, labels, seriesMap, activeKey, multi) {
       h.setAttribute("cy", activeGeom.pts[idx][1].toFixed(1));
       h.style.display = "";
     }
-    const rows = Object.entries(seriesMap).map(([k, ss]) => {
+    const rows = keys.map((k) => {
+      const ss = seriesMap[k];
       const v = ss.data ? ss.data[idx] : null;
       return `<div class="chart-tip-row"><i class="tip-dot" style="background:${seriesColor(k)}"></i><span>${esc(ss.label)}</span><b>${v == null ? "—" : esc(fmtNum(v))}</b></div>`;
     }).join("");
