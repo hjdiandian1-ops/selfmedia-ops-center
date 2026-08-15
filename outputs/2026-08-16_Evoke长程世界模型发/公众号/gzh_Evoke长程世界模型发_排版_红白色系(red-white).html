@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>140亿参数的世界模型，能连续记路2小时 · 小吴聊</title>
+</head>
+<body style="margin:0;padding:0;background:#FAFAFA;">
+<section style="max-width:677px;margin:0 auto;background:#FFFFFF;padding:36px 24px;font-family:-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#374151;line-height:1.8;letter-spacing:0.5px;font-size:15px;">
+
+  <p style="font-size:14px;color:#9CA3AF;letter-spacing:2px;margin:0 0 18px;"><span leaf="">小吴聊 · 商业观察 · 2026-08-16</span></p>
+  <h1 style="font-size:27px;line-height:1.5;font-weight:900;margin:0 0 22px;color:#1C1917;"><span leaf="">140亿参数的世界模型，能连续记路2小时</span></h1>
+  <p style="font-size:14px;color:#6B7280;border-left:4px solid #DC2626;padding-left:12px;margin:0 0 30px;"><span leaf="">更快（3 步去噪）反而更稳，记忆被搬到了模型外面。</span></p>
+
+  <p><span leaf="">8月12日，Alaya Lab 把 EVOKE 的论文、权重和演示一起放了出来。一句话：这是一个 140 亿参数的交互世界模型，用 3 步去噪生成视频，官方称在 WBench 上拿下 SOTA，还能连续跑 2 小时不崩。</span></p>
+  <p><span leaf="">我把论文、项目主页和 GitHub 仓库翻了一遍。这次值得关注的，是它第一次把记忆放在了模型外面。</span></p>
+
+  <section style="padding:0 0 32px;">
+    <p style="font-size:14px;color:#9CA3AF;margin:0 0 14px;letter-spacing:1px;"><span leaf="">📌 本文看点</span></p>
+    <section style="display:flex;justify-content:space-between;">
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:16px 10px;margin-right:8px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:2px 10px;border-radius:4px;margin:0 0 8px;"><span leaf="">01</span></p>
+        <p style="font-size:13px;font-weight:700;color:#1C1917;margin:0;"><span leaf="">快与省的账</span></p>
+      </section>
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:16px 10px;margin-right:8px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:2px 10px;border-radius:4px;margin:0 0 8px;"><span leaf="">02</span></p>
+        <p style="font-size:13px;font-weight:700;color:#1C1917;margin:0;"><span leaf="">记忆为什么难</span></p>
+      </section>
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:16px 10px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:2px 10px;border-radius:4px;margin:0 0 8px;"><span leaf="">03</span></p>
+        <p style="font-size:13px;font-weight:700;color:#1C1917;margin:0;"><span leaf="">行动判断</span></p>
+      </section>
+    </section>
+  </section>
+
+  <section style="margin-top:16px;margin-bottom:28px;padding:0;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">01</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;"><span leaf="">LEDGER</span></p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;"><span leaf="">账本：快与省的账怎么算</span></h3>
+        </section>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;"><span leaf="">单张 H200，384×640、24fps，每 1.5 秒的视频分块耗时 2.11 秒。传统做法要 50 步去噪加 CFG，EVOKE 只用 3 步、零 CFG，一次前向推理出一个分块。交互式生成的算力账，从跑不起变成了单卡可试。</span></p>
+
+    <section data-viz="table" style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;overflow:hidden;">
+      <section style="padding:14px 18px;background:#FEF2F2;font-size:15px;font-weight:800;color:#1C1917;"><span leaf="">EVOKE 关键规格（官方口径）</span></section>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr style="background:#FAFAFA;">
+          <td style="padding:9px 8px;font-size:12px;color:#9CA3AF;width:34%;"><span leaf="">项目</span></td>
+          <td style="padding:9px 8px;font-size:12px;color:#9CA3AF;width:66%;"><span leaf="">数值</span></td>
+        </tr>
+        <tr style="border-top:1px solid #F5F5F5;">
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#6B7280;"><span leaf="">参数量</span></td>
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#1C1917;"><span leaf="">140 亿（14B）</span></td>
+        </tr>
+        <tr style="border-top:1px solid #F5F5F5;">
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#6B7280;"><span leaf="">去噪步数</span></td>
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#DC2626;font-weight:800;"><span leaf="">3 步，零 CFG</span></td>
+        </tr>
+        <tr style="border-top:1px solid #F5F5F5;">
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#6B7280;"><span leaf="">生成速度</span></td>
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#1C1917;"><span leaf="">1.5 秒分块 / 2.11 秒（单张 H200）</span></td>
+        </tr>
+        <tr style="border-top:1px solid #F5F5F5;">
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#6B7280;"><span leaf="">记忆窗口</span></td>
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#1C1917;"><span leaf="">约 90 秒（外部世界状态库）</span></td>
+        </tr>
+        <tr style="border-top:1px solid #F5F5F5;">
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#6B7280;"><span leaf="">连续会话</span></td>
+          <td style="padding:9px 8px;font-size:13px;line-height:1.5;color:#DC2626;font-weight:800;"><span leaf="">小时级实测，演示含 2 小时</span></td>
+        </tr>
+      </table>
+      <section style="padding:12px 18px 14px;font-size:12px;color:#9CA3AF;border-top:1px dashed #F3E2E2;margin-top:12px;"><span leaf="">数据来源：GitHub AlayaLab/Evoke / 官方项目主页（2026-08）</span></section>
+    </section>
+
+    <p><span leaf="">开源账同样值得算：GitHub 仓库 Apache-2.0，4 个模型加教师权重全部放出。要提醒的是深度后端 ViGeo 是 CC-BY-NC-4.0，商用前要把许可证逐条核对。</span></p>
+  </section>
+
+  <section style="padding:0 10px;">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;"><span leaf=""><br></span></section>
+  </section>
+
+  <section style="margin-top:48px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">02</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;"><span leaf="">MECHANISM</span></p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;"><span leaf="">机制解剖：为什么记住这么难</span></h3>
+        </section>
+      </section>
+    </section>
+
+    <p><span leaf="">长视频世界模型最大的坑是上下文：把历史帧塞进 denoiser 的上下文或 KV cache，会话越长，每次生成越贵；窗口化又会让模型忘事。EVOKE 的解法是外部化：用单目深度估计把生成的分块变成相机坐标下的点云，存进世界状态库；生成新一帧时只取当前视角要用的几何。默认 90 秒的保留窗口，会话再长，模型内部上下文保持有界。</span></p>
+    <p><span leaf="">记忆之外，它还把教师模型重做了一遍：chunk 分组稀疏注意力加远端帧检索，让 30 秒的自强制 rollout 成本可控，再把长程能力蒸馏到 3 步学生。效果在数字上很直白：镜头离开再回来，场景重建 PSNR 提升 2.3~3.2 dB；中途改提示词 67% 能生效；已经生成过的区域想覆盖，成功率掉到 4%。</span></p>
+
+    <section data-viz="bar" style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;padding:18px;">
+      <section style="font-size:15px;font-weight:800;color:#1C1917;margin-bottom:14px;"><span leaf="">四组数字：速度、记忆与改写（量级对比）</span></section>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:9px 10px 2px;font-size:13px;color:#6B7280;width:62%;"><span leaf="">传统多步去噪</span></td><td style="padding:9px 10px 2px;text-align:right;font-size:13px;font-weight:800;color:#DC2626;width:38%;"><span leaf="">50 步 + CFG</span></td></tr>
+        <tr><td colspan="2" style="padding:0 10px 10px;"><section style="background:#F5F5F5;border-radius:999px;height:8px;overflow:hidden;"><section style="width:100%;height:8px;background:#DC2626;border-radius:999px;"></section></section></td></tr>
+        <tr><td style="padding:9px 10px 2px;font-size:13px;color:#6B7280;width:62%;"><span leaf="">EVOKE 学生</span></td><td style="padding:9px 10px 2px;text-align:right;font-size:13px;font-weight:800;color:#DC2626;width:38%;"><span leaf="">3 步，零 CFG</span></td></tr>
+        <tr><td colspan="2" style="padding:0 10px 10px;"><section style="background:#F5F5F5;border-radius:999px;height:8px;overflow:hidden;"><section style="width:6%;height:8px;background:#DC2626;border-radius:999px;"></section></section></td></tr>
+        <tr><td style="padding:9px 10px 2px;font-size:13px;color:#6B7280;width:62%;"><span leaf="">中途改提示词生效</span></td><td style="padding:9px 10px 2px;text-align:right;font-size:13px;font-weight:800;color:#DC2626;width:38%;"><span leaf="">67%</span></td></tr>
+        <tr><td colspan="2" style="padding:0 10px 10px;"><section style="background:#F5F5F5;border-radius:999px;height:8px;overflow:hidden;"><section style="width:67%;height:8px;background:#DC2626;border-radius:999px;"></section></section></td></tr>
+        <tr><td style="padding:9px 10px 2px;font-size:13px;color:#6B7280;width:62%;"><span leaf="">已存区域想覆盖</span></td><td style="padding:9px 10px 2px;text-align:right;font-size:13px;font-weight:800;color:#DC2626;width:38%;"><span leaf="">4%</span></td></tr>
+        <tr><td colspan="2" style="padding:0 10px 10px;"><section style="background:#F5F5F5;border-radius:999px;height:8px;overflow:hidden;"><section style="width:4%;height:8px;background:#DC2626;border-radius:999px;"></section></section></td></tr>
+        <tr><td style="padding:9px 10px 2px;font-size:13px;color:#6B7280;width:62%;"><span leaf="">回头重建提升</span></td><td style="padding:9px 10px 2px;text-align:right;font-size:13px;font-weight:800;color:#DC2626;width:38%;"><span leaf="">+2.3~3.2 dB</span></td></tr>
+        <tr><td colspan="2" style="padding:0 10px 10px;"><section style="background:#F5F5F5;border-radius:999px;height:8px;overflow:hidden;"><section style="width:32%;height:8px;background:#DC2626;border-radius:999px;"></section></section></td></tr>
+      </table>
+      <section style="padding:12px 18px 14px;font-size:12px;color:#9CA3AF;border-top:1px dashed #F3E2E2;margin-top:12px;"><span leaf="">数据来源：arXiv 2608.13546 / AlphaXiv 解读（2026-08）</span></section>
+    </section>
+
+    <p><span leaf="">这不是一家在卷。世界模型赛道从年初就在挤：Genie 3、Kling、Wan 系、LingBot-World、Matrix-Game、HY-WorldPlay 相继出现。Alaya Lab 自己 7 月底刚发过 15B 的 AlayaWorld，8 月 12 日又发了 EVOKE。WBench 这个交互式基准上已经有 30 个模型、22 项指标、289 个用例，长时记忆成了整条赛道的公共考卷。</span></p>
+  </section>
+
+  <section style="padding:0 10px;">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;"><span leaf=""><br></span></section>
+  </section>
+
+  <section style="margin-top:48px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">03</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;"><span leaf="">JUDGMENT</span></p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;"><span leaf="">当生成趋近无限，什么会变贵</span></h3>
+        </section>
+      </section>
+    </section>
+
+    <p><span leaf="">如果世界模型真的能无限生成，视频生产的边际成本会继续往下掉。供给接近无限之后，稀缺品会转移：能稳定输出小时级可交互世界的模型权重；能把世界状态变成可复用资产的产品，比如游戏地图、虚拟拍摄场景、仿真环境；还有经过验证的评测与人工反馈数据。</span></p>
+    <p><span leaf="">个人的位置也更清楚：工具越便宜，判断力越贵。谁能分辨演示片段的真实边界，谁就少付一次相信演示的学费。</span></p>
+
+    <section data-viz="kpi" style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;padding:18px;">
+      <section style="font-size:15px;font-weight:800;color:#1C1917;margin-bottom:8px;"><span leaf="">记住这三个数字就够了</span></section>
+      <table style="width:100%;border-collapse:collapse;margin:10px 0 4px;">
+        <tr>
+          <td style="width:33%;padding:8px 4px;text-align:center;"><section style="font-size:24px;font-weight:900;color:#DC2626;"><span leaf="">140亿</span></section><section style="font-size:12px;color:#6B7280;margin-top:4px;"><span leaf="">参数，开源权重</span></section></td>
+          <td style="width:33%;padding:8px 4px;text-align:center;"><section style="font-size:24px;font-weight:900;color:#DC2626;"><span leaf="">2.11秒</span></section><section style="font-size:12px;color:#6B7280;margin-top:4px;"><span leaf="">生成 1.5 秒视频</span></section></td>
+          <td style="width:33%;padding:8px 4px;text-align:center;"><section style="font-size:24px;font-weight:900;color:#DC2626;"><span leaf="">2小时</span></section><section style="font-size:12px;color:#6B7280;margin-top:4px;"><span leaf="">连续会话不崩</span></section></td>
+        </tr>
+      </table>
+      <section style="padding:12px 18px 14px;font-size:12px;color:#9CA3AF;border-top:1px dashed #F3E2E2;margin-top:12px;"><span leaf="">数据来源：官方项目主页 / GitHub / arXiv（2026-08）</span></section>
+    </section>
+
+    <p style="font-size:17px;font-weight:800;color:#1C1917;margin:28px 0 14px;"><span leaf="">行动判断</span></p>
+    <p><span leaf="">1. 想体验：先看项目主页的演示，确认它解决的确实是你的问题，再动 H200 级别算力的念头。</span></p>
+    <p><span leaf="">2. 做产品：把记忆当卖点前，先核对 90 秒窗口、4% 覆盖率和 ViGeo 的许可证。</span></p>
+    <p><span leaf="">3. 盯评测：下次刷新认知的，可能是更长的会话，而不是更高的分辨率。</span></p>
+
+    <section style="background:#FEF2F2;border-radius:0 10px 10px 0;border-left:4px solid #DC2626;padding:18px 22px;margin:26px 0 10px;">
+      <p style="font-size:16px;font-weight:800;color:#991B1B;margin:0;line-height:1.8;"><span leaf="">最后留一个问题：你希望世界模型先做到哪一样，画面更真，还是世界不塌？</span></p>
+    </section>
+  </section>
+
+  <section style="padding:0 10px;">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;"><span leaf=""><br></span></section>
+  </section>
+
+  <section style="margin-top:44px;padding:0 10px;">
+    <p style="font-size:14px;color:#9CA3AF;letter-spacing:1px;margin:0 0 12px;"><span leaf="">参考来源</span></p>
+    <section style="border-left:2px solid #E5E7EB;padding-left:12px;">
+      <p style="font-size:11px;color:#6B7280;line-height:1.7;margin:0 0 6px;"><span leaf="">[1] arXiv 论文 Alaya-EVOKE：From Linear-Scaling Supervision to Endless World（2608.13546）<br><a href="https://arxiv.org/abs/2608.13546" style="color:#9CA3AF;text-decoration:underline;">https://arxiv.org/abs/2608.13546</a></span></p>
+      <p style="font-size:11px;color:#6B7280;line-height:1.7;margin:0 0 6px;"><span leaf="">[2] 官方项目主页<br><a href="https://evoke-world.github.io/Evoke/" style="color:#9CA3AF;text-decoration:underline;">https://evoke-world.github.io/Evoke/</a></span></p>
+      <p style="font-size:11px;color:#6B7280;line-height:1.7;margin:0 0 6px;"><span leaf="">[3] GitHub 仓库（Apache-2.0，推理与训练脚本）<br><a href="https://github.com/AlayaLab/Evoke" style="color:#9CA3AF;text-decoration:underline;">https://github.com/AlayaLab/Evoke</a></span></p>
+      <p style="font-size:11px;color:#6B7280;line-height:1.7;margin:0 0 6px;"><span leaf="">[4] Hugging Face 论文页<br><a href="https://huggingface.co/papers/2608.13546" style="color:#9CA3AF;text-decoration:underline;">https://huggingface.co/papers/2608.13546</a></span></p>
+      <p style="font-size:11px;color:#6B7280;line-height:1.7;margin:0 0 6px;"><span leaf="">[5] WBench 基准（30 模型/22 指标/289 用例）<br><a href="https://github.com/meituan-longcat/WBench" style="color:#9CA3AF;text-decoration:underline;">https://github.com/meituan-longcat/WBench</a></span></p>
+      <p style="font-size:11px;color:#6B7280;line-height:1.7;margin:0 0 6px;"><span leaf="">[6] AlphaXiv 长文解读（机制与实验细节）<br><a href="https://www.alphaxiv.org/abs/2608.13546" style="color:#9CA3AF;text-decoration:underline;">https://www.alphaxiv.org/abs/2608.13546</a></span></p>
+    </section>
+    <p style="font-size:12px;color:#9CA3AF;margin:22px 0 0;"><span leaf="">本文由 AI 辅助整理，事实与数字已对照官方来源人工核验，仅供信息参考。</span></p>
+  </section>
+
+</section>
+</body>
+</html>

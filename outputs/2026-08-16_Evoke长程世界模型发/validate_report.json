@@ -1,0 +1,80 @@
+{
+  "output_dir": "outputs/2026-08-16_Evoke长程世界模型发/",
+  "materials": "materials/2026-08/2026-08-16_Evoke长程世界模型发素材包.md",
+  "validated_at": "2026-08-16 03:06:26",
+  "verdict": "PASSED",
+  "fails": 0,
+  "warns": 0,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-16_Evoke长程世界模型发素材包.md（12 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[短视频] 120s黄金分镜脚本.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜EVOKE：140 亿参数的 3 步去噪世界模型，官方主页称 WBench SOTA，一次前向推理生成 1 个分块…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M2「M2｜推理账本：单张 H200 上 384×640@24fps，每 1.5 秒视频分块耗时 2.11 秒，三步金字塔去噪…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜外部世界状态库：相机坐标索引的持久点云，只检索当前视角所需几何，默认保留约 90 秒窗口，支持小时级连续会话**…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜长程监督：教师模型做 30 秒自强制 rollout 蒸馏到 3 步学生；中途改提示词 67% 生效，已存几何区覆…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜开源：GitHub Apache-2.0，放出 4 个模型 + 双专家教师 + 底座权重，HuggingFace …」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 9 处（要求 ≥2）：['140亿', '140 亿', '1.5 秒', '2.11 秒', '2 小时', '90 秒']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 15 处（要求 ≥2）：['140亿', '2小时', '140 亿', '2 小时', '1.5 秒', '2.11 秒']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[短视频] 120s黄金分镜脚本.md 具体数字 23 处（要求 ≥1）：['120 秒', '140亿', '2 秒', '140 亿', '1.5 秒', '2.11 秒']"
+    }
+  ]
+}
