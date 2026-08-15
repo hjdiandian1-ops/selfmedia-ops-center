@@ -2893,6 +2893,7 @@ $("#dash-import-file").addEventListener("change", async (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   switchView("overview");
   loadLicenseStatus();
+  applyProfile();
   setTimeout(() => showOnboarding(false), 500);
 });
 
@@ -2915,6 +2916,26 @@ async function loadLicenseStatus() {
 }
 window.loadLicenseStatus = loadLicenseStatus;
 
+function applyProfile() {
+  let prof = {};
+  try { prof = JSON.parse(localStorage.getItem("selfmedia_profile") || "{}"); } catch (e) { /* ignore */ }
+  const av = $("#brand-avatar");
+  if (av) {
+    if (prof.avatar) {
+      av.style.backgroundImage = 'url("' + String(prof.avatar).replace(/["\\]/g, "") + '")';
+      av.style.backgroundSize = "cover";
+      av.style.backgroundPosition = "center";
+      av.textContent = "";
+    } else {
+      av.style.backgroundImage = "";
+      av.textContent = (prof.nickname || "小吴聊").slice(0, 1);
+    }
+  }
+  const nk = $("#brand-nickname");
+  if (nk) nk.textContent = (prof.nickname || "小吴聊") + " · 运营工作台";
+}
+window.applyProfile = applyProfile;
+
 // ---------- 配置（API Key / 公众号凭据） ----------
 function openSettings() {
   loadSettings();
@@ -2932,6 +2953,10 @@ async function loadSettings() {
   const st = $("#settings-status");
   try {
     const d = await api("/api/settings");
+    let prof = {};
+    try { prof = JSON.parse(localStorage.getItem("selfmedia_profile") || "{}"); } catch (e) { /* ignore */ }
+    if ($("#set-nickname")) $("#set-nickname").value = prof.nickname || "";
+    if ($("#set-avatar")) $("#set-avatar").value = prof.avatar || "";
     const th = document.documentElement.dataset.theme || "default";
     const themeSel = $("#set-theme");
     if (themeSel) themeSel.value = THEME_NAMES[th] ? th : "default";
@@ -3023,6 +3048,13 @@ async function saveSettings(silent) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    try {
+      localStorage.setItem("selfmedia_profile", JSON.stringify({
+        nickname: $("#set-nickname") ? $("#set-nickname").value.trim() : "",
+        avatar: $("#set-avatar") ? $("#set-avatar").value.trim() : "",
+      }));
+    } catch (e) { /* ignore */ }
+    applyProfile();
     $("#set-llm-key").value = "";
     $("#set-gzh-secret").value = "";
     $("#set-key-mask").textContent = d.llm.configured ? "当前已配置：" + d.llm.api_key_masked : "未配置";

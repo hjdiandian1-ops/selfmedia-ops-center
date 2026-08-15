@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-<link rel="stylesheet" href="/static/style.css?v=3.66">
+<link rel="stylesheet" href="/static/style.css?v=3.67">
 </head>
 <body>
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-      <span class="brand-logo">吴</span>
+      <span class="brand-logo" id="brand-avatar">吴</span>
       <span class="brand-text">
         <b>自媒体运营中心</b>
-        <small>小吴聊 · 运营工作台</small>
+        <small id="brand-nickname">小吴聊 · 运营工作台</small>
       </span>
     </div>
     <nav class="nav" id="nav">
@@ -541,6 +541,11 @@
     </div>
         <div class="form">
           <p class="muted" style="margin-top:0">配置保存在本机 .env，不会上传。留空的输入框表示保持原值。</p>
+          <div class="form-section-title">个人资料</div>
+          <label class="field-label">昵称（显示在左上角）</label>
+          <input id="set-nickname" placeholder="小吴聊">
+          <label class="field-label">头像图片 URL（可选，网络图片）</label>
+          <input id="set-avatar" placeholder="https://example.com/avatar.png">
           <div class="form-section-title">外观主题</div>
           <div class="toolbar" style="gap:8px">
             <select id="set-theme" class="select" onchange="applyTheme(this.value)" title="切换工作台皮肤">
@@ -647,6 +652,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.66"></script>
+    <script src="/static/app.js?v=3.67"></script>
 </body>
 </html>
