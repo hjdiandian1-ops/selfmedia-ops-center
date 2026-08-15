@@ -529,7 +529,7 @@ function renderPlatformPane(name) {
     </div>
     ${xhsExtra}`;
   if (name !== "小红书") renderPlatformTrend(name, p.trend);
-  renderWeakList($("#pf-weak"), p.weak_points || [], name);
+  renderWeakCompact($("#pf-weak"), p.weak_points || [], name);
   renderRecentRows($("#pf-recent"), p.recent || [], false);
   if (name === "小红书") {
     dashState.data = ovCache;
@@ -667,6 +667,26 @@ function renderWeakList(box, weakList, platform) {
         <button class="btn small filled" onclick="savePlatformWeakLesson('${esc(platform)}','${esc(w.id)}')">沉淀为经验</button>
       </div>
     </div>`).join("");
+}
+
+function clip(s, n) {
+  s = String(s || "");
+  return s.length > n ? s.slice(0, n - 1) + "…" : s;
+}
+
+function renderWeakCompact(box, weakList, platform) {
+  if (!weakList.length) {
+    return box.innerHTML = '<span class="muted">当前没有命中规则；继续回填/导入数据后自动诊断。</span>';
+  }
+  box.innerHTML = `<div class="weak-compact">
+    ${weakList.map((w) => `
+      <div class="weak-row" title="${esc(w.title)}｜${esc(w.suggestion)}">
+        <span class="badge error">${esc(w.current)}</span>
+        <span class="wt">${esc(w.title)}</span>
+        <span class="wm">${esc(clip(w.suggestion, 32))}</span>
+        <button class="btn tiny" onclick="savePlatformWeakLesson('${esc(platform)}','${esc(w.id)}')">沉淀</button>
+      </div>`).join("")}
+  </div>`;
 }
 
 async function savePlatformWeakLesson(platform, id) {
