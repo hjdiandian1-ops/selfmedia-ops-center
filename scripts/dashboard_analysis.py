@@ -513,6 +513,49 @@ def _platform_summary(platform, records, publishes, range_days):
     }
 
 
+def _iso_full(s):
+    """中文长时间 → 'YYYY-MM-DD HH:MM:SS'，失败回退 iso_date。"""
+    m = re.match(r"^(\d{4})年(\d{1,2})月(\d{1,2})日(\d{1,2})时(\d{1,2})分", str(s or ""))
+    if m:
+        y, mo, d, h, mi = m.groups()
+        return f"{int(y):04d}-{int(mo):02d}-{int(d):02d} {int(h):02d}:{int(mi):02d}:00"
+    d = iso_date(s)
+    return d + " 00:00:00" if d else ""
+
+
+def _xhs_note_records(data_dir, range_days):
+    """把导入的笔记明细转成回填记录，供小红书平台统计使用（观看/互动/涨粉/分享等）。"""
+    store = read_json(os.path.join(data_dir, "xhs_notes.json")) or {}
+    today = datetime.now().date()
+    start = (today - timedelta(days=range_days - 1)).isoformat()
+    out = []
+    for nid, note in (store.get("notes") or {}).items():
+        at = _iso_full(note.get("first_published_at") or note.get("updated_at", ""))
+        if not at or at[:10] < start:
+            continue
+        reads = _num(note.get("reads"))
+        likes = _num(note.get("likes"))
+        collects = _num(note.get("collects"))
+        comments = _num(note.get("comments"))
+        shares = _num(note.get("shares"))
+        gained = _num(note.get("followers_gained"))
+        eng = round((likes + collects + comments) / reads, 4) if reads else 0.0
+        hit = bool(note.get("hit")) or reads >= 5000 or likes >= 200
+        out.append({
+            "platform": "小红书",
+            "collected_at": at,
+            "job_id": note.get("matched_job") or f"xhs_note_{nid}",
+            "title": note.get("title") or "未命名笔记",
+            "reads": reads, "likes": likes, "collects": collects,
+            "comments": comments, "shares": shares,
+            "followers_gained": gained, "engagement": eng, "hit": hit,
+            "exposure": _num(note.get("exposure")),
+            "ctr": note.get("ctr"), "format": note.get("format", ""),
+            "avg_watch_seconds": note.get("avg_watch_seconds", 0),
+        })
+    return out
+
+
 def _apply_xhs_publish_export(s, data_dir, range_days):
     """小红书发布数量以平台导入的「发布数据」表为准（总发布 + 总发布趋势）。"""
     pub = read_json(os.path.join(data_dir, "dashboard", "publish.json")) or {}
@@ -769,9 +812,11 @@ def build_dashboard(range_days=None, period="day", platforms=None,
     weak_points = build_weak_points(tabs, notes_cur, sources)
     records = _backfill_records(jobs_dir, range_days)
     publishes = _publish_events(jobs_dir, range_days)
+    xhs_notes = _xhs_note_records(data_dir, range_days)
     platform_data = {}
     for p in PLATFORM_ORDER:
-        s = _platform_summary(p, records, publishes, range_days)
+        recs = records + xhs_notes if p == "小红书" else records
+        s = _platform_summary(p, recs, publishes, range_days)
         if p == "小红书":
             s = _apply_xhs_publish_export(s, data_dir, range_days)
         if p == "小红书":
