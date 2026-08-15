@@ -8,7 +8,7 @@
   document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";
   document.documentElement.dataset.style = localStorage.getItem("selfmedia_style") || "google-rounded";
 </script>
-    <link rel="stylesheet" href="/static/style.css?v=3.88">
+    <link rel="stylesheet" href="/static/style.css?v=3.89">
 </head>
 <body>
 <div class="app">
@@ -575,6 +575,7 @@
                 <option value="cyberpunk">赛博朋克·霓虹风暴</option>
                 <option value="hermes">爱马仕橙奢侈风</option>
                 <option value="chanel">香奈儿小香风</option>
+                <option value="cream">日系奶油风</option>
               </select>
               <label class="field-label">质感档位（与颜色主题独立组合）</label>
               <select id="set-style" class="select" onchange="applyStyle(this.value)" title="切换卡片质感">
@@ -583,6 +584,15 @@
                 <option value="paper-layered">纸张叠影</option>
                 <option value="neon-glow">霓虹光晕</option>
               </select>
+              <label class="field-label">质感预览</label>
+              <div class="style-preview">
+                <div class="sp-sample">
+                  <div class="sp-title"></div>
+                  <div class="sp-line"></div>
+                  <div class="sp-line short"></div>
+                  <div class="sp-actions"><span class="sp-btn filled"></span><span class="sp-btn tonal"></span></div>
+                </div>
+              </div>
             </div>
             <div class="set-panel" id="panel-templates">
               <p class="muted set-hint">选择初始化默认模板：小红书图文卡片 / 公众号排版 / 封面构图风格。</p>
