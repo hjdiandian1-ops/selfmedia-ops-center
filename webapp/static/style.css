@@ -670,6 +670,10 @@ textarea {
 .ov-pane { display: block; }
 .ov-pane.hidden { display: none; }
 .panel-toolbar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.xhs-dash-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+}
 .tri-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
 .tri-grid .card { height: 100%; display: flex; flex-direction: column; }
 .tri-grid .card .stack { flex: 1; }

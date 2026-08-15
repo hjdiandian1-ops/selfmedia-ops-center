@@ -681,26 +681,21 @@ function metricsHtmlFor(p) {
 
 function xhsDashCardHtml() {
   return `
-    <div class="card">
-      <div class="card-head">
-        <h3>小红书式数据分析（导出明细）</h3>
-        <span class="muted" id="dash-note"></span>
-        <div class="dash-controls">
-          <div class="tabs" id="dash-tabs">
-            <button class="tab active" data-dash="watch" onclick="switchDashTab('watch')">观看</button>
-            <button class="tab" data-dash="interact" onclick="switchDashTab('interact')">互动</button>
-            <button class="tab" data-dash="follower" onclick="switchDashTab('follower')">涨粉</button>
-            <button class="tab" data-dash="publish" onclick="switchDashTab('publish')">发布</button>
-          </div>
-        </div>
+    <div class="xhs-dash-head">
+      <div class="tabs" id="dash-tabs" style="margin-bottom:0">
+        <button class="tab active" data-dash="watch" onclick="switchDashTab('watch')">观看</button>
+        <button class="tab" data-dash="interact" onclick="switchDashTab('interact')">互动</button>
+        <button class="tab" data-dash="follower" onclick="switchDashTab('follower')">涨粉</button>
+        <button class="tab" data-dash="publish" onclick="switchDashTab('publish')">发布</button>
       </div>
-      <div class="kpi-grid" id="dash-kpis"></div>
-      <div class="grid-2">
-        <div id="dash-funnel" class="dash-panel"></div>
-        <div id="dash-trend" class="dash-panel">
-          <div class="card-head"><h3>趋势</h3></div>
-          <div class="trend-chart" id="dash-trend-chart"></div>
-        </div>
+      <span class="muted" id="dash-note"></span>
+    </div>
+    <div class="kpi-grid" id="dash-kpis"></div>
+    <div class="grid-2">
+      <div id="dash-funnel" class="dash-panel"></div>
+      <div id="dash-trend" class="dash-panel">
+        <div class="card-head"><h3>趋势</h3></div>
+        <div class="trend-chart" id="dash-trend-chart"></div>
       </div>
       <div id="dash-extra" class="grid-2" style="margin-top:18px"></div>
     </div>`;
