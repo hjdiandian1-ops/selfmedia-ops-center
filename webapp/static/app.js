@@ -480,7 +480,7 @@ function renderPlatformPane(name) {
     $("#ov-platform").innerHTML = '<div class="card"><span class="muted">暂无数据，先采集/回填。</span></div>';
     return;
   }
-  const metrics = (p.metrics || []).map((m) => `
+  const metricsHtml = (p.metrics || []).map((m) => `
     <div class="kpi">
       <div class="num small">${m.value == null ? "—" : esc(fmtNum(m.value)) + (m.unit ? `<small class="unit">${esc(m.unit)}</small>` : "")}</div>
       <div class="lbl">${esc(m.label)} <span class="muted">基准 ${esc(m.benchmark_text)}</span></div>
@@ -491,47 +491,156 @@ function renderPlatformPane(name) {
     ...wins.map((m) => `<div class="kv">✅ ${esc(m.label)}：<b>${esc(m.value)}${esc(m.unit || "")}</b>（优于基准 ${esc(m.benchmark_text)}）</div>`),
     ...(t.hits ? [`<div class="kv">🔥 爆款 <b>${t.hits}</b> 篇</div>`] : []),
   ].join("") || '<span class="muted">暂无突出项，继续积累数据后自动给出。</span>';
-  const xhsExtra = name === "小红书" ? xhsDashCardHtml() : "";
-  const trendCard = name === "小红书" ? "" : `
-    <div class="card">
-      <div class="card-head"><h3>趋势</h3></div>
-      <div id="pf-trend" class="line-chart-wrap"></div>
-      <div class="series-tabs" id="pf-series"></div>
-    </div>`;
+  const layout = panelLayout(name);
+  const missing = Object.keys(PANEL_TITLES).filter((id) => !layout.includes(id));
   $("#ov-platform").innerHTML = `
-    <div class="tri-grid">
-      <div class="card">
-        <div class="card-head"><h3>做得好的</h3></div>
-        <div class="stack">${winsHtml}</div>
-      </div>
-      <div class="card">
-        <div class="card-head"><h3>存在的问题</h3></div>
-        <div id="pf-weak" class="stack"></div>
-      </div>
-      <div class="card">
-        <div class="card-head"><h3>下一步要做的事情</h3></div>
-        <div class="focus-card">${esc(p.focus || "—")}</div>
-      </div>
+    <div id="pf-modules">
+      ${layout.map((id) => `
+        <div class="pf-module" data-module="${esc(id)}" draggable="true">
+          <div class="pf-module-head">
+            <span class="pf-drag" title="按住拖动排序">⠿</span>
+            <b>${esc(PANEL_TITLES[id])}</b>
+            <span class="muted">拖动排序</span>
+            <button class="btn tiny tonal" onclick="removePanelModule('${esc(name)}','${esc(id)}')">删除</button>
+          </div>
+          <div class="pf-module-body" data-body="${esc(id)}"></div>
+        </div>`).join("")}
     </div>
-    <div class="card">
-      <div class="card-head"><h3>核心指标</h3><span class="muted">缺失指标需回填/导入</span></div>
-      <div class="kpi-grid">${metrics}</div>
-    </div>
-    ${trendCard}
-    <div class="card">
-      <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 10 条 · 自动快评</span></div>
-      <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th>时间</th><th>标题</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th><th>快评</th></tr></thead>
-          <tbody id="pf-recent"></tbody>
-        </table>
+    <details class="card" style="padding:12px 16px">
+      <summary style="cursor:pointer;font-weight:600">＋ 添加组件</summary>
+      <div class="add-modules">
+        ${missing.length ? missing.map((id) =>
+          `<button class="btn tiny tonal" onclick="addPanelModule('${esc(name)}','${esc(id)}')">${esc(PANEL_TITLES[id])}</button>`).join("")
+          : '<span class="muted">全部组件都已显示</span>'}
       </div>
-    </div>
-    ${xhsExtra}`;
-  if (name !== "小红书") renderPlatformTrend(name, p.trend);
-  renderWeakCompact($("#pf-weak"), p.weak_points || [], name);
-  renderRecentRows($("#pf-recent"), p.recent || [], false);
-  if (name === "小红书") {
+    </details>`;
+  layout.forEach((id) => fillPanelModule(name, id, p));
+  bindPanelDrag(name);
+}
+
+const PANEL_TITLES = {
+  tri: "诊断（做得好的 / 存在的问题 / 下一步）",
+  kpis: "核心指标", recent: "最近发布表现", trend: "趋势",
+  xhs_detail: "小红书式数据分析（导出明细）",
+};
+
+function defaultPanelLayout(platform) {
+  if (platform === "小红书") return ["tri", "kpis", "recent", "xhs_detail"];
+  return ["tri", "kpis", "trend", "recent"];
+}
+
+function panelLayout(platform) {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_panel") || "{}");
+    if (Array.isArray(v[platform]) && v[platform].length) {
+      return v[platform].filter((id) => PANEL_TITLES[id]);
+    }
+  } catch (e) { /* ignore */ }
+  return defaultPanelLayout(platform);
+}
+
+function savePanelLayout(platform, layout) {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_panel") || "{}");
+    v[platform] = layout;
+    localStorage.setItem("selfmedia_panel", JSON.stringify(v));
+  } catch (e) { /* ignore */ }
+}
+
+function addPanelModule(platform, id) {
+  const layout = panelLayout(platform);
+  if (!layout.includes(id)) {
+    layout.push(id);
+    savePanelLayout(platform, layout);
+    renderPlatformPane(platform);
+  }
+}
+window.addPanelModule = addPanelModule;
+
+function reorderPanelModule(platform, from, to) {
+  const layout = panelLayout(platform);
+  const i = layout.indexOf(from);
+  if (i < 0) return;
+  layout.splice(i, 1);
+  const j = layout.indexOf(to);
+  layout.splice(j < 0 ? layout.length : j, 0, from);
+  savePanelLayout(platform, layout);
+  renderPlatformPane(platform);
+}
+window.reorderPanelModule = reorderPanelModule;
+
+function removePanelModule(platform, id) {
+  savePanelLayout(platform, panelLayout(platform).filter((x) => x !== id));
+  renderPlatformPane(platform);
+}
+window.removePanelModule = removePanelModule;
+
+function bindPanelDrag(platform) {
+  const box = $("#pf-modules");
+  if (!box) return;
+  box.addEventListener("dragstart", (e) => {
+    const m = e.target.closest(".pf-module");
+    if (!m) return;
+    e.dataTransfer.setData("text/plain", m.dataset.module);
+    m.classList.add("dragging");
+  });
+  box.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    const m = e.target.closest(".pf-module");
+    box.querySelectorAll(".pf-module").forEach((x) => x.classList.remove("drop-target"));
+    if (m) m.classList.add("drop-target");
+  });
+  box.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const from = e.dataTransfer.getData("text/plain");
+    const to = e.target.closest(".pf-module");
+    if (!from || !to) return;
+    const layout = panelLayout(platform);
+    const i = layout.indexOf(from);
+    if (i < 0) return;
+    layout.splice(i, 1);
+    const j = layout.indexOf(to.dataset.module);
+    layout.splice(j < 0 ? layout.length : j, 0, from);
+    savePanelLayout(platform, layout);
+    renderPlatformPane(platform);
+  });
+  box.addEventListener("dragend", () => {
+    box.querySelectorAll(".pf-module").forEach((x) => x.classList.remove("dragging", "drop-target"));
+  });
+}
+
+function fillPanelModule(platform, id, p) {
+  const body = $(`#ov-platform .pf-module[data-module="${id}"] .pf-module-body`);
+  if (!body) return;
+  if (id === "tri") {
+    body.innerHTML = `
+      <div class="tri-grid">
+        <div class="card">
+          <div class="card-head"><h3>做得好的</h3></div>
+          <div class="stack">${winsHtmlFor(p)}</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>存在的问题</h3></div>
+          <div id="pf-weak" class="stack"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>下一步要做的事情</h3></div>
+          <div class="focus-card">${esc(p.focus || "—")}</div>
+        </div>
+      </div>`;
+    renderWeakCompact($("#pf-weak"), p.weak_points || [], platform);
+  } else if (id === "kpis") {
+    body.innerHTML = `<div class="kpi-grid">${metricsHtmlFor(p)}</div>`;
+  } else if (id === "trend") {
+    body.innerHTML = '<div id="pf-trend" class="line-chart-wrap"></div><div class="series-tabs" id="pf-series"></div>';
+    renderPlatformTrend(platform, p.trend);
+  } else if (id === "recent") {
+    body.innerHTML = `<div class="table-wrap"><table class="table">
+      <thead><tr><th>时间</th><th>标题</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th><th>快评</th></tr></thead>
+      <tbody id="pf-recent"></tbody></table></div>`;
+    renderRecentRows($("#pf-recent"), p.recent || [], false);
+  } else if (id === "xhs_detail") {
+    body.innerHTML = xhsDashCardHtml();
     dashState.data = ovCache;
     dashState.weakPoints = ovCache.weak_points || [];
     renderDash();
@@ -539,6 +648,23 @@ function renderPlatformPane(name) {
     $("#dash-note").textContent =
       `更新于 ${ovCache.generated_at || ""} · 看板导出 ${Object.values(files).filter(Boolean).length}/4 · 笔记明细 ${(ovCache.sources || {}).notes_in_range || 0} 条`;
   }
+}
+
+function winsHtmlFor(p) {
+  const wins = (p.metrics || []).filter((m) => m.available && m.score != null && m.score >= 100);
+  const t = p.totals || {};
+  return [
+    ...wins.map((m) => `<div class="kv">✅ ${esc(m.label)}：<b>${esc(m.value)}${esc(m.unit || "")}</b>（优于基准 ${esc(m.benchmark_text)}）</div>`),
+    ...(t.hits ? [`<div class="kv">🔥 爆款 <b>${t.hits}</b> 篇</div>`] : []),
+  ].join("") || '<span class="muted">暂无突出项，继续积累数据后自动给出。</span>';
+}
+
+function metricsHtmlFor(p) {
+  return (p.metrics || []).map((m) => `
+    <div class="kpi">
+      <div class="num small">${m.value == null ? "—" : esc(fmtNum(m.value)) + (m.unit ? `<small class="unit">${esc(m.unit)}</small>` : "")}</div>
+      <div class="lbl">${esc(m.label)} <span class="muted">基准 ${esc(m.benchmark_text)}</span></div>
+    </div>`).join("");
 }
 
 function xhsDashCardHtml() {

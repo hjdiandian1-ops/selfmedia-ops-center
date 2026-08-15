@@ -670,7 +670,23 @@ textarea {
 .ov-pane { display: block; }
 .ov-pane.hidden { display: none; }
 .tri-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
-.tri-grid .card { align-self: start; }
+.tri-grid .card { height: 100%; display: flex; flex-direction: column; }
+.tri-grid .card .stack { flex: 1; }
+.tri-grid .card .focus-card { flex: 1; }
+.pf-module {
+  border: 1px solid var(--outline-variant); border-radius: var(--radius-lg);
+  background: var(--surface); box-shadow: var(--shadow-1);
+  padding: 14px 18px; margin-bottom: 14px;
+}
+.pf-module-head {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 10px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--outline-variant);
+}
+.pf-module-head .pf-drag { cursor: grab; color: var(--on-surface-variant); font-size: 16px; user-select: none; }
+.pf-module.dragging { opacity: .5; }
+.pf-module.drop-target { outline: 2px dashed var(--primary); outline-offset: 2px; }
+.add-modules { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .weak-compact { max-height: 190px; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
 .weak-row {
   display: flex; align-items: center; gap: 8px;
