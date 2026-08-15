@@ -486,14 +486,11 @@ function renderPlatformPane(name) {
       <div class="lbl">${esc(m.label)} <span class="muted">基准 ${esc(m.benchmark_text)}</span></div>
     </div>`).join("");
   const t = p.totals || {};
-  const funnel = [
-    ["发布", t.publish_count ?? 0], ["回填", t.backfill_count ?? 0],
-    ["阅读/播放", t.total_reads ?? 0],
-    ["互动率", t.engagement == null ? "—" : (t.engagement * 100).toFixed(2) + "%"],
-    ["爆款", t.hits ?? 0],
-  ];
-  const funnelHtml = funnel.map(([l, v]) =>
-    `<div class="fstep"><div class="fnum">${esc(String(v))}</div><div class="flbl">${esc(l)}</div></div>`).join('<div class="farrow">→</div>');
+  const wins = (p.metrics || []).filter((m) => m.available && m.score != null && m.score >= 100);
+  const winsHtml = [
+    ...wins.map((m) => `<div class="kv">✅ ${esc(m.label)}：<b>${esc(m.value)}${esc(m.unit || "")}</b>（优于基准 ${esc(m.benchmark_text)}）</div>`),
+    ...(t.hits ? [`<div class="kv">🔥 爆款 <b>${t.hits}</b> 篇</div>`] : []),
+  ].join("") || '<span class="muted">暂无突出项，继续积累数据后自动给出。</span>';
   const xhsExtra = name === "小红书" ? xhsDashCardHtml() : "";
   const trendCard = name === "小红书" ? "" : `
     <div class="card">
@@ -502,23 +499,25 @@ function renderPlatformPane(name) {
       <div class="series-tabs" id="pf-series"></div>
     </div>`;
   $("#ov-platform").innerHTML = `
-    <div class="card">
-      <div class="card-head"><h3>本周最重要的一件事</h3></div>
-      <div class="focus-card">${esc(p.focus || "—")}</div>
+    <div class="tri-grid">
+      <div class="card">
+        <div class="card-head"><h3>做得好的</h3></div>
+        <div class="stack">${winsHtml}</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>存在的问题</h3></div>
+        <div id="pf-weak" class="stack"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>下一步要做的事情</h3></div>
+        <div class="focus-card">${esc(p.focus || "—")}</div>
+      </div>
     </div>
     <div class="card">
       <div class="card-head"><h3>核心指标</h3><span class="muted">缺失指标需回填/导入</span></div>
       <div class="kpi-grid">${metrics}</div>
     </div>
-    <div class="card">
-      <div class="card-head"><h3>转化链路</h3></div>
-      <div class="funnel">${funnelHtml}</div>
-    </div>
     ${trendCard}
-    <div class="card">
-      <div class="card-head"><h3>薄弱点诊断 · 提升方向</h3></div>
-      <div id="pf-weak" class="stack"></div>
-    </div>
     <div class="card">
       <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 10 条 · 自动快评</span></div>
       <div class="table-wrap">
