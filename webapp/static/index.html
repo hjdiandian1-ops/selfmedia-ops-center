@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-    <link rel="stylesheet" href="/static/style.css?v=3.78">
+    <link rel="stylesheet" href="/static/style.css?v=3.79">
 </head>
 <body>
 <div class="app">
@@ -89,40 +89,7 @@
           <button class="btn small tonal" onclick="openPlatformPrefs()" title="选择要统计显示的平台">平台管理</button>
         </div>
         <div class="kpi-grid" id="kpi-cards"></div>
-        <div id="ov-overview" class="ov-pane">
-          <div class="card">
-            <div class="card-head"><h3>平台细分对比</h3><span class="muted" id="ov-compare-note"></span></div>
-            <div id="ov-compare" class="compare-chart"></div>
-            <div id="ov-platform-cards" class="agent-grid" style="margin-top:14px"></div>
-          </div>
-          <div class="card">
-            <div class="card-head"><h3>本周最重要的一件事</h3></div>
-            <div id="ov-focus" class="focus-card">—</div>
-          </div>
-          <details class="card" style="padding:14px 18px">
-            <summary style="cursor:pointer;font-weight:600">生产与发布汇总（任务状态 + 发布趋势）</summary>
-            <div class="grid-2" style="margin-top:12px">
-              <div>
-                <h4 class="pool-title">任务状态分布</h4>
-                <div id="state-bars" class="state-bars"></div>
-              </div>
-              <div>
-                <h4 class="pool-title">发布趋势</h4>
-                <div id="ov-trend" class="line-chart-wrap"></div>
-                <div class="series-tabs" id="ov-series"></div>
-              </div>
-            </div>
-          </details>
-          <div class="card">
-            <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 10 条 · 自动快评</span></div>
-            <div class="table-wrap">
-              <table class="table">
-                <thead><tr><th>时间</th><th>标题</th><th>平台</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th><th>快评</th></tr></thead>
-                <tbody id="recent-table"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <div id="ov-overview" class="ov-pane"></div>
         <div id="ov-platform" class="ov-pane hidden"></div>
       </section>
 
@@ -558,7 +525,7 @@
         </div>
         <div class="set-toolbar">
           <button class="btn filled" onclick="confirmCrop()">使用此头像</button>
-          <span class="muted">拖动图片调整位置</span>
+          <span class="muted">拖动圆圈选择头像区域</span>
         </div>
       </div>
     </div>
@@ -722,6 +689,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.78"></script>
+    <script src="/static/app.js?v=3.79"></script>
 </body>
 </html>

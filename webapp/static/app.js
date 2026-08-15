@@ -405,30 +405,135 @@ function renderGlobalKpis(stats, dash) {
     `<div class="kpi"><div class="num ${String(num).length > 5 ? "small" : ""}">${esc(num)}</div><div class="lbl">${esc(lbl)}</div></div>`).join("");
 }
 
+const OV_TITLES = {
+  compare: "平台细分对比",
+  focus: "本周最重要的一件事",
+  summary: "生产与发布汇总（任务状态 + 发布趋势）",
+  recent: "最近发布表现",
+};
+
+function overviewLayout() {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_overview_panel") || "null");
+    if (Array.isArray(v) && v.length) return v.filter((id) => OV_TITLES[id]);
+  } catch (e) { /* ignore */ }
+  return ["compare", "focus", "summary", "recent"];
+}
+
+function saveOverviewLayout(layout) {
+  try {
+    localStorage.setItem("selfmedia_overview_panel", JSON.stringify(layout));
+  } catch (e) { /* ignore */ }
+}
+
+function addOverviewModule(id) {
+  const layout = overviewLayout();
+  if (!layout.includes(id)) {
+    layout.push(id);
+    saveOverviewLayout(layout);
+    renderOverviewPane(ovStatsCache || {}, ovCache || {});
+  }
+}
+window.addOverviewModule = addOverviewModule;
+
+function removeOverviewModule(id) {
+  saveOverviewLayout(overviewLayout().filter((x) => x !== id));
+  renderOverviewPane(ovStatsCache || {}, ovCache || {});
+}
+window.removeOverviewModule = removeOverviewModule;
+
 function renderOverviewPane(stats, d) {
+  const box = $("#ov-overview");
+  if (!box) return;
   const ov = d.overview || {};
   const dx = d.diagnostics || {};
   const noteParts = [];
   if (dx.generated_at) noteParts.push("诊断更新于 " + dx.generated_at.slice(5, 16));
   if (dx.previous_at) noteParts.push("上次 " + dx.previous_at.slice(5, 16));
-  $("#ov-compare-note").textContent = noteParts.join(" · ");
-  $("#ov-focus").textContent = ov.focus || "先回填/导入数据后开始诊断。";
-  renderPlatformCompareChart(d.platforms || {});
-  renderPlatformCards(d.platforms || {});
+  const layout = overviewLayout();
+  const missing = Object.keys(OV_TITLES).filter((id) => !layout.includes(id));
+  box.innerHTML = `
+    <div class="panel-toolbar">
+      <button class="btn small tonal" onclick="togglePanelEdit()">${panelEditMode ? "✓ 完成" : "编辑组件"}</button>
+    </div>
+    <div id="ov-modules">
+      ${layout.map((id) => `
+        <div class="pf-module" data-module="${esc(id)}" ${panelEditMode ? 'draggable="true"' : ""}>
+          <div class="pf-module-head">
+            <b>${esc(OV_TITLES[id])}</b>
+            ${panelEditMode ? `
+              <span class="pf-drag" title="按住拖动排序">⠿</span>
+              <span class="muted">拖动排序</span>
+              <button class="btn tiny tonal" onclick="removeOverviewModule('${esc(id)}')">删除</button>` : ""}
+          </div>
+          <div class="pf-module-body" data-body="${esc(id)}"></div>
+        </div>`).join("")}
+    </div>
+    ${panelEditMode ? `
+      <details class="card" style="padding:12px 16px">
+        <summary style="cursor:pointer;font-weight:600">＋ 添加组件</summary>
+        <div class="add-modules">
+          ${missing.length ? missing.map((id) =>
+            `<button class="btn tiny tonal" onclick="addOverviewModule('${esc(id)}')">${esc(OV_TITLES[id])}</button>`).join("")
+            : '<span class="muted">全部组件都已显示</span>'}
+        </div>
+      </details>` : ""}`;
+  layout.forEach((id) => fillOverviewModule(id, stats, d, noteParts));
+  bindModuleDrag("overview", "#ov-modules");
+}
 
-  const states = Object.entries(stats.by_state || {});
-  const total = stats.jobs_total || 1;
-  $("#state-bars").innerHTML = states.length
-    ? states.map(([s, n]) => `
-      <div class="sbar">
-        <span class="name">${esc(STATE_LABELS[s] || s)}</span>
-        <div class="track"><div class="fill" style="width:${(n / total * 100).toFixed(0)}%"></div></div>
-        <span class="cnt">${n}</span>
-      </div>`).join("")
-    : '<span class="muted">暂无任务</span>';
-
-  renderOverviewTrend();
-  renderRecentRows($("#recent-table"), ov.recent || []);
+function fillOverviewModule(id, stats, d, noteParts) {
+  const body = $(`#ov-overview .pf-module[data-module="${id}"] .pf-module-body`);
+  if (!body) return;
+  const ov = d.overview || {};
+  if (id === "compare") {
+    body.innerHTML = `
+      <div class="card-head"><h3>平台细分对比</h3><span class="muted">${esc((noteParts || []).join(" · "))}</span></div>
+      <div id="ov-compare" class="compare-chart"></div>
+      <div id="ov-platform-cards" class="agent-grid" style="margin-top:14px"></div>`;
+    renderPlatformCompareChart(d.platforms || {});
+    renderPlatformCards(d.platforms || {});
+  } else if (id === "focus") {
+    body.innerHTML = `<div class="focus-card">${esc(ov.focus || "先回填/导入数据后开始诊断。")}</div>`;
+  } else if (id === "summary") {
+    const states = Object.entries(stats.by_state || {});
+    const total = stats.jobs_total || 1;
+    body.innerHTML = `
+      <details class="card" style="padding:14px 18px">
+        <summary style="cursor:pointer;font-weight:600">生产与发布汇总（任务状态 + 发布趋势）</summary>
+        <div class="grid-2" style="margin-top:12px">
+          <div>
+            <h4 class="pool-title">任务状态分布</h4>
+            <div id="state-bars" class="state-bars">
+              ${states.length
+                ? states.map(([s, n]) => `
+                  <div class="sbar">
+                    <span class="name">${esc(STATE_LABELS[s] || s)}</span>
+                    <div class="track"><div class="fill" style="width:${(n / total * 100).toFixed(0)}%"></div></div>
+                    <span class="cnt">${n}</span>
+                  </div>`).join("")
+                : '<span class="muted">暂无任务</span>'}
+            </div>
+          </div>
+          <div>
+            <h4 class="pool-title">发布趋势</h4>
+            <div id="ov-trend" class="line-chart-wrap"></div>
+            <div class="series-tabs" id="ov-series"></div>
+          </div>
+        </div>
+      </details>`;
+    renderOverviewTrend();
+  } else if (id === "recent") {
+    body.innerHTML = `
+      <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 10 条 · 自动快评</span></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>时间</th><th>标题</th><th>平台</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th><th>快评</th></tr></thead>
+          <tbody id="recent-table"></tbody>
+        </table>
+      </div>`;
+    renderRecentRows($("#recent-table"), ov.recent || []);
+  }
 }
 
 function renderOverviewTrend() {
@@ -666,7 +771,8 @@ function renderPlatformPane(name) {
 
 function togglePanelEdit() {
   panelEditMode = !panelEditMode;
-  if (currentOvTab !== "overview") renderPlatformPane(currentOvTab);
+  if (currentOvTab === "overview") renderOverviewPane(ovStatsCache || {}, ovCache || {});
+  else renderPlatformPane(currentOvTab);
 }
 window.togglePanelEdit = togglePanelEdit;
 
@@ -727,9 +833,16 @@ function removePanelModule(platform, id) {
 }
 window.removePanelModule = removePanelModule;
 
-function bindPanelDrag(platform) {
-  const box = $("#pf-modules");
+function bindModuleDrag(platform, boxId) {
+  const box = $(boxId);
   if (!box) return;
+  const getLayout = platform === "overview" ? overviewLayout : () => panelLayout(platform);
+  const saveLayout = platform === "overview"
+    ? saveOverviewLayout
+    : (l) => savePanelLayout(platform, l);
+  const rerender = platform === "overview"
+    ? () => renderOverviewPane(ovStatsCache || {}, ovCache || {})
+    : () => renderPlatformPane(platform);
   box.addEventListener("dragstart", (e) => {
     const m = e.target.closest(".pf-module");
     if (!m) return;
@@ -747,18 +860,22 @@ function bindPanelDrag(platform) {
     const from = e.dataTransfer.getData("text/plain");
     const to = e.target.closest(".pf-module");
     if (!from || !to) return;
-    const layout = panelLayout(platform);
+    const layout = getLayout();
     const i = layout.indexOf(from);
     if (i < 0) return;
     layout.splice(i, 1);
     const j = layout.indexOf(to.dataset.module);
     layout.splice(j < 0 ? layout.length : j, 0, from);
-    savePanelLayout(platform, layout);
-    renderPlatformPane(platform);
+    saveLayout(layout);
+    rerender();
   });
   box.addEventListener("dragend", () => {
     box.querySelectorAll(".pf-module").forEach((x) => x.classList.remove("dragging", "drop-target"));
   });
+}
+
+function bindPanelDrag(platform) {
+  bindModuleDrag(platform, "#pf-modules");
 }
 
 function fillPanelModule(platform, id, p) {
@@ -2945,20 +3062,35 @@ function readFileAsDataUrl(file) {
   });
 }
 
-const cropState = { x: 0, y: 0, zoom: 1, stage: 340, naturalW: 1, naturalH: 1 };
+const cropState = { imgX: 0, imgY: 0, zoom: 1, stage: 340, cropSize: 220, naturalW: 1, naturalH: 1 };
+const cropFramePos = { x: 0, y: 0 };
 let cropDrag = null;
+
+function cropBaseScale() {
+  return Math.max(cropState.stage / cropState.naturalW, cropState.stage / cropState.naturalH);
+}
 
 function renderCrop() {
   const img = $("#crop-img");
-  const base = cropState.stage / Math.min(cropState.naturalW, cropState.naturalH);
+  if (!img) return;
+  const base = cropBaseScale();
   const w = cropState.naturalW * base * cropState.zoom;
   const h = cropState.naturalH * base * cropState.zoom;
   img.style.width = w + "px";
   img.style.height = h + "px";
-  cropState.x = Math.min(0, Math.max(cropState.stage - w, cropState.x));
-  cropState.y = Math.min(0, Math.max(cropState.stage - h, cropState.y));
-  img.style.left = cropState.x + "px";
-  img.style.top = cropState.y + "px";
+  img.style.left = cropState.imgX + "px";
+  img.style.top = cropState.imgY + "px";
+  const frame = $("#crop-frame");
+  if (frame) {
+    frame.style.left = cropFramePos.x + "px";
+    frame.style.top = cropFramePos.y + "px";
+  }
+}
+
+function centerImage() {
+  const base = cropBaseScale();
+  cropState.imgX = (cropState.stage - cropState.naturalW * base * cropState.zoom) / 2;
+  cropState.imgY = (cropState.stage - cropState.naturalH * base * cropState.zoom) / 2;
 }
 
 function openCropModal(dataUrl) {
@@ -2966,7 +3098,7 @@ function openCropModal(dataUrl) {
   img.onload = () => {
     cropState.naturalW = img.naturalWidth || 1;
     cropState.naturalH = img.naturalHeight || 1;
-    const cover = cropState.stage / Math.min(cropState.naturalW, cropState.naturalH);
+    const cover = cropBaseScale();
     cropState.zoom = cover;
     const zoom = $("#crop-zoom");
     if (zoom) {
@@ -2974,9 +3106,9 @@ function openCropModal(dataUrl) {
       zoom.max = Math.max(4, (cover * 3).toFixed(2));
       zoom.value = cropState.zoom.toFixed(2);
     }
-    const base = cropState.stage / Math.min(cropState.naturalW, cropState.naturalH);
-    cropState.x = (cropState.stage - cropState.naturalW * base * cropState.zoom) / 2;
-    cropState.y = (cropState.stage - cropState.naturalH * base * cropState.zoom) / 2;
+    centerImage();
+    cropFramePos.x = (cropState.stage - cropState.cropSize) / 2;
+    cropFramePos.y = (cropState.stage - cropState.cropSize) / 2;
     renderCrop();
     $("#crop-modal").classList.remove("hidden");
   };
@@ -2998,9 +3130,11 @@ function confirmCrop() {
   const h = parseFloat(img.style.height);
   if (!w || !h) return;
   const scale = w / cropState.naturalW;
-  const cropPx = cropState.stage / scale;
-  const sx = Math.max(0, Math.min(cropState.naturalW - cropPx, -cropState.x / scale));
-  const sy = Math.max(0, Math.min(cropState.naturalH - cropPx, -cropState.y / scale));
+  const cropPx = cropState.cropSize / scale;
+  const cx = cropFramePos.x + cropState.cropSize / 2;
+  const cy = cropFramePos.y + cropState.cropSize / 2;
+  const sx = Math.max(0, Math.min(cropState.naturalW - cropPx, (cx - cropState.imgX) / scale));
+  const sy = Math.max(0, Math.min(cropState.naturalH - cropPx, (cy - cropState.imgY) / scale));
   const cv = document.createElement("canvas");
   cv.width = 256;
   cv.height = 256;
@@ -3042,38 +3176,41 @@ async function handleAvatarUpload(input) {
 window.handleAvatarUpload = handleAvatarUpload;
 
 const cropStage = $("#crop-stage");
-if (cropStage) {
-  cropStage.addEventListener("pointerdown", (e) => {
-    cropDrag = { sx: e.clientX, sy: e.clientY, x: cropState.x, y: cropState.y };
-    cropStage.setPointerCapture(e.pointerId);
-    cropStage.classList.add("dragging");
+const cropFrame = $("#crop-frame");
+if (cropStage && cropFrame) {
+  cropFrame.addEventListener("pointerdown", (e) => {
+    cropDrag = { sx: e.clientX, sy: e.clientY, x: cropFramePos.x, y: cropFramePos.y };
+    cropFrame.setPointerCapture(e.pointerId);
+    cropFrame.classList.add("dragging");
   });
-  cropStage.addEventListener("pointermove", (e) => {
+  cropFrame.addEventListener("pointermove", (e) => {
     if (!cropDrag) return;
-    cropState.x = cropDrag.x + (e.clientX - cropDrag.sx);
-    cropState.y = cropDrag.y + (e.clientY - cropDrag.sy);
+    cropFramePos.x = Math.max(0, Math.min(cropState.stage - cropState.cropSize, cropDrag.x + (e.clientX - cropDrag.sx)));
+    cropFramePos.y = Math.max(0, Math.min(cropState.stage - cropState.cropSize, cropDrag.y + (e.clientY - cropDrag.sy)));
     renderCrop();
   });
   const endCropDrag = () => {
     cropDrag = null;
-    cropStage.classList.remove("dragging");
+    cropFrame.classList.remove("dragging");
   };
-  cropStage.addEventListener("pointerup", endCropDrag);
-  cropStage.addEventListener("pointercancel", endCropDrag);
+  cropFrame.addEventListener("pointerup", endCropDrag);
+  cropFrame.addEventListener("pointercancel", endCropDrag);
   const zoom = $("#crop-zoom");
   if (zoom) {
     zoom.addEventListener("input", (e) => {
       const img = $("#crop-img");
       const oldW = parseFloat(img.style.width) || cropState.stage;
       const oldH = parseFloat(img.style.height) || cropState.stage;
-      const cx = cropState.x + oldW / 2;
-      const cy = cropState.y + oldH / 2;
+      const cx = cropFramePos.x + cropState.cropSize / 2;
+      const cy = cropFramePos.y + cropState.cropSize / 2;
+      const fx = (cx - cropState.imgX) / oldW;
+      const fy = (cy - cropState.imgY) / oldH;
       cropState.zoom = parseFloat(e.target.value) || cropState.zoom;
       renderCrop();
       const nw = parseFloat(img.style.width) || oldW;
       const nh = parseFloat(img.style.height) || oldH;
-      cropState.x = cx * (nw / oldW) - nw / 2;
-      cropState.y = cy * (nh / oldH) - nh / 2;
+      cropState.imgX = cx - fx * nw;
+      cropState.imgY = cy - fy * nh;
       renderCrop();
     });
   }
