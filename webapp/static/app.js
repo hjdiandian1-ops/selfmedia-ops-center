@@ -253,30 +253,46 @@ function renderPlatformCompareChart(platforms) {
   const box = $("#ov-compare");
   if (!box) return;
   const order = ["小红书", "公众号", "短视频"];
-  const rows = [
-    { label: "阅读/播放", val: (p) => (p.totals || {}).total_reads || 0, fmt: (v) => fmtNum(v) },
-    { label: "互动率", val: (p) => (p.totals || {}).engagement, fmt: (v) => v == null ? "—" : (v * 100).toFixed(1) + "%" },
-    { label: "爆款", val: (p) => (p.totals || {}).hits || 0, fmt: (v) => v },
+  const metrics = [
+    { key: "publish_count", label: "发布", fmt: (v) => v },
+    { key: "backfill_count", label: "回填", fmt: (v) => v },
+    { key: "total_reads", label: "阅读/播放", fmt: (v) => fmtNum(v) },
+    { key: "engagement", label: "互动率", fmt: (v) => v == null ? "—" : (v * 100).toFixed(1) + "%" },
   ];
-  box.innerHTML = rows.map((r) => {
-    const vals = order.map((pl) => {
-      const p = platforms[pl];
-      return { pl, v: p ? r.val(p) : 0 };
+  const W = 760, H = 300, PAD_L = 12, PAD_R = 12, PAD_T = 26, PAD_B = 46;
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+  const groupW = innerW / metrics.length;
+  const barW = Math.min(40, groupW * 0.22);
+  const maxBy = {};
+  metrics.forEach((m) => {
+    let max = 0;
+    order.forEach((pl) => {
+      const t = (platforms[pl] || {}).totals || {};
+      const v = m.key === "engagement" ? t.engagement : t[m.key] || 0;
+      if (typeof v === "number" && v > max) max = v;
     });
-    const max = Math.max(1, ...vals.map((x) => (typeof x.v === "number" ? x.v : 0)));
-    return `
-      <div class="cbar-row">
-        <span class="cbar-label">${esc(r.label)}</span>
-        ${vals.map((x) => {
-          const w = typeof x.v === "number" && x.v > 0 ? Math.max(2, Math.round(x.v / max * 100)) : 0;
-          return `
-            <div class="cbar-item">
-              <div class="cbar-track"><div class="cbar-fill ${esc(x.pl)}" style="width:${w}%"></div></div>
-              <span class="cbar-num">${esc(x.pl)} ${esc(r.fmt(x.v))}</span>
-            </div>`;
-        }).join("")}
-      </div>`;
+    maxBy[m.key] = max || 1;
+  });
+  const bars = metrics.map((m, gi) => {
+    const gx = PAD_L + gi * groupW + groupW / 2;
+    return order.map((pl, pi) => {
+      const t = (platforms[pl] || {}).totals || {};
+      const v = m.key === "engagement" ? t.engagement : t[m.key] || 0;
+      const h = (typeof v === "number" && v > 0) ? Math.max(3, v / maxBy[m.key] * innerH) : 0;
+      const x = gx + (pi - 1) * (barW + 6) - barW / 2;
+      const y = PAD_T + innerH - h;
+      const val = `<text x="${(x + barW / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" class="gbar-val">${esc(m.fmt(v))}</text>`;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="4" class="gbar ${esc(pl)}"/>${h ? val : ""}`;
+    }).join("");
   }).join("");
+  const metricLabels = metrics.map((m, gi) => {
+    const gx = PAD_L + gi * groupW + groupW / 2;
+    return `<text x="${gx.toFixed(1)}" y="${H - 14}" text-anchor="middle" class="gbar-label">${esc(m.label)}</text>`;
+  }).join("");
+  const legend = order.map((pl) =>
+    `<span class="legend-item"><i class="legend-dot ${esc(pl)}"></i>${esc(pl)}</span>`).join("");
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="compare-svg">${bars}${metricLabels}</svg><div class="legend">${legend}</div>`;
 }
 
 function setOverviewSeries(k) {
