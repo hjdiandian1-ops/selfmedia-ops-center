@@ -18,6 +18,10 @@ nas-n8n/.env
 xiaohongshu_cookies.json
 nas-n8n/shared_files/*.json
 
+# 本地用户偏好与编辑备份（个人数据，禁止入库）
+data/user_prefs.json
+data/style_backups/
+
 # 大体积产出（图片/视频/音频）；文案/HTML/JSON 报告保留入库
 outputs/**/*.png
 outputs/**/*.jpg

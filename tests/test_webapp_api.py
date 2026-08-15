@@ -328,6 +328,26 @@ def test_topics_preferences_roundtrip(tmp_path, monkeypatch):
     assert d["preferences"]["platforms"]["小红书"] == ["科技数码"]
 
 
+def test_templates_and_style_docs(tmp_path, monkeypatch):
+    t = server.api_templates()
+    assert len(t["categories"]) >= 3
+    docs = server.api_style_docs()
+    assert any(d["path"] == "skills/personal-style-guide.md" for d in docs["docs"])
+    monkeypatch.setattr(server, "ROOT", str(tmp_path))
+    rel = "skills/personal-style-guide.md"
+    p = os.path.join(str(tmp_path), rel)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w", encoding="utf-8") as f:
+        f.write("旧内容")
+    r = server.api_style_doc_save(server.StyleDocPayload(path=rel, content="新文风"))
+    assert r["ok"] is True
+    assert open(p, encoding="utf-8").read() == "新文风"
+    assert server.api_style_doc(path=rel)["content"] == "新文风"
+    backups = list((tmp_path / "data" / "style_backups").glob("*-personal-style-guide.md"))
+    assert len(backups) == 1
+    assert backups[0].read_text(encoding="utf-8") == "旧内容"
+
+
 def test_flywheel_regenerate(isolated_dirs, isolated_flywheel):
     r = server.api_flywheel_regenerate()
     assert r["ok"] is True

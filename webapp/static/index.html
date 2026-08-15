@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-<link rel="stylesheet" href="/static/style.css?v=3.67">
+    <link rel="stylesheet" href="/static/style.css?v=3.69">
 </head>
 <body>
 <div class="app">
@@ -539,75 +539,107 @@
       <h3>⚙ 配置</h3>
       <button class="btn small tonal" onclick="closeSettings()">关闭</button>
     </div>
-        <div class="form">
-          <p class="muted" style="margin-top:0">配置保存在本机 .env，不会上传。留空的输入框表示保持原值。</p>
-          <div class="form-section-title">个人资料</div>
-          <label class="field-label">昵称（显示在左上角）</label>
-          <input id="set-nickname" placeholder="小吴聊">
-          <label class="field-label">头像图片 URL（可选，网络图片）</label>
-          <input id="set-avatar" placeholder="https://example.com/avatar.png">
-          <div class="form-section-title">外观主题</div>
-          <div class="toolbar" style="gap:8px">
-            <select id="set-theme" class="select" onchange="applyTheme(this.value)" title="切换工作台皮肤">
-              <option value="default">蓝白默认</option>
-              <option value="brand-red">红白小吴聊</option>
-              <option value="midnight">深空暗黑</option>
-              <option value="pink">粉漾少女</option>
-              <option value="doraemon">哆啦A梦（蓝胖）</option>
-            </select>
-            <span class="muted">选择后立即生效并记住</span>
+        <div class="settings-layout">
+          <div class="settings-menu" id="settings-menu">
+            <button class="set-menu-item active" data-panel="profile" onclick="switchSettingsPanel('profile')">个人资料</button>
+            <button class="set-menu-item" data-panel="theme" onclick="switchSettingsPanel('theme')">外观主题</button>
+            <button class="set-menu-item" data-panel="templates" onclick="switchSettingsPanel('templates')">模板选择</button>
+            <button class="set-menu-item" data-panel="style" onclick="switchSettingsPanel('style')">文风设置</button>
+            <button class="set-menu-item" data-panel="llm" onclick="switchSettingsPanel('llm')">AI 引擎</button>
+            <button class="set-menu-item" data-panel="gzh" onclick="switchSettingsPanel('gzh')">公众号</button>
+            <button class="set-menu-item" data-panel="license" onclick="switchSettingsPanel('license')">Pro 授权</button>
+            <button class="set-menu-item" data-panel="data" onclick="switchSettingsPanel('data')">数据管理</button>
           </div>
-          <div class="form-section-title">AI 引擎</div>
-          <label class="field-label">LLM API Key（DeepSeek / OpenAI 等）</label>
-          <input id="set-llm-key" type="password" placeholder="sk-..." autocomplete="off">
-          <span class="muted" id="set-key-mask"></span>
-          <label class="field-label">API 地址</label>
-          <input id="set-llm-base" placeholder="https://api.deepseek.com/v1">
-          <label class="field-label">模型名</label>
-          <input id="set-llm-model" placeholder="deepseek-chat">
-          <div class="form-section-title">公众号（可选）</div>
-          <label class="field-label">公众号 AppID（可选，认证号自动推草稿用）</label>
-          <input id="set-gzh-id" placeholder="wx..." autocomplete="off">
-          <label class="field-label">公众号 AppSecret（可选）</label>
-          <input id="set-gzh-secret" type="password" placeholder="..." autocomplete="off">
-          <details class="card" style="margin-top:12px;padding:10px">
-            <summary style="cursor:pointer;font-weight:600">💡 公众号配置温馨提示（需要你手动操作）</summary>
-            <div class="stack" style="margin-top:8px;font-size:13px;line-height:1.7">
-              <div>1. 只有<b>已认证</b>的公众号才能用 API 推草稿；个人订阅号不支持，只能手动发布。</div>
-              <div>2. 登录公众号后台：<a href="https://mp.weixin.qq.com" target="_blank" rel="noopener">mp.weixin.qq.com</a> → 设置与开发 → 基本配置。</div>
-              <div>3. 开发者ID(AppID) 直接复制；开发者密码(AppSecret) 需点「重置」后才会完整显示一次，务必当场保存。</div>
-              <div>4. 同一页面把「IP白名单」改成你电脑的<b>公网 IP</b>（浏览器搜索"我的IP"即可查到），保存后 1-5 分钟生效。</div>
-              <div>5. 平台无法代替你完成以上操作；配好后保存，再到成品库点「推送到公众号草稿箱」。</div>
-              <div>6. 详细图文步骤见「发布指引」（成品库页）。</div>
+          <div class="settings-content">
+            <div class="set-panel active" id="panel-profile">
+              <p class="muted" style="margin-top:0">显示在左上角的头像与昵称，保存后即时生效。</p>
+              <label class="field-label">昵称（显示在左上角）</label>
+              <input id="set-nickname" placeholder="小吴聊">
+              <label class="field-label">头像图片 URL（可选，网络图片）</label>
+              <input id="set-avatar" placeholder="https://example.com/avatar.png">
             </div>
-          </details>
-          <div class="form-section-title">Pro 会员授权</div>
-          <label class="field-label">Pro 授权 token（付款后由卖家发放）</label>
-          <div class="toolbar" style="gap:8px">
-            <input id="set-license-token" type="password" placeholder="粘贴 token 即可激活为会员" autocomplete="off" style="flex:1">
-            <button class="btn tonal" onclick="runWithSpin(this, activateLicense)">激活授权</button>
-          </div>
-          <span class="muted">激活后立即生效：左下角会显示「Pro 已激活 · 到期日期」；到期后自动拦截，续费后粘贴新 token 即可恢复。</span>
-              <div class="form-section-title">数据管理</div>
-              <details class="card" style="margin-top:10px;padding:10px">
-                <summary style="cursor:pointer;font-weight:600">清理规则与操作</summary>
+            <div class="set-panel" id="panel-theme">
+              <p class="muted" style="margin-top:0">选择工作台皮肤，立即生效并记住。</p>
+              <label class="field-label">外观主题</label>
+              <select id="set-theme" class="select" onchange="applyTheme(this.value)" title="切换工作台皮肤">
+                <option value="default">蓝白默认</option>
+                <option value="brand-red">红白小吴聊</option>
+                <option value="midnight">深空暗黑</option>
+                <option value="pink">粉漾少女</option>
+                <option value="doraemon">哆啦A梦（蓝胖）</option>
+              </select>
+            </div>
+            <div class="set-panel" id="panel-templates">
+              <p class="muted" style="margin-top:0">选择初始化默认模板：小红书图文卡片 / 公众号排版 / 封面构图风格。</p>
+              <div class="tpl-cats" id="tpl-cats"></div>
+              <div class="tpl-grid" id="tpl-grid"></div>
+              <button class="btn filled" style="margin-top:12px" onclick="saveTemplates()">保存模板选择</button>
+            </div>
+            <div class="set-panel" id="panel-style">
+              <p class="muted" style="margin-top:0">可个性化设置的 md 文档（文风、SOP、工作流、去 AI 味规则）。</p>
+              <label class="field-label">选择文档</label>
+              <select id="style-doc-select" class="select" onchange="loadStyleDoc()"></select>
+              <textarea id="style-doc-text" class="style-doc-text" spellcheck="false"></textarea>
+              <div class="toolbar" style="margin-top:10px">
+                <button class="btn filled" onclick="saveStyleDoc()">保存文风文档</button>
+                <span class="muted" id="style-doc-status"></span>
+              </div>
+            </div>
+            <div class="set-panel" id="panel-llm">
+              <p class="muted" style="margin-top:0">LLM API Key 保存到本机 .env，留空表示保持原值。</p>
+              <label class="field-label">LLM API Key（DeepSeek / OpenAI 等）</label>
+              <input id="set-llm-key" type="password" placeholder="sk-..." autocomplete="off">
+              <span class="muted" id="set-key-mask"></span>
+              <label class="field-label">API 地址</label>
+              <input id="set-llm-base" placeholder="https://api.deepseek.com/v1">
+              <label class="field-label">模型名</label>
+              <input id="set-llm-model" placeholder="deepseek-chat">
+            </div>
+            <div class="set-panel" id="panel-gzh">
+              <p class="muted" style="margin-top:0">公众号凭据（可选，认证号自动推草稿用）。</p>
+              <label class="field-label">公众号 AppID（可选）</label>
+              <input id="set-gzh-id" placeholder="wx..." autocomplete="off">
+              <label class="field-label">公众号 AppSecret（可选）</label>
+              <input id="set-gzh-secret" type="password" placeholder="..." autocomplete="off">
+              <details class="card" style="margin-top:12px;padding:10px">
+                <summary style="cursor:pointer;font-weight:600">💡 公众号配置温馨提示（需要你手动操作）</summary>
                 <div class="stack" style="margin-top:8px;font-size:13px;line-height:1.7">
-          <div class="muted" id="retention-summary">点击「体检存储」查看各模块占用与可清理项。</div>
-          <div class="toolbar" style="gap:8px;margin-top:6px">
-            <button class="btn tonal" onclick="runWithSpin(this, loadRetention)">体检存储</button>
-            <button class="btn tonal" onclick="runWithSpin(this, applyRetention)">清理过期数据</button>
-          </div>
-          <div class="muted" id="retention-last"></div>
-                  <div class="muted" style="margin-top:4px">规则：过程日志保留 7 天、平台榜单快照 90 天、旧任务 30 天自动归档、未出爆款任务的图片 90 天清理；文案与拆解报告永久保留。每日流水线自动 dry-run，周日自动执行清理。</div>
+                  <div>1. 只有<b>已认证</b>的公众号才能用 API 推草稿；个人订阅号不支持，只能手动发布。</div>
+                  <div>2. 登录公众号后台：<a href="https://mp.weixin.qq.com" target="_blank" rel="noopener">mp.weixin.qq.com</a> → 设置与开发 → 基本配置。</div>
+                  <div>3. 开发者ID(AppID) 直接复制；开发者密码(AppSecret) 需点「重置」后才会完整显示一次，务必当场保存。</div>
+                  <div>4. 同一页面把「IP白名单」改成你电脑的<b>公网 IP</b>（浏览器搜索"我的IP"即可查到），保存后 1-5 分钟生效。</div>
+                  <div>5. 平台无法代替你完成以上操作；配好后保存，再到成品库点「推送到公众号草稿箱」。</div>
+                  <div>6. 详细图文步骤见「发布指引」（成品库页）。</div>
                 </div>
               </details>
-              <div class="toolbar" style="margin-top:16px;justify-content:flex-end">
-                <button class="btn filled" onclick="runWithSpin(this, saveSettings)">保存配置</button>
-                <button class="btn tonal" onclick="runWithSpin(this, testLlm)">测试 AI 连接</button>
-                <button class="btn tonal" onclick="runWithSpin(this, refreshLicense)">刷新授权状态</button>
-      </div>
-      <p class="muted" id="settings-status"></p>
-    </div>
+            </div>
+            <div class="set-panel" id="panel-license">
+              <p class="muted" style="margin-top:0">粘贴 Pro 授权 token 即可激活会员。</p>
+              <label class="field-label">Pro 授权 token（付款后由卖家发放）</label>
+              <div class="toolbar" style="gap:8px">
+                <input id="set-license-token" type="password" placeholder="粘贴 token 即可激活为会员" autocomplete="off" style="flex:1">
+                <button class="btn tonal" onclick="runWithSpin(this, activateLicense)">激活授权</button>
+              </div>
+              <span class="muted">激活后立即生效：左下角显示「Pro 已激活 · 到期日期」；续费后粘贴新 token 即可恢复。</span>
+            </div>
+            <div class="set-panel" id="panel-data">
+              <p class="muted" style="margin-top:0">数据保留与清理：呈现占用 → 预览 → 一键清理。</p>
+              <div class="muted" id="retention-summary">点击「体检存储」查看各模块占用与可清理项。</div>
+              <div class="toolbar" style="gap:8px;margin-top:8px">
+                <button class="btn tonal" onclick="runWithSpin(this, loadRetention)">体检存储</button>
+                <button class="btn tonal" onclick="runWithSpin(this, applyRetention)">清理过期数据</button>
+              </div>
+              <div class="muted" id="retention-last"></div>
+              <div class="muted" style="margin-top:8px">规则：日志 7 天、榜单快照 90 天、旧任务 30 天归档、未出爆款图片 90 天清理；文案与报告永久保留。周日自动执行清理。</div>
+            </div>
+            <div class="set-actions">
+              <button class="btn filled" onclick="runWithSpin(this, saveSettings)">保存配置</button>
+              <button class="btn tonal" onclick="runWithSpin(this, testLlm)">测试 AI 连接</button>
+              <button class="btn tonal" onclick="runWithSpin(this, refreshLicense)">刷新授权状态</button>
+              <span class="muted" id="settings-status"></span>
+            </div>
+          </div>
+        </div>
   </div>
 </div>
 
@@ -652,6 +684,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.67"></script>
+    <script src="/static/app.js?v=3.69"></script>
 </body>
 </html>

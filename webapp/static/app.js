@@ -2936,10 +2936,149 @@ function applyProfile() {
 }
 window.applyProfile = applyProfile;
 
+function switchSettingsPanel(name) {
+  $$("#settings-menu .set-menu-item").forEach((b) => b.classList.toggle("active", b.dataset.panel === name));
+  $$("#settings-modal .set-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + name));
+}
+window.switchSettingsPanel = switchSettingsPanel;
+
+let tplData = { categories: [] };
+let tplSel = {};
+let tplActiveCat = "";
+let styleDocs = [];
+
+async function loadTemplates() {
+  try {
+    const [td, prefs] = await Promise.all([
+      api("/api/templates"),
+      api("/api/user-preferences"),
+    ]);
+    tplData = td;
+    tplSel = (prefs.templates || {});
+    tplActiveCat = (td.categories[0] || {}).id || "";
+    renderTplCats();
+    renderTplGrid();
+  } catch (e) { /* 模板非必须 */ }
+}
+
+function renderTplCats() {
+  const box = $("#tpl-cats");
+  if (!box) return;
+  box.innerHTML = (tplData.categories || []).map((c) =>
+    `<button class="tab ${c.id === tplActiveCat ? "active" : ""}" onclick="tplActiveCat='${esc(c.id)}';renderTplCats();renderTplGrid()">${esc(c.name)}</button>`).join("");
+}
+
+function tplMockHtml(catId, name, colors) {
+  const [bg, ink, accent] = colors;
+  const base = `background:${bg};color:${ink};border-color:${accent}`;
+  const titleBar = `<div class="tpl-mock-title" style="background:${accent}"></div>`;
+  const lines = `<div class="tpl-mock-line"></div><div class="tpl-mock-line short"></div><div class="tpl-mock-line"></div>`;
+  if (catId === "xhs_card") {
+    return `<div class="tpl-mock tpl-mock-card" style="${base}">
+      ${titleBar}
+      <div class="tpl-mock-media" style="background:${ink}"></div>
+      ${lines}
+      <span class="tpl-mock-tag" style="color:${accent}">${esc(name)}</span>
+    </div>`;
+  }
+  if (catId === "gzh_layout") {
+    return `<div class="tpl-mock tpl-mock-article" style="${base}">
+      ${titleBar}
+      <div class="tpl-mock-title wide" style="background:${ink}"></div>
+      <div class="tpl-mock-meta" style="color:${accent}">标题 · 作者 · 摘要</div>
+      ${lines}${lines}
+    </div>`;
+  }
+  return `<div class="tpl-mock tpl-mock-cover" style="${base}">
+    <span class="tpl-mock-tag" style="color:${ink}">${esc(name)}</span>
+    <div class="tpl-mock-title wide" style="background:${accent}"></div>
+    ${lines}
+  </div>`;
+}
+
+function renderTplGrid() {
+  const box = $("#tpl-grid");
+  if (!box) return;
+  const cat = (tplData.categories || []).find((c) => c.id === tplActiveCat);
+  if (!cat) return box.innerHTML = '<span class="muted">暂无模板</span>';
+  box.innerHTML = cat.items.map((it) => {
+    const sel = tplSel[cat.id] === it.id;
+    return `
+      <div class="tpl-item ${sel ? "selected" : ""}" onclick="selectTemplate('${esc(cat.id)}','${esc(it.id)}')">
+        <div class="tpl-preview">${tplMockHtml(cat.id, it.name, it.colors)}</div>
+        <div class="tpl-name">${esc(it.name)}</div>
+        <div class="tpl-desc">${esc(it.desc)}</div>
+      </div>`;
+  }).join("");
+}
+
+function selectTemplate(catId, itemId) {
+  tplSel[catId] = itemId;
+  renderTplGrid();
+}
+window.selectTemplate = selectTemplate;
+
+async function saveTemplates() {
+  try {
+    const d = await api("/api/user-preferences", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ templates: tplSel }),
+    });
+    toast("模板选择已保存，后续生成将按此模板初始化");
+  } catch (e) {
+    toast("保存模板失败: " + e.message, false);
+  }
+}
+window.saveTemplates = saveTemplates;
+
+async function loadStyleDocs() {
+  try {
+    const d = await api("/api/style-docs");
+    styleDocs = d.docs || [];
+    const sel = $("#style-doc-select");
+    if (!sel) return;
+    sel.innerHTML = styleDocs.map((doc) => `<option value="${esc(doc.path)}">${esc(doc.name)}</option>`).join("");
+    loadStyleDoc();
+  } catch (e) { /* 忽略 */ }
+}
+
+async function loadStyleDoc() {
+  const sel = $("#style-doc-select");
+  const ta = $("#style-doc-text");
+  if (!sel || !ta || !sel.value) return;
+  try {
+    const d = await api("/api/style-doc?path=" + encodeURIComponent(sel.value));
+    ta.value = d.content || "";
+    $("#style-doc-status").textContent = "已加载 " + sel.value;
+  } catch (e) {
+    $("#style-doc-status").textContent = "加载失败: " + e.message;
+  }
+}
+window.loadStyleDoc = loadStyleDoc;
+
+async function saveStyleDoc() {
+  const sel = $("#style-doc-select");
+  const ta = $("#style-doc-text");
+  if (!sel || !sel.value) return;
+  try {
+    await api("/api/style-doc", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: sel.value, content: ta.value }),
+    });
+    $("#style-doc-status").textContent = "已保存 " + sel.value;
+    toast("文风文档已保存");
+  } catch (e) {
+    toast("保存失败: " + e.message, false);
+  }
+}
+window.saveStyleDoc = saveStyleDoc;
+
 // ---------- 配置（API Key / 公众号凭据） ----------
 function openSettings() {
   loadSettings();
   loadRetention();
+  loadTemplates();
+  loadStyleDocs();
   $("#settings-modal").classList.remove("hidden");
 }
 window.openSettings = openSettings;

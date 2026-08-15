@@ -13,6 +13,7 @@
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -52,6 +53,19 @@ RUN_VIRAL_BREAKDOWN_DAILY = os.path.join(SCRIPTS, "run_viral_breakdown_daily.py"
 AGGREGATE_VIRAL = os.path.join(SCRIPTS, "aggregate_viral_lessons.py")
 RETENTION_LOG = os.path.join(ROOT, "data", "retention_log.json")
 TOPICS_DIR = os.path.join(ROOT, "data", "topics")
+TEMPLATES_FILE = os.path.join(ROOT, "data", "templates.json")
+USER_PREFS_FILE = os.path.join(ROOT, "data", "user_prefs.json")
+
+STYLE_DOCS = [
+    ("skills/personal-style-guide.md", "个人文风指南"),
+    ("agent.md", "总入口 Agent 指令"),
+    ("agents/xhs-editor-小红书主编.md", "小红书主编 SOP"),
+    ("agents/gzh-editor-公众号主编.md", "公众号主编 SOP"),
+    ("agents/video-director-短视频导演.md", "短视频导演 SOP"),
+    ("workflows/自媒体运营工厂.md", "自媒体运营工厂工作流"),
+    ("skills/anti-ai-flavor-skill/SKILL.md", "去 AI 味规则"),
+]
+STYLE_DOC_ALLOWED_PREFIXES = ("skills/", "agents/", "workflows/", "agent.md")
 
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
@@ -1538,6 +1552,89 @@ class GzhDraftRequest(BaseModel):
 
 class LicenseActivateRequest(BaseModel):
     token: str
+
+
+def _safe_style_path(path):
+    p = os.path.normpath(path or "")
+    if p.startswith("/") or ".." in p:
+        raise HTTPException(status_code=400, detail="path 不合法")
+    if p == "agent.md" or p.startswith(STYLE_DOC_ALLOWED_PREFIXES):
+        return os.path.join(ROOT, p)
+    raise HTTPException(status_code=400, detail=f"path 不在可编辑白名单: {p}")
+
+
+@app.get("/api/templates")
+def api_templates():
+    data = read_json(TEMPLATES_FILE) or {"categories": []}
+    return data
+
+
+@app.get("/api/style-docs")
+def api_style_docs():
+    out = []
+    for rel, name in STYLE_DOCS:
+        p = os.path.join(ROOT, rel)
+        out.append({"path": rel, "name": name, "chars": os.path.getsize(p) if os.path.exists(p) else 0})
+    return {"docs": out}
+
+
+@app.get("/api/style-doc")
+def api_style_doc(path: str = ""):
+    p = _safe_style_path(path)
+    if not os.path.exists(p):
+        raise HTTPException(status_code=404, detail=f"文档不存在: {path}")
+    return {"path": path, "content": read_text(p)}
+
+
+class StyleDocPayload(BaseModel):
+    path: str
+    content: str = ""
+
+
+@app.post("/api/style-doc")
+def api_style_doc_save(payload: StyleDocPayload):
+    p = _safe_style_path(payload.path)
+    if len(payload.content) > 200_000:
+        raise HTTPException(status_code=400, detail="内容过大（≤200KB）")
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    if os.path.exists(p):
+        backup_dir = os.path.join(ROOT, "data", "style_backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        backup_path = os.path.join(backup_dir, f"{stamp}-{os.path.basename(p)}")
+        try:
+            shutil.copy2(p, backup_path)
+        except Exception:
+            pass  # 备份失败不阻断保存
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(payload.content)
+    return {"ok": True, "path": payload.path}
+
+
+class UserPrefsPayload(BaseModel):
+    templates: dict = {}
+
+
+@app.post("/api/user-preferences")
+def api_user_preferences_save(payload: UserPrefsPayload):
+    """保存用户偏好（模板选择等），供初始化与流水线读取。"""
+    templates = payload.templates or {}
+    valid_ids = set()
+    td = read_json(TEMPLATES_FILE) or {"categories": []}
+    for cat in td.get("categories", []):
+        for it in cat.get("items", []):
+            valid_ids.add(it.get("id", ""))
+    cleaned = {k: v for k, v in templates.items() if v in valid_ids}
+    data = {"templates": cleaned, "updated_at": _now_str()}
+    os.makedirs(os.path.dirname(USER_PREFS_FILE), exist_ok=True)
+    with open(USER_PREFS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "preferences": data}
+
+
+@app.get("/api/user-preferences")
+def api_user_preferences():
+    return read_json(USER_PREFS_FILE) or {"templates": {}}
 
 
 @app.get("/api/settings")
