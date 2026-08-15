@@ -338,7 +338,6 @@ function renderOverviewTrend() {
   const series = {
     publishes: { label: "累计发布", data: c.publishes },
     reads: { label: "累计阅读/播放", data: c.reads },
-    engagement: { label: "互动率%（累计）", data: c.engagement },
     followers: { label: "累计涨粉", data: c.followers },
   };
   const keys = chartSeriesFor("overview");
@@ -732,7 +731,6 @@ function renderPlatformTrend(name, trend) {
   const seriesMap = {
     publishes: { label: "累计发布", data: c.publishes },
     reads: { label: "累计阅读/播放", data: c.reads },
-    engagement: { label: "互动率%（累计）", data: c.engagement },
     followers: { label: "累计涨粉", data: c.followers },
   };
   const keys = chartSeriesFor(name);
@@ -750,7 +748,7 @@ function setPlatformSeries(platform, key) {
 window.setPlatformSeries = setPlatformSeries;
 
 function chartSeriesFor(scope) {
-  const all = ["publishes", "reads", "engagement", "followers"];
+  const all = ["publishes", "reads", "followers"];
   try {
     const v = JSON.parse(localStorage.getItem("selfmedia_chart_series") || "{}");
     if (Array.isArray(v[scope]) && v[scope].length) {
@@ -799,9 +797,14 @@ function svgLineChart(el, labels, seriesMap, selectedKeys) {
     };
   });
   const activeGeom = geoms[0];
-  const grid = [0.25, 0.5, 0.75].map((p) => {
+  const gridAll = [0, 0.25, 0.5, 0.75, 1].map((p) => {
     const y = H - PAD - p * (H - PAD * 2);
     return `<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PAD}" y2="${y.toFixed(1)}" class="chart-grid"/>`;
+  }).join("");
+  const ticks = [1, 0.75, 0.5, 0.25, 0].map((p) => {
+    const y = H - PAD - p * (H - PAD * 2);
+    const label = useMulti ? (p === 0 ? "0" : Math.round(p * 100) + "%") : fmtNum(activeGeom.max * p);
+    return `<text x="${PAD - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="chart-axis">${esc(label)}</text>`;
   }).join("");
   const labelsHtml = labels.map((l, i) =>
     `<text x="${(PAD + i * step).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${esc(l)}</text>`).join("");
@@ -831,7 +834,7 @@ function svgLineChart(el, labels, seriesMap, selectedKeys) {
     const base = H - PAD;
     return `<path d="${d} L ${last[0].toFixed(1)} ${base} L ${first[0].toFixed(1)} ${base} Z" fill="url(#grad-${g.k})" class="chart-area"/>`;
   }).join("");
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${defs}${grid}${guide}${hi}${areas}${lines}${circles}${labelsHtml}${overlay}</svg>${legend}<div class="chart-tip"></div>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${defs}${gridAll}${ticks}${guide}${hi}${areas}${lines}${circles}${labelsHtml}${overlay}</svg>${legend}<div class="chart-tip"></div>`;
   el.style.position = "relative";
   const svg = el.querySelector("svg");
   const tip = el.querySelector(".chart-tip");
