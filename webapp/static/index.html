@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-    <link rel="stylesheet" href="/static/style.css?v=3.77">
+    <link rel="stylesheet" href="/static/style.css?v=3.78">
 </head>
 <body>
 <div class="app">
@@ -539,6 +539,32 @@
     <button class="btn filled" style="margin-top:14px" onclick="dismissOnboarding()">我知道了，开始使用</button>
   </div>
 </div>
+
+<div id="crop-modal" class="modal hidden" onclick="if(event.target===this)closeCrop()">
+  <div class="modal-box crop-box">
+    <div class="modal-head">
+      <h3>裁剪头像</h3>
+      <button class="btn small tonal" onclick="closeCrop()">取消</button>
+    </div>
+    <div class="crop-wrap">
+      <div class="crop-stage" id="crop-stage">
+        <img id="crop-img" alt="待裁剪头像" draggable="false">
+        <div class="crop-frame"></div>
+      </div>
+      <div class="crop-controls">
+        <div class="crop-zoom-row">
+          <span class="muted">缩放</span>
+          <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1">
+        </div>
+        <div class="set-toolbar">
+          <button class="btn filled" onclick="confirmCrop()">使用此头像</button>
+          <span class="muted">拖动图片调整位置</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="settings-modal" class="modal hidden" onclick="if(event.target===this)closeSettings()">
   <div class="modal-box">
     <div class="modal-head">
@@ -561,7 +587,7 @@
               <p class="muted set-hint">显示在左上角的头像与昵称，保存后即时生效。</p>
               <label class="field-label">昵称（显示在左上角）</label>
               <input id="set-nickname" placeholder="小吴聊">
-              <label class="field-label">头像图片（本地上传，≤2MB，自动压缩到 256px）</label>
+              <label class="field-label">头像图片（本地上传，≤2MB，可裁剪）</label>
               <input type="file" id="set-avatar-file" accept="image/*" onchange="handleAvatarUpload(this)">
               <img id="set-avatar-preview" class="set-avatar-preview hidden" alt="头像预览">
               <label class="field-label">或使用图片 URL（可选，网络图片）</label>
@@ -696,6 +722,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.77"></script>
+    <script src="/static/app.js?v=3.78"></script>
 </body>
 </html>

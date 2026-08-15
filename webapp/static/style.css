@@ -491,6 +491,31 @@ textarea {
   background: var(--surface); color: var(--on-surface);
 }
 
+/* 头像裁剪 */
+.crop-box { width: min(460px, 94vw); }
+.crop-wrap { padding: 18px 20px 20px; }
+.crop-stage {
+  position: relative; width: 340px; height: 340px; margin: 0 auto;
+  border-radius: 50%; overflow: hidden; cursor: grab;
+  touch-action: none; user-select: none; background: var(--hover-bg);
+}
+.crop-stage.dragging { cursor: grabbing; }
+.crop-stage img {
+  position: absolute; left: 0; top: 0; max-width: none;
+  user-select: none; pointer-events: none;
+}
+.crop-frame {
+  position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, .35);
+  pointer-events: none;
+}
+.crop-controls { margin-top: 18px; }
+.crop-zoom-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.crop-zoom-row input[type="range"] { flex: 1; padding: 0; }
+.crop-controls .set-toolbar { margin-top: 0; }
+
 /* 选题 */
 .topics-layout {
   display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
