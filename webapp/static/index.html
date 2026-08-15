@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-    <link rel="stylesheet" href="/static/style.css?v=3.72">
+    <link rel="stylesheet" href="/static/style.css?v=3.73">
 </head>
 <body>
 <div class="app">
@@ -537,10 +537,10 @@
   <div class="modal-box">
     <div class="modal-head">
       <h3>⚙ 配置</h3>
-      <button class="btn small tonal" onclick="closeSettings()" title="关闭设置">✕</button>
     </div>
         <div class="settings-layout">
           <div class="settings-menu" id="settings-menu">
+            <button class="set-back" onclick="closeSettings()">← 返回</button>
             <button class="set-menu-item active" data-panel="profile" onclick="switchSettingsPanel('profile')">个人资料</button>
             <button class="set-menu-item" data-panel="theme" onclick="switchSettingsPanel('theme')">外观主题</button>
             <button class="set-menu-item" data-panel="templates" onclick="switchSettingsPanel('templates')">模板选择</button>
@@ -687,6 +687,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.72"></script>
+    <script src="/static/app.js?v=3.73"></script>
 </body>
 </html>
