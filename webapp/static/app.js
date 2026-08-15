@@ -2969,8 +2969,8 @@ async function handleAvatarUpload(input) {
     input.value = "";
     return;
   }
-  if (file.size > 8 * 1024 * 1024) {
-    toast("图片过大（≤8MB）", false);
+  if (file.size > 2 * 1024 * 1024) {
+    toast("图片过大（≤2MB）", false);
     input.value = "";
     return;
   }
