@@ -827,6 +827,8 @@ textarea {
   background: var(--surface); box-shadow: var(--shadow-1);
   padding: 14px 18px; margin-bottom: 14px;
 }
+/* 内外层颜色分层：外层模块卡用 surface，内层内容卡用 hover-bg，避免同底色套娃 */
+.pf-module-body .card { background: var(--hover-bg); }
 .pf-module-head {
   display: flex; align-items: center; gap: 10px;
   padding-bottom: 10px; margin-bottom: 12px;

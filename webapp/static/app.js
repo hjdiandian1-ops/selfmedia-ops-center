@@ -408,7 +408,7 @@ function renderGlobalKpis(stats, dash) {
 const OV_TITLES = {
   compare: "平台细分对比",
   focus: "本周最重要的一件事",
-  summary: "生产与发布汇总（任务状态 + 发布趋势）",
+  summary: "生产与发布汇总",
   recent: "最近发布表现",
 };
 
@@ -774,7 +774,7 @@ function togglePanelEdit() {
 window.togglePanelEdit = togglePanelEdit;
 
 const PANEL_TITLES = {
-  tri: "诊断（做得好的 / 存在的问题 / 下一步）",
+  tri: "诊断",
   kpis: "核心指标", recent: "最近发布表现", trend: "趋势",
   xhs_detail: "小红书式数据分析（导出明细）",
 };
