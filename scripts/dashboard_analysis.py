@@ -513,6 +513,24 @@ def _platform_summary(platform, records, publishes, range_days):
     }
 
 
+def _apply_xhs_publish_export(s, data_dir, range_days):
+    """小红书发布数量以平台导入的「发布数据」表为准（总发布 + 总发布趋势）。"""
+    pub = read_json(os.path.join(data_dir, "dashboard", "publish.json")) or {}
+    acct = pub.get("account") or {}
+    total = _num(acct.get("总发布"))
+    if total > 0:
+        s["publish_count"] = int(total)
+    series = (pub.get("series") or {}).get("总发布趋势") or []
+    by_date = {}
+    for it in series:
+        d = iso_date(it.get("date", ""))[:10]
+        if d:
+            by_date[d] = int(_num(it.get("value")))
+    days = _last_n_days(range_days)
+    s["trend"]["publishes"] = [by_date.get(d, 0) for d in days]
+    return s
+
+
 def _quick_label(platform, rec):
     if rec.get("hit"):
         return "爆款：延续该公式"
@@ -754,6 +772,8 @@ def build_dashboard(range_days=None, period="day", platforms=None,
     platform_data = {}
     for p in PLATFORM_ORDER:
         s = _platform_summary(p, records, publishes, range_days)
+        if p == "小红书":
+            s = _apply_xhs_publish_export(s, data_dir, range_days)
         if p == "小红书":
             metrics = _xhs_metrics(tabs, range_days)
             weak = weak_points

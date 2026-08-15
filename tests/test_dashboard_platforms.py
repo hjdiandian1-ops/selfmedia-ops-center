@@ -162,3 +162,29 @@ def test_stats_platform_filter(tmp_path):
     assert "followers_gained" in s["by_platform"][0]
     assert "followers_total" in s
     assert s["total_reads"] == 2000
+
+
+def test_xhs_publish_uses_imported_export(tmp_path):
+    root = str(tmp_path)
+    _write_job(root, "job_xhs", "小红书", records=[], publishes=[
+        {"platform": "小红书", "status": "success", "mode": "manual", "at": _days_ago_str(1)},
+        {"platform": "小红书", "status": "success", "mode": "manual", "at": _days_ago_str(2)},
+    ])
+    dash = os.path.join(root, "data", "dashboard")
+    os.makedirs(dash, exist_ok=True)
+    today = datetime.now().date().isoformat()
+    with open(os.path.join(dash, "publish.json"), "w", encoding="utf-8") as f:
+        json.dump({
+            "kind": "publish",
+            "account": {"总发布": 20},
+            "series": {"总发布趋势": [
+                {"date": today, "value": 3},
+                {"date": _days_ago_str(1)[:10], "value": 2},
+            ]},
+        }, f, ensure_ascii=False, indent=2)
+    d = DA.build_dashboard(range_days=7, jobs_dir=os.path.join(root, "jobs"),
+                           outputs_dir=os.path.join(root, "outputs"),
+                           data_dir=os.path.join(root, "data"))
+    xhs = d["platforms"]["小红书"]
+    assert xhs["totals"]["publish_count"] == 20
+    assert sum(xhs["trend"]["publishes"]) == 5
