@@ -72,11 +72,29 @@ def check_palettes(path):
         if not all(k in toks for k in keys):
             out.append({"theme": t["id"], "error": "缺少 palette-1..4"})
             continue
-        hs = [hue_of(toks[k]) for k in keys]
+        chromatic = []
+        for k in keys:
+            h, s, _v = hex_to_hsv(toks[k])
+            if s >= 0.05:  # 近中性色（黑/白/灰）色相无意义，不参与色相差
+                chromatic.append(h * 360.0)
+        if not chromatic:
+            out.append({"theme": t["id"], "hues": [], "min-gap": None, "note": "全中性色板"})
+            continue
+        hs = chromatic
         # 最小相邻色相差（环形距离）
-        diffs = sorted((b - a) % 360 for a, b in zip(hs, hs[1:]))
-        gaps = [min(d, 360 - d) for d in diffs] + [min((hs[0] - hs[-1]) % 360, 360 - (hs[0] - hs[-1]) % 360)]
-        out.append({"theme": t["id"], "hues": [round(x, 1) for x in hs], "min-gap": round(min(gaps), 1)})
+        sorted_hs = sorted(hs)
+        gaps = []
+        for a, b in zip(sorted_hs, sorted_hs[1:]):
+            d = (b - a) % 360
+            gaps.append(min(d, 360 - d))
+        d = (sorted_hs[0] - sorted_hs[-1]) % 360
+        gaps.append(min(d, 360 - d))
+        out.append({
+            "theme": t["id"],
+            "hues": [round(x, 1) for x in hs],
+            "min-gap": round(min(gaps), 1),
+            "note": "" if min(gaps) >= 40 else "存在近色对（品牌同族可接受，图表需靠明度区分）",
+        })
     return out
 
 

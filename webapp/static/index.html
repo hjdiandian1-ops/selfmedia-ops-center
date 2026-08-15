@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
-<script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-    <link rel="stylesheet" href="/static/style.css?v=3.87">
+<script>
+  document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";
+  document.documentElement.dataset.style = localStorage.getItem("selfmedia_style") || "google-rounded";
+</script>
+    <link rel="stylesheet" href="/static/style.css?v=3.88">
 </head>
 <body>
 <div class="app">
@@ -571,6 +574,14 @@
                 <option value="doraemon">哆啦A梦（蓝胖）</option>
                 <option value="cyberpunk">赛博朋克·霓虹风暴</option>
                 <option value="hermes">爱马仕橙奢侈风</option>
+                <option value="chanel">香奈儿小香风</option>
+              </select>
+              <label class="field-label">质感档位（与颜色主题独立组合）</label>
+              <select id="set-style" class="select" onchange="applyStyle(this.value)" title="切换卡片质感">
+                <option value="google-rounded">谷歌圆润（默认）</option>
+                <option value="sharp-flat">极简直角</option>
+                <option value="paper-layered">纸张叠影</option>
+                <option value="neon-glow">霓虹光晕</option>
               </select>
             </div>
             <div class="set-panel" id="panel-templates">

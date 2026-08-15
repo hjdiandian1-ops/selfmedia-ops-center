@@ -51,7 +51,7 @@ def test_theme_switcher_present():
     assert 'id="set-theme"' in html
     assert 'localStorage.setItem("selfmedia_theme"' in js
     assert "function applyTheme" in js
-    for theme_id in ("default", "brand-red", "midnight", "pink", "doraemon", "cyberpunk", "hermes"):
+    for theme_id in ("default", "brand-red", "midnight", "pink", "doraemon", "cyberpunk", "hermes", "chanel"):
         assert f'value="{theme_id}"' in html
 
 
@@ -63,3 +63,16 @@ def test_implemented_themes_have_palette_and_scheme():
         assert theme.get("scheme"), f"主题 {theme['id']} 缺少配色方案 scheme"
         for k in ("palette-1", "palette-2", "palette-3", "palette-4"):
             assert k in theme["tokens"], f"主题 {theme['id']} 缺少 {k}"
+
+
+def test_style_presets_present():
+    css = _read(STYLE)
+    html = _read(INDEX)
+    js = _read(APPJS)
+    # google-rounded 是默认档（不覆盖主题自带质感），只需出现在设置项
+    for preset in ("sharp-flat", "paper-layered", "neon-glow"):
+        assert f'[data-style="{preset}"]' in css
+    assert 'value="google-rounded"' in html
+    assert 'id="set-style"' in html
+    assert "selfmedia_style" in js and "dataset.style" in js
+    assert 'dataset.style = localStorage.getItem("selfmedia_style")' in html

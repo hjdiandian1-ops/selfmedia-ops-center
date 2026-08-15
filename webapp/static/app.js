@@ -3391,6 +3391,9 @@ async function loadSettings() {
     const th = document.documentElement.dataset.theme || "default";
     const themeSel = $("#set-theme");
     if (themeSel) themeSel.value = THEME_NAMES[th] ? th : "default";
+    const stl = document.documentElement.dataset.style || "google-rounded";
+    const styleSel = $("#set-style");
+    if (styleSel) styleSel.value = STYLE_NAMES[stl] ? stl : "google-rounded";
     $("#set-llm-key").value = "";
     $("#set-llm-base").value = d.llm.base_url || "";
     $("#set-llm-model").value = d.llm.model || "";
@@ -3410,7 +3413,7 @@ window.loadSettings = loadSettings;
 const THEME_NAMES = {
   default: "蓝白默认", "brand-red": "红白小吴聊", midnight: "深空暗黑",
   pink: "粉漾少女", doraemon: "哆啦A梦（蓝胖）", cyberpunk: "赛博朋克·霓虹风暴",
-  hermes: "爱马仕橙奢侈风",
+  hermes: "爱马仕橙奢侈风", chanel: "香奈儿小香风",
 };
 
 function applyTheme(name) {
@@ -3422,6 +3425,21 @@ function applyTheme(name) {
   toast("已切换主题：" + THEME_NAMES[name]);
 }
 window.applyTheme = applyTheme;
+
+const STYLE_NAMES = {
+  "google-rounded": "谷歌圆润", "sharp-flat": "极简直角",
+  "paper-layered": "纸张叠影", "neon-glow": "霓虹光晕",
+};
+
+function applyStyle(name) {
+  name = STYLE_NAMES[name] ? name : "google-rounded";
+  document.documentElement.dataset.style = name;
+  localStorage.setItem("selfmedia_style", name);
+  const sel = $("#set-style");
+  if (sel) sel.value = name;
+  toast("已切换质感：" + STYLE_NAMES[name]);
+}
+window.applyStyle = applyStyle;
 
 const RETENTION_LABELS = {
   candidates: "过期候选", logs: "过期日志", platform_days: "过期榜单快照",
