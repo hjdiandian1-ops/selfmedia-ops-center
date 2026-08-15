@@ -1065,8 +1065,8 @@ function svgLineChart(el, labels, seriesMap, selectedKeys) {
     : "";
   const defs = `<defs>${geoms.map((g) => `
     <linearGradient id="grad-${g.k}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${seriesColor(g.k)}" stop-opacity=".28"/>
-      <stop offset="100%" stop-color="${seriesColor(g.k)}" stop-opacity="0"/>
+      <stop offset="0%" style="stop-color:${seriesColor(g.k)}" stop-opacity=".28"/>
+      <stop offset="100%" style="stop-color:${seriesColor(g.k)}" stop-opacity="0"/>
     </linearGradient>`).join("")}</defs>`;
   const areas = geoms.map((g) => {
     const d = smoothPath(g.pts);
@@ -1140,9 +1140,9 @@ function smoothPath(xy) {
 
 function seriesColor(k) {
   return {
-    publishes: "#f59e0b", reads: "#1a73e8",
-    engagement: "#0f9d58", followers: "#9c27b0",
-  }[k] || "#1a73e8";
+    publishes: "var(--palette-3)", reads: "var(--palette-1)",
+    engagement: "var(--palette-2)", followers: "var(--palette-4)",
+  }[k] || "var(--palette-1)";
 }
 
 function niceStep(v) {
@@ -3410,6 +3410,7 @@ window.loadSettings = loadSettings;
 const THEME_NAMES = {
   default: "蓝白默认", "brand-red": "红白小吴聊", midnight: "深空暗黑",
   pink: "粉漾少女", doraemon: "哆啦A梦（蓝胖）", cyberpunk: "赛博朋克·霓虹风暴",
+  hermes: "爱马仕橙奢侈风",
 };
 
 function applyTheme(name) {

@@ -42,7 +42,11 @@
         "applied-border": "rgba(52, 83, 168, .4)",
         "applied-bg": "#f6fdf8",
         "scrim": "rgba(32, 33, 36, .55)",
-        "brand-gradient": "linear-gradient(135deg, #1a73e8, #66a4f5)"
+        "brand-gradient": "linear-gradient(135deg, #1a73e8, #66a4f5)",
+        "palette-1": "#1a73e8",
+        "palette-2": "#0f9d58",
+        "palette-3": "#f59e0b",
+        "palette-4": "#9c27b0"
       }
     },
     {
@@ -87,7 +91,11 @@
         "applied-border": "rgba(52, 83, 168, .4)",
         "applied-bg": "#f6fdf8",
         "scrim": "rgba(32, 33, 36, .55)",
-        "brand-gradient": "linear-gradient(135deg, #dc2626, #f87171)"
+        "brand-gradient": "linear-gradient(135deg, #dc2626, #f87171)",
+        "palette-1": "#dc2626",
+        "palette-2": "#f59e0b",
+        "palette-3": "#92400e",
+        "palette-4": "#0f766e"
       }
     },
     {
@@ -132,7 +140,11 @@
         "applied-border": "rgba(158, 206, 106, .4)",
         "applied-bg": "#1a2b1f",
         "scrim": "rgba(0, 0, 0, .62)",
-        "brand-gradient": "linear-gradient(135deg, #7aa2f7, #3d59a1)"
+        "brand-gradient": "linear-gradient(135deg, #7aa2f7, #3d59a1)",
+        "palette-1": "#7aa2f7",
+        "palette-2": "#bb9af7",
+        "palette-3": "#9ece6a",
+        "palette-4": "#f7768e"
       }
     },
     {
@@ -178,7 +190,11 @@
         "applied-bg": "#f6fdf8",
         "scrim": "rgba(59, 36, 48, .55)",
         "brand-gradient": "linear-gradient(135deg, #ec4899, #f9a8d4)",
-        "brand-logo-bg": "var(--brand-gradient)"
+        "brand-logo-bg": "var(--brand-gradient)",
+        "palette-1": "#d81b60",
+        "palette-2": "#7c3aed",
+        "palette-3": "#f59e0b",
+        "palette-4": "#0ea5e9"
       }
     },
     {
@@ -224,7 +240,11 @@
         "applied-bg": "#f0f8ff",
         "scrim": "rgba(22, 50, 74, .55)",
         "brand-gradient": "linear-gradient(135deg, #1296db, #4fc3f7)",
-        "brand-logo-bg": "url(\\\"/static/themes/doraemon-mascot.svg\\\") center/cover no-repeat, linear-gradient(135deg, #1296db, #4fc3f7)"
+        "brand-logo-bg": "url(\\\"/static/themes/doraemon-mascot.svg\\\") center/cover no-repeat, linear-gradient(135deg, #1296db, #4fc3f7)",
+        "palette-1": "#0b72b9",
+        "palette-2": "#ef4444",
+        "palette-3": "#facc15",
+        "palette-4": "#22c55e"
       }
     },
     {
@@ -273,7 +293,64 @@
         "brand-logo-bg": "var(--brand-gradient)",
         "aurora-1": "rgba(0, 229, 255, .30)",
         "aurora-2": "rgba(255, 46, 209, .26)",
-        "aurora-3": "rgba(123, 92, 255, .24)"
+        "aurora-3": "rgba(123, 92, 255, .24)",
+        "palette-1": "#00e5ff",
+        "palette-2": "#ff2ed1",
+        "palette-3": "#7b5cff",
+        "palette-4": "#00ff9f"
+      }
+    },
+    {
+      "id": "hermes",
+      "name": "爱马仕橙奢侈风",
+      "desc": "爱马仕橙 + 金色/深茶/墨绿，轻奢暖调",
+      "implemented": true,
+      "tokens": {
+        "primary": "#e8680a",
+        "primary-strong": "#c95309",
+        "on-primary": "#2a1000",
+        "primary-container": "#fde8d5",
+        "on-primary-container": "#7a3b05",
+        "surface": "#fdf8f1",
+        "surface-dim": "#f7efe3",
+        "on-surface": "#2b2018",
+        "on-surface-variant": "#6f5b49",
+        "outline": "#ddd0bd",
+        "outline-variant": "#ebe1d2",
+        "error": "#b3261e",
+        "success": "#1a7f37",
+        "border-width": "1px",
+        "font-stack": "Roboto, \\\"Google Sans\\\", \\\"PingFang SC\\\", \\\"Hiragino Sans GB\\\", \\\"Microsoft YaHei\\\", -apple-system, sans-serif",
+        "shadow-1": "0 1px 3px rgba(122,82,30,.16), 0 2px 10px rgba(122,82,30,.1)",
+        "shadow-2": "0 2px 8px rgba(122,82,30,.2), 0 6px 22px rgba(122,82,30,.14)",
+        "hover-bg": "#f5ecdf",
+        "surface-hover": "#faf3e8",
+        "code-bg": "#f5ecdf",
+        "primary-hover": "#fbdcc0",
+        "focus-ring": "#f5a25c",
+        "step-ring": "#fde8d5",
+        "success-container": "#e6f4ea",
+        "error-container": "#fce8e6",
+        "hit-container": "#fdeed6",
+        "deco-accent": "#b45309",
+        "score-text": "#7a4a00",
+        "score-bg": "#fdf0d8",
+        "preview-text": "#4a3a2c",
+        "toast-text": "#ffffff",
+        "toast-ok": "#1a7f37",
+        "toast-err": "#b3261e",
+        "applied-border": "rgba(26, 127, 55, .35)",
+        "applied-bg": "#f1f8f2",
+        "scrim": "rgba(43, 32, 24, .55)",
+        "brand-gradient": "linear-gradient(135deg, #e8680a, #d4a72c)",
+        "brand-logo-bg": "var(--brand-gradient)",
+        "aurora-1": "rgba(232, 104, 10, .20)",
+        "aurora-2": "rgba(212, 167, 44, .16)",
+        "aurora-3": "rgba(47, 111, 94, .14)",
+        "palette-1": "#e8680a",
+        "palette-2": "#d4a72c",
+        "palette-3": "#2f6f5e",
+        "palette-4": "#8a5a2b"
       }
     },
     {
