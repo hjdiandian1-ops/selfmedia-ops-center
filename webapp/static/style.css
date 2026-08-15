@@ -765,6 +765,23 @@ textarea {
 .series-tabs .tab { padding: 3px 10px; font-size: 12px; }
 .ov-pane details.card summary { font-size: 13px; }
 
+/* 热点采集进度 */
+.topics-progress {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; margin-bottom: 14px;
+  border: 1px solid var(--outline-variant); border-radius: var(--radius-md);
+  background: var(--surface); font-size: 13px; color: var(--on-surface-variant);
+}
+.topics-progress.hidden { display: none; }
+.tp-spinner {
+  width: 16px; height: 16px; flex: 0 0 auto;
+  border: 2px solid var(--outline); border-top-color: var(--primary);
+  border-radius: 50%; animation: tp-spin .8s linear infinite;
+}
+@keyframes tp-spin { to { transform: rotate(360deg); } }
+.tp-pulse { animation: tp-pulse .5s ease; }
+@keyframes tp-pulse { from { opacity: .3; } to { opacity: 1; } }
+
 /* 响应式 */
 @media (max-width: 1280px) {
   .tri-grid { grid-template-columns: 1fr; }

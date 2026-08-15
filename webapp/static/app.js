@@ -175,6 +175,56 @@ window.onboardGo = onboardGo;
 $$(".nav-item").forEach((btn) => btn.addEventListener("click", () => switchView(btn.dataset.view)));
 $("#btn-refresh-topics").addEventListener("click", (e) => runWithSpin(e.currentTarget, loadTopics));
 
+const TOPICS_STEPS = [
+  "正在抓取今日热榜…",
+  "正在抓取谷歌趋势…",
+  "正在抓取 X / 推楼热点…",
+  "正在清洗去重…",
+  "正在计算时效/热度/质量评分…",
+  "正在生成日选题与周选题…",
+];
+
+async function fetchHotTopics(btn) {
+  const box = $("#topics-progress");
+  const txt = $("#topics-progress-text");
+  box.classList.remove("hidden");
+  let i = 0;
+  txt.textContent = TOPICS_STEPS[0];
+  const timer = setInterval(() => {
+    i = (i + 1) % TOPICS_STEPS.length;
+    txt.textContent = TOPICS_STEPS[i];
+    txt.classList.remove("tp-pulse");
+    void txt.offsetWidth;
+    txt.classList.add("tp-pulse");
+  }, 1200);
+  try {
+    const d = await api("/api/pipeline/run", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "topics" }),
+    });
+    clearInterval(timer);
+    txt.classList.remove("tp-pulse");
+    if (d.ok) {
+      txt.textContent = "✅ 采集完成，已生成最新选题推荐";
+      toast("热点采集完成，选题推荐已更新");
+      loadTopics();
+    } else {
+      txt.textContent = "⚠️ 采集有阻塞项，见浏览器控制台";
+      toast("热点采集有阻塞项", false);
+      console.log((d.stdout || "") + (d.stderr || ""));
+    }
+  } catch (e) {
+    clearInterval(timer);
+    txt.classList.remove("tp-pulse");
+    txt.textContent = "❌ 采集失败：" + e.message;
+    toast("采集失败: " + e.message, false);
+  } finally {
+    if (btn) { btn.classList.remove("spinning"); btn.disabled = false; }
+    setTimeout(() => box.classList.add("hidden"), 4000);
+  }
+}
+window.fetchHotTopics = fetchHotTopics;
+
 // ---------- 概览 ----------
 let ovCache = null;
 let ovStatsCache = null;
