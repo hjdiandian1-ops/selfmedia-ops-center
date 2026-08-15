@@ -1735,7 +1735,7 @@ function renderViralDaily(daily) {
     const src = (viralCache.sourceStatus || {})[p] || {};
     const rows = daily[p].map((it) => {
       const rec = viralCache.videos.find((v) => v.id === it.viral_id) || {};
-      const statusBtn = statusButton(it.status, it.viral_id, rec.has_report);
+      const statusBtn = statusButton(it.status, it.viral_id, rec.has_report, rec.notes || "");
       return `
         <tr>
           <td class="num">${it.rank ?? "—"}</td>
@@ -1763,14 +1763,15 @@ function renderViralDaily(daily) {
   }).join("");
 }
 
-function statusButton(status, vid, hasReport) {
+function statusButton(status, vid, hasReport, note) {
+  const noteTip = note ? `\n最近状态：${String(note).slice(0, 120)}` : "";
   if (status === "analyzing") {
-    return '<span class="badge primary" title="拆解进行中，完成后自动更新">拆解中</span>';
+    return '<span class="badge primary" title="拆解进行中，完成后自动更新' + esc(noteTip) + '">拆解中</span>';
   }
   const reportBtn = hasReport
     ? `<button class="btn small vstatus" title="点击查看拆解报告" onclick="viewBreakdown('${esc(vid)}')">查看报告</button>`
     : (status === "analyzed" || status === "applied")
-      ? `<button class="btn small filled vstatus" title="该记录缺少报告文件，点击重新拆解" onclick="analyzeDailyItem('${esc(vid)}')">已拆解·重新拆</button>`
+      ? `<button class="btn small filled vstatus" title="该记录缺少报告文件，点击重新拆解${noteTip}" onclick="analyzeDailyItem('${esc(vid)}')">已拆解·重新拆</button>`
       : "";
   if (status === "applied") {
     return `<span class="badge success" title="已标记应用：该爆款已用于创作">已应用</span>${reportBtn}`;
@@ -1778,7 +1779,7 @@ function statusButton(status, vid, hasReport) {
   if (status === "analyzed") {
     return `${reportBtn}<button class="btn small vstatus" title="标记该爆款已用于创作，计入已应用" onclick="setViralStatus('${esc(vid)}','applied')">标记应用</button>`;
   }
-  return `<button class="btn small filled vstatus" title="点击开始 AI 拆解" onclick="analyzeDailyItem('${esc(vid)}')">待拆解</button>`;
+  return `<button class="btn small filled vstatus" title="点击开始 AI 拆解${noteTip}" onclick="analyzeDailyItem('${esc(vid)}')">待拆解</button>`;
 }
 
 async function analyzeDailyItem(vid) {
@@ -1880,7 +1881,7 @@ function renderOwnHits(hits) {
       || String(x.notes || "").includes(h.job_id));
     const status = v ? v.status : "tracked";
     const btn = v
-      ? statusButton(status, v.id, v.has_report)
+      ? statusButton(status, v.id, v.has_report, v.notes || "")
       : `<button class="btn small filled" title="点击转入跟踪并启动 AI 拆解" onclick="importOwnHit('${esc(h.job_id).replace(/'/g, "\\'")}')">转入跟踪并拆解</button>`;
     return `
       <div class="topic-item">

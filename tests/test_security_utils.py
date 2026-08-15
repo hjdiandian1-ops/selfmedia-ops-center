@@ -38,6 +38,7 @@ def test_safe_http_url_rejects_unsafe():
 
 def test_safe_http_url_accepts_public():
     assert SU.safe_http_url("https://github.com/gitleaks/gitleaks", resolve_dns=False)
+    assert SU.safe_http_url("https://www.xiaohongshu.com/search_result?keyword=%E6%B5%8B%E8%AF%95", resolve_dns=False)
     assert SU.safe_http_url("http://tophub.today/c/ai", resolve_dns=False)
 
 

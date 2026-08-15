@@ -934,7 +934,9 @@ def api_viral_analyze(payload: ViralAnalyze):
         raise HTTPException(status_code=400, detail="字段过长")
     if payload.platform not in ("小红书", "抖音", "视频号", "B站", "快手", "X", "公众号", "其他"):
         raise HTTPException(status_code=400, detail=f"平台不合法: {payload.platform}")
-    if payload.link.strip() and not security_utils.safe_http_url(payload.link):
+    # 链接只传给 AI 拆解做参考，服务端不会主动请求它：用 resolve_dns=False，
+    # 避免本机 DNS 抖动/受限把正常公网链接误判为内网（与采集器同策略）。
+    if payload.link.strip() and not security_utils.safe_http_url(payload.link, resolve_dns=False):
         raise HTTPException(status_code=400, detail="链接不合法：仅允许公网 http/https，禁止内网/元数据地址")
 
     data = _load_flywheel(VIRAL_FILE, {"videos": []})
