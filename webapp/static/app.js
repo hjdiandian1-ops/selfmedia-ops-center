@@ -701,12 +701,13 @@ function quickClass(q) {
 }
 
 function noteRow(r, withPlatform) {
+  const time = fmtTime(r.first_published_at || r.collected_at);
   const ctr = r.ctr != null && Number(r.ctr) > 0
     ? (Number(r.ctr) <= 1 ? (Number(r.ctr) * 100).toFixed(1) + "%" : esc(r.ctr) + "%")
     : "—";
   return `
     <tr>
-      <td>${esc((r.first_published_at || r.collected_at || "").slice(0, 16))}</td>
+      <td>${esc(time)}</td>
       <td title="${esc(r.theme || "")}">${esc(r.title || r.job_id)}</td>
       ${withPlatform ? `<td>${esc(r.platform || "—")}</td>` : ""}
       <td>${esc(r.format || "—")}</td>
@@ -722,6 +723,14 @@ function noteRow(r, withPlatform) {
       <td>${r.hit ? '<span class="badge hit">🔥 爆款</span>' : '<span class="badge">常规</span>'}</td>
       ${r.quick ? `<td><span class="badge ${quickClass(r.quick)}">${esc(r.quick)}</span></td>` : ""}
     </tr>`;
+}
+
+function fmtTime(s) {
+  if (!s) return "—";
+  const pad = (n) => String(n).padStart(2, "0");
+  const zh = String(s).match(/^(\d{4})年(\d{1,2})月(\d{1,2})日(\d{1,2})时(\d{1,2})分/);
+  if (zh) return `${zh[1]}-${pad(zh[2])}-${pad(zh[3])} ${pad(zh[4])}:${pad(zh[5])}`;
+  return String(s).replace("T", " ").slice(0, 16);
 }
 
 function renderRecentRows(box, records, withPlatform = true) {
