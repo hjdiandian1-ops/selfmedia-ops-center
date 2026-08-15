@@ -127,7 +127,7 @@ function stateBadge(state) {
 
 // ---------- 视图切换 ----------
 const PAGE_META = {
-  overview: ["概览", "生产 + 分析 + 学习闭环 · 薄弱点即提升方向"],
+  overview: ["运营中台", "生产 + 分析 + 学习闭环 · 平台数据一眼掌握"],
   topics: ["选题", "热点雷达 → 选题推荐 → 采纳建任务"],
   themes: ["爆款跟踪", "小红书/抖音/公众号每日爆款 · AI 拆解 + 周经验包反哺流水线"],
   flywheel: ["数据飞轮", "写稿发布 → 账户反馈 → 市场学习 → 总结经验 → 反哺 Agent"],
@@ -177,20 +177,33 @@ $("#btn-refresh-topics").addEventListener("click", (e) => runWithSpin(e.currentT
 
 // ---------- 概览 ----------
 let ovCache = null;
+let ovStatsCache = null;
 let currentOvTab = "overview";
 let lastStatsTrend = [];
+let dashPeriod = "day";
 const ovSeriesSel = { overview: "reads", 小红书: "reads", 公众号: "reads", 短视频: "reads" };
 
 async function loadOverview() {
   try {
+    const plats = enabledPlatforms();
+    const q = "platforms=" + encodeURIComponent(plats.join(","));
     const [stats, dash] = await Promise.all([
-      api("/api/stats"),
-      api("/api/dashboard?range=" + dashState.range),
+      api("/api/stats?" + q),
+      api("/api/dashboard?period=" + dashPeriod + "&" + q),
     ]);
     ovCache = dash;
+    ovStatsCache = stats;
     lastStatsTrend = stats.trend || [];
+    $$("#ov-tabs .tab").forEach((b) => {
+      const hidden = b.dataset.ov !== "overview" && !plats.includes(b.dataset.ov);
+      b.classList.toggle("hidden", hidden);
+    });
+    if (currentOvTab !== "overview" && !plats.includes(currentOvTab)) {
+      currentOvTab = "overview";
+      $$("#ov-tabs .tab").forEach((b) => b.classList.toggle("active", b.dataset.ov === "overview"));
+    }
     $("#topbar-meta").textContent = "更新于 " + (dash.generated_at || stats.generated_at || "");
-    renderGlobalKpis(stats);
+    renderGlobalKpis(stats, dash);
     renderOverviewPane(stats, dash);
     if (currentOvTab !== "overview") renderPlatformPane(currentOvTab);
   } catch (e) {
@@ -198,13 +211,72 @@ async function loadOverview() {
   }
 }
 
-function renderGlobalKpis(d) {
-  const kpis = [
-    ["任务总数", d.jobs_total], ["已发布任务", d.published_jobs],
-    ["爆款数", d.hits], ["总阅读", fmtNum(d.total_reads)],
-    ["平均互动率", d.total_reads ? pct(d.avg_engagement) : "—"],
-    ["待回收", d.pending_recycle],
-  ];
+function enabledPlatforms() {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_platforms") || "null");
+    if (Array.isArray(v) && v.length) {
+      const all = ["小红书", "公众号", "短视频"];
+      const ok = v.filter((p) => all.includes(p));
+      if (ok.length) return ok;
+    }
+  } catch (e) { /* ignore */ }
+  return ["小红书", "公众号", "短视频"];
+}
+
+function setDashPeriod(p) {
+  dashPeriod = p;
+  $$("#period-tabs .tab").forEach((b) => b.classList.toggle("active", b.dataset.period === p));
+  loadOverview();
+}
+window.setDashPeriod = setDashPeriod;
+
+function openPlatformPrefs() {
+  const plats = enabledPlatforms();
+  $("#pfp-xhs").checked = plats.includes("小红书");
+  $("#pfp-gzh").checked = plats.includes("公众号");
+  $("#pfp-video").checked = plats.includes("短视频");
+  $("#platform-prefs-modal").classList.remove("hidden");
+}
+window.openPlatformPrefs = openPlatformPrefs;
+
+function closePlatformPrefs() {
+  $("#platform-prefs-modal").classList.add("hidden");
+}
+window.closePlatformPrefs = closePlatformPrefs;
+
+function savePlatformPrefs() {
+  const plats = [];
+  if ($("#pfp-xhs").checked) plats.push("小红书");
+  if ($("#pfp-gzh").checked) plats.push("公众号");
+  if ($("#pfp-video").checked) plats.push("短视频");
+  localStorage.setItem("selfmedia_platforms", JSON.stringify(plats));
+  closePlatformPrefs();
+  toast("平台设置已保存" + (plats.length ? "" : "，至少保留一个平台更合理"));
+  loadOverview();
+}
+window.savePlatformPrefs = savePlatformPrefs;
+
+function renderGlobalKpis(stats, dash) {
+  const isPlatform = currentOvTab !== "overview";
+  let kpis;
+  if (isPlatform) {
+    const t = ((dash.platforms || {})[currentOvTab] || {}).totals || {};
+    kpis = [
+      ["任务总数", t.publish_count ?? 0],
+      ["已发布任务", t.backfill_count ?? 0],
+      ["爆款数", t.hits ?? 0],
+      ["总阅读", fmtNum(t.total_reads ?? 0)],
+      ["平均互动率", t.engagement == null ? "—" : (t.engagement * 100).toFixed(2) + "%"],
+      ["粉丝数", t.followers ?? "—"],
+    ];
+  } else {
+    kpis = [
+      ["任务总数", stats.jobs_total], ["已发布任务", stats.published_jobs],
+      ["爆款数", stats.hits], ["总阅读", fmtNum(stats.total_reads)],
+      ["平均互动率", stats.total_reads ? pct(stats.avg_engagement) : "—"],
+      ["粉丝数", stats.followers_total ?? "—"],
+    ];
+  }
   $("#kpi-cards").innerHTML = kpis.map(([lbl, num]) =>
     `<div class="kpi"><div class="num ${String(num).length > 5 ? "small" : ""}">${esc(num)}</div><div class="lbl">${esc(lbl)}</div></div>`).join("");
 }
@@ -212,20 +284,13 @@ function renderGlobalKpis(d) {
 function renderOverviewPane(stats, d) {
   const ov = d.overview || {};
   const dx = d.diagnostics || {};
-  $("#ov-health").innerHTML = ov.health_score == null
-    ? "—"
-    : `${esc(ov.health_score)}<small> / 100</small>`;
   const noteParts = [];
   if (dx.generated_at) noteParts.push("诊断更新于 " + dx.generated_at.slice(5, 16));
   if (dx.previous_at) noteParts.push("上次 " + dx.previous_at.slice(5, 16));
-  $("#ov-health-note").textContent = noteParts.join(" · ");
-  svgRadar($("#ov-radar"), ov.radar);
+  $("#ov-compare-note").textContent = noteParts.join(" · ");
   $("#ov-focus").textContent = ov.focus || "先回填/导入数据后开始诊断。";
-  const axes = (ov.radar && ov.radar.axes) || [];
-  $("#ov-health-explain").innerHTML = `
-    <div class="muted" style="margin-bottom:6px">健康度 = 各可算指标相对基准的归一化加权分（0-100），缺失指标不计权并置灰。</div>
-    ${axes.map((a) => `
-      <div class="kv">${esc(a.label)}：<b>${a.value == null ? "—" : esc(a.value) + " / 100"}</b></div>`).join("")}`;
+  renderPlatformCompareChart(d.platforms || {});
+  renderPlatformCards(d.platforms || {});
 
   const states = Object.entries(stats.by_state || {});
   const total = stats.jobs_total || 1;
@@ -244,13 +309,40 @@ function renderOverviewPane(stats, d) {
 
 function renderOverviewTrend() {
   const key = ovSeriesSel.overview;
+  const dates = new Set();
+  const byDate = {};
+  Object.values(ovCache.platforms || {}).forEach((p) => {
+    const tr = p.trend || {};
+    (tr.dates || []).forEach((dd, i) => {
+      dates.add(dd);
+      byDate[dd] = byDate[dd] || { publish: 0, reads: 0, followers: 0, readsEng: 0 };
+      byDate[dd].publish += tr.publishes?.[i] || 0;
+      byDate[dd].reads += tr.reads?.[i] || 0;
+      byDate[dd].followers += tr.followers?.[i] || 0;
+      if (tr.engagement?.[i] != null && tr.reads?.[i]) {
+        byDate[dd].readsEng += tr.engagement[i] * tr.reads[i];
+      }
+    });
+  });
+  const sorted = Array.from(dates).sort();
+  const raw = {
+    dates: sorted,
+    labels: sorted.map((dd) => dd.slice(5)),
+    publishes: sorted.map((dd) => byDate[dd].publish),
+    reads: sorted.map((dd) => byDate[dd].reads),
+    engagement: sorted.map((dd) => byDate[dd].reads ? byDate[dd].readsEng / byDate[dd].reads : null),
+    followers: sorted.map((dd) => byDate[dd].followers),
+  };
+  const bucketed = bucketTrend(raw, dashPeriod);
   const series = {
-    publishes: { label: "发布数", data: lastStatsTrend.map((t) => t.publish_count || 0) },
-    reads: { label: "阅读", data: lastStatsTrend.map((t) => t.reads || 0) },
+    publishes: { label: "发布数", data: bucketed.publishes },
+    reads: { label: "阅读/播放", data: bucketed.reads },
+    engagement: { label: "互动率%", data: bucketed.engagement },
+    followers: { label: "粉丝", data: bucketed.followers },
   };
   $("#ov-series").innerHTML = Object.entries(series).map(([k, s]) =>
     `<button class="tab ${k === key ? "active" : ""}" onclick="setOverviewSeries('${k}')">${s.label}</button>`).join("");
-  svgLineChart($("#ov-trend"), lastStatsTrend.map((t) => t.label), series, key);
+  svgLineChart($("#ov-trend"), bucketed.labels, series, key);
 }
 
 function setOverviewSeries(k) {
@@ -259,11 +351,125 @@ function setOverviewSeries(k) {
 }
 window.setOverviewSeries = setOverviewSeries;
 
+function bucketTrend(raw, period) {
+  const keys = [];
+  const byKey = {};
+  const engW = {};
+  const labels = [];
+  const seen = {};
+  (raw.labels || []).forEach((lbl, i) => {
+    const date = (raw.dates ? raw.dates[i] : "") || lbl;
+    const key = dateKey(date, period);
+    if (!(key in seen)) {
+      seen[key] = true;
+      keys.push(key);
+      byKey[key] = { publish: 0, reads: 0, followers: 0, readsEng: 0 };
+      labels.push(key);
+    }
+    byKey[key].publish += raw.publishes?.[i] || 0;
+    byKey[key].reads += raw.reads?.[i] || 0;
+    byKey[key].followers += raw.followers?.[i] || 0;
+    if (raw.engagement?.[i] != null && raw.reads?.[i]) {
+      byKey[key].readsEng += raw.engagement[i] * raw.reads[i];
+    }
+  });
+  return {
+    labels,
+    publishes: keys.map((k) => byKey[k].publish),
+    reads: keys.map((k) => byKey[k].reads),
+    followers: keys.map((k) => byKey[k].followers),
+    engagement: keys.map((k) => byKey[k].reads ? +(byKey[k].readsEng / byKey[k].reads * 100).toFixed(2) : null),
+  };
+}
+
+function dateKey(date, period) {
+  if (!date) return date;
+  if (period === "day") return date.slice(5);
+  if (period === "month") return date.slice(0, 7).replace("-", "年") + "月";
+  if (period === "year") return date.slice(0, 4) + "年";
+  // week：ISO 周
+  const d = new Date(date + "T00:00:00");
+  const day = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - day + 3);
+  const firstThu = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const firstDay = (firstThu.getUTCDay() + 6) % 7;
+  firstThu.setUTCDate(firstThu.getUTCDate() - firstDay + 3);
+  const week = 1 + Math.round((d - firstThu) / (7 * 86400000));
+  return d.getUTCFullYear() + "-W" + String(week).padStart(2, "0");
+}
+
+function renderPlatformCompareChart(platforms) {
+  const box = $("#ov-compare");
+  if (!box) return;
+  const order = ["小红书", "公众号", "短视频"].filter((p) => platforms[p]);
+  if (!order.length) {
+    box.innerHTML = '<span class="muted">暂无平台数据，先在「平台管理」中启用平台并回填数据。</span>';
+    return;
+  }
+  const metrics = [
+    { key: "total_reads", label: "阅读/播放", fmt: (v) => fmtNum(v) },
+    { key: "followers", label: "粉丝数", fmt: (v) => fmtNum(v) },
+    { key: "hits", label: "爆款数", fmt: (v) => v },
+    { key: "engagement", label: "互动率", fmt: (v) => v == null ? "—" : (v * 100).toFixed(1) + "%" },
+  ];
+  const W = 760, H = 300, PAD_L = 12, PAD_R = 12, PAD_T = 26, PAD_B = 46;
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+  const groupW = innerW / metrics.length;
+  const barW = Math.min(40, groupW * 0.24);
+  const maxBy = {};
+  metrics.forEach((m) => {
+    let max = 0;
+    order.forEach((pl) => {
+      const t = (platforms[pl] || {}).totals || {};
+      const v = m.key === "engagement" ? t.engagement : t[m.key] || 0;
+      if (typeof v === "number" && v > max) max = v;
+    });
+    maxBy[m.key] = max || 1;
+  });
+  const bars = metrics.map((m, gi) => {
+    const gx = PAD_L + gi * groupW + groupW / 2;
+    return order.map((pl, pi) => {
+      const t = (platforms[pl] || {}).totals || {};
+      const v = m.key === "engagement" ? t.engagement : t[m.key] || 0;
+      const h = (typeof v === "number" && v > 0) ? Math.max(3, v / maxBy[m.key] * innerH) : 0;
+      const x = gx + (pi - (order.length - 1) / 2) * (barW + 6) - barW / 2;
+      const y = PAD_T + innerH - h;
+      const val = `<text x="${(x + barW / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" class="gbar-val">${esc(m.fmt(v))}</text>`;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="4" class="gbar ${esc(pl)}"/>${h ? val : ""}`;
+    }).join("");
+  }).join("");
+  const metricLabels = metrics.map((m, gi) => {
+    const gx = PAD_L + gi * groupW + groupW / 2;
+    return `<text x="${gx.toFixed(1)}" y="${H - 14}" text-anchor="middle" class="gbar-label">${esc(m.label)}</text>`;
+  }).join("");
+  const legend = order.map((pl) =>
+    `<span class="legend-item"><i class="legend-dot ${esc(pl)}"></i>${esc(pl)}</span>`).join("");
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="compare-svg">${bars}${metricLabels}</svg><div class="legend">${legend}</div>`;
+}
+
+function renderPlatformCards(platforms) {
+  const box = $("#ov-platform-cards");
+  if (!box) return;
+  const icons = { "公众号": "📰", "小红书": "📕", "短视频": "🎬" };
+  box.innerHTML = Object.entries(platforms).map(([pl, p]) => {
+    const t = p.totals || {};
+    return `
+      <div class="agent-card">
+        <div class="head"><span class="emoji">${icons[pl] || "📊"}</span><span class="role">${esc(pl)}</span></div>
+        <div class="resp">发布 <b>${t.publish_count ?? 0}</b> ｜ 回填 <b>${t.backfill_count ?? 0}</b> ｜ 爆款 <b>${t.hits ?? 0}</b></div>
+        <div class="kv">阅读/播放 <b>${fmtNum(t.total_reads ?? 0)}</b> ｜ 互动率 <b>${t.engagement == null ? "—" : (t.engagement * 100).toFixed(2) + "%"}</b></div>
+        <div class="kv">粉丝数 <b>${t.followers ?? "—"}</b></div>
+      </div>`;
+  }).join("") || '<span class="muted">暂无平台数据</span>';
+}
+
 function switchOverviewTab(name) {
   currentOvTab = name;
   $$("#ov-tabs .tab").forEach((b) => b.classList.toggle("active", b.dataset.ov === name));
   $("#ov-overview").classList.toggle("hidden", name !== "overview");
   $("#ov-platform").classList.toggle("hidden", name === "overview");
+  renderGlobalKpis(ovStatsCache || {}, ovCache || {});
   if (name !== "overview") renderPlatformPane(name);
 }
 window.switchOverviewTab = switchOverviewTab;
@@ -274,9 +480,6 @@ function renderPlatformPane(name) {
     $("#ov-platform").innerHTML = '<div class="card"><span class="muted">暂无数据，先采集/回填。</span></div>';
     return;
   }
-  const dx = (ovCache.diagnostics || {}).deltas || {};
-  const delta = dx[name];
-  const deltaHtml = delta == null ? "" : `<span class="delta ${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "↑" : "↓"}${Math.abs(delta)}</span>`;
   const metrics = (p.metrics || []).map((m) => `
     <div class="kpi">
       <div class="num small">${m.value == null ? "—" : esc(fmtNum(m.value)) + (m.unit ? `<small class="unit">${esc(m.unit)}</small>` : "")}</div>
@@ -299,16 +502,6 @@ function renderPlatformPane(name) {
       <div class="series-tabs" id="pf-series"></div>
     </div>`;
   $("#ov-platform").innerHTML = `
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-head"><h3>${esc(name)} 健康度</h3></div>
-        <div class="health-score">${p.health_score == null ? "—" : esc(p.health_score)}<small> / 100</small> ${deltaHtml}</div>
-      </div>
-      <div class="card">
-        <div class="card-head"><h3>${esc(name)} 雷达（相对基准）</h3></div>
-        <div id="pf-radar" class="radar-box"></div>
-      </div>
-    </div>
     <div class="card">
       <div class="card-head"><h3>本周最重要的一件事</h3></div>
       <div class="focus-card">${esc(p.focus || "—")}</div>
@@ -336,7 +529,6 @@ function renderPlatformPane(name) {
       </div>
     </div>
     ${xhsExtra}`;
-  svgRadar($("#pf-radar"), p.radar);
   if (name !== "小红书") renderPlatformTrend(name, p.trend);
   renderWeakList($("#pf-weak"), p.weak_points || [], name);
   renderRecentRows($("#pf-recent"), p.recent || []);
@@ -363,10 +555,6 @@ function xhsDashCardHtml() {
             <button class="tab" data-dash="follower" onclick="switchDashTab('follower')">涨粉</button>
             <button class="tab" data-dash="publish" onclick="switchDashTab('publish')">发布</button>
           </div>
-          <div class="range-toggle">
-            <button class="tab active" data-range="7" onclick="setDashRange(7)">近7日</button>
-            <button class="tab" data-range="30" onclick="setDashRange(30)">近30日</button>
-          </div>
         </div>
       </div>
       <div class="kpi-grid" id="dash-kpis"></div>
@@ -383,15 +571,23 @@ function xhsDashCardHtml() {
 
 function renderPlatformTrend(name, trend) {
   const key = ovSeriesSel[name] || "reads";
+  const bucketed = bucketTrend({
+    dates: trend.dates || [],
+    labels: trend.labels || [],
+    publishes: trend.publishes || [],
+    reads: trend.reads || [],
+    engagement: trend.engagement || [],
+    followers: trend.followers || [],
+  }, dashPeriod);
   const seriesMap = {
-    publishes: { label: "发布数", data: trend.publishes || [] },
-    reads: { label: "阅读/播放", data: trend.reads || [] },
-    engagement: { label: "互动率%", data: (trend.engagement || []).map((v) => v == null ? null : +(v * 100).toFixed(2)) },
-    followers: { label: "涨粉", data: trend.followers || [] },
+    publishes: { label: "发布数", data: bucketed.publishes },
+    reads: { label: "阅读/播放", data: bucketed.reads },
+    engagement: { label: "互动率%", data: bucketed.engagement },
+    followers: { label: "粉丝", data: bucketed.followers },
   };
   $("#pf-series").innerHTML = Object.entries(seriesMap).map(([k, s]) =>
     `<button class="tab ${k === key ? "active" : ""}" onclick="setPlatformSeries('${esc(name)}','${k}')">${s.label}</button>`).join("");
-  svgLineChart($("#pf-trend"), trend.labels || [], seriesMap, key);
+  svgLineChart($("#pf-trend"), bucketed.labels, seriesMap, key);
 }
 
 function setPlatformSeries(platform, key) {
@@ -605,8 +801,9 @@ function renderDashFunnel(tab) {
 function renderDashTrend(trend) {
   const box = $("#dash-trend-chart");
   if (!trend || !trend.length) return box.innerHTML = '<span class="muted">暂无趋势数据</span>';
-  const maxV = Math.max(1, ...trend.map((t) => Number(t.value || t.total || 0)));
-  box.innerHTML = trend.map((t) => {
+  const bucketed = bucketDaily(trend, dashPeriod);
+  const maxV = Math.max(1, ...bucketed.map((t) => Number(t.value || 0)));
+  box.innerHTML = bucketed.map((t) => {
     const v = Number(t.value != null ? t.value : t.total || 0);
     const extra = t.video != null ? ` 视频 ${t.video} / 图文 ${t.image}` : "";
     return `
@@ -616,6 +813,18 @@ function renderDashTrend(trend) {
         <span class="day">${esc(t.label)}</span>
       </div>`;
   }).join("");
+}
+
+function bucketDaily(trend, period) {
+  const map = {};
+  trend.forEach((t) => {
+    const k = dateKey(t.date || "", period);
+    map[k] = map[k] || { label: k, value: 0, video: 0, image: 0, date: t.date || "" };
+    map[k].value += Number(t.value != null ? t.value : t.total || 0);
+    map[k].video += Number(t.video || 0);
+    map[k].image += Number(t.image || 0);
+  });
+  return Object.values(map);
 }
 
 function renderDashExtra(tab) {

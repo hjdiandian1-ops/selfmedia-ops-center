@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-<link rel="stylesheet" href="/static/style.css?v=3.42">
+<link rel="stylesheet" href="/static/style.css?v=3.43">
 </head>
 <body>
 <div class="app">
@@ -20,7 +20,7 @@
     <nav class="nav" id="nav">
       <button class="nav-item active" data-view="overview">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-        概览
+        运营中台
       </button>
       <button class="nav-item" data-view="topics">
         <svg viewBox="0 0 24 24"><path d="M5 3v18M5 5h12l-2 4 2 4H5"/></svg>
@@ -59,7 +59,7 @@
   <div class="main">
     <header class="topbar">
       <div>
-        <h1 class="page-title" id="page-title">概览</h1>
+        <h1 class="page-title" id="page-title">运营中台</h1>
         <p class="page-sub" id="page-sub">数据大盘 · 结果优先</p>
       </div>
       <div class="topbar-meta" id="topbar-meta"></div>
@@ -68,24 +68,27 @@
     <main class="content">
       <!-- 概览 -->
       <section id="view-overview" class="view active">
-        <div class="kpi-grid" id="kpi-cards"></div>
-        <div class="ov-tabs" id="ov-tabs">
-          <button class="tab active" data-ov="overview" onclick="switchOverviewTab('overview')">总览</button>
-          <button class="tab" data-ov="小红书" onclick="switchOverviewTab('小红书')">小红书</button>
-          <button class="tab" data-ov="公众号" onclick="switchOverviewTab('公众号')">公众号</button>
-          <button class="tab" data-ov="短视频" onclick="switchOverviewTab('短视频')">短视频</button>
+        <div class="ov-toolbar">
+          <div class="tabs" id="ov-tabs" style="margin-bottom:0">
+            <button class="tab active" data-ov="overview" onclick="switchOverviewTab('overview')">总览</button>
+            <button class="tab" data-ov="小红书" onclick="switchOverviewTab('小红书')">小红书</button>
+            <button class="tab" data-ov="公众号" onclick="switchOverviewTab('公众号')">公众号</button>
+            <button class="tab" data-ov="短视频" onclick="switchOverviewTab('短视频')">短视频</button>
+          </div>
+          <div class="range-toggle" id="period-tabs">
+            <button class="tab active" data-period="day" onclick="setDashPeriod('day')">日</button>
+            <button class="tab" data-period="week" onclick="setDashPeriod('week')">周</button>
+            <button class="tab" data-period="month" onclick="setDashPeriod('month')">月</button>
+            <button class="tab" data-period="year" onclick="setDashPeriod('year')">年</button>
+          </div>
+          <button class="btn small tonal" onclick="openPlatformPrefs()" title="选择要统计显示的平台">平台管理</button>
         </div>
+        <div class="kpi-grid" id="kpi-cards"></div>
         <div id="ov-overview" class="ov-pane">
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-head"><h3>账号健康度</h3><span class="muted" id="ov-health-note"></span></div>
-              <div class="health-score" id="ov-health">—</div>
-              <div id="ov-health-explain" class="health-explain"></div>
-            </div>
-            <div class="card">
-              <div class="card-head"><h3>整体雷达（三平台健康度）</h3></div>
-              <div id="ov-radar" class="radar-box"></div>
-            </div>
+          <div class="card">
+            <div class="card-head"><h3>平台细分对比</h3><span class="muted" id="ov-compare-note"></span></div>
+            <div id="ov-compare" class="compare-chart"></div>
+            <div id="ov-platform-cards" class="agent-grid" style="margin-top:14px"></div>
           </div>
           <div class="card">
             <div class="card-head"><h3>本周最重要的一件事</h3></div>
@@ -588,7 +591,23 @@
   </div>
 </div>
 
+<div id="platform-prefs-modal" class="modal hidden" onclick="if(event.target===this)closePlatformPrefs()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>平台管理</h3>
+      <button class="btn small tonal" onclick="closePlatformPrefs()">关闭</button>
+    </div>
+    <div class="form" style="padding:8px 22px 18px">
+      <p class="muted" style="margin-top:0">选择你要运营的平台；未勾选的平台会隐藏，且不参与统计。</p>
+      <label class="field-label" style="margin-top:12px"><input type="checkbox" id="pfp-xhs" checked> 小红书</label>
+      <label class="field-label"><input type="checkbox" id="pfp-gzh" checked> 公众号</label>
+      <label class="field-label"><input type="checkbox" id="pfp-video" checked> 短视频</label>
+      <button class="btn filled" style="margin-top:14px" onclick="savePlatformPrefs()">保存</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.42"></script>
+    <script src="/static/app.js?v=3.43"></script>
 </body>
 </html>

@@ -30,6 +30,7 @@ VIDEO_SHARE_WEAK = 0.2         # 视频占比 <20% → 体裁结构失衡
 
 KINDS = ("publish", "watch", "interact", "follower")
 PLATFORM_ORDER = ("小红书", "公众号", "短视频")
+PERIOD_DAYS = {"day": 14, "week": 90, "month": 365, "year": 1825}
 
 # 公众号 / 短视频基准（回填口径起步）
 GZH_ENGAGEMENT_WEAK = 0.005    # 互动率 <0.5%
@@ -485,6 +486,7 @@ def _platform_summary(platform, records, publishes, range_days):
         if total_r:
             by_day[d]["engagement"] = round(sum(v[0] * v[1] for v in vals) / total_r, 4)
     trend = {
+        "dates": days,
         "labels": [d[5:] for d in days],
         "publishes": [by_day[d]["publish"] for d in days],
         "reads": [by_day[d]["reads"] for d in days],
@@ -736,13 +738,16 @@ def _save_diagnostics(data_dir, payload):
     }
 
 
-def build_dashboard(range_days=7, jobs_dir=DEFAULT_JOBS_DIR, outputs_dir=DEFAULT_OUTPUTS_DIR,
+def build_dashboard(range_days=None, period="day", platforms=None,
+                    jobs_dir=DEFAULT_JOBS_DIR, outputs_dir=DEFAULT_OUTPUTS_DIR,
                     data_dir=DEFAULT_DATA_DIR):
+    if range_days is None:
+        range_days = PERIOD_DAYS.get(period, PERIOD_DAYS["day"])
     tabs, notes_cur, sources = build_tabs(range_days, data_dir)
     weak_points = build_weak_points(tabs, notes_cur, sources)
     records = _backfill_records(jobs_dir, range_days)
     publishes = _publish_events(jobs_dir, range_days)
-    platforms = {}
+    platform_data = {}
     for p in PLATFORM_ORDER:
         s = _platform_summary(p, records, publishes, range_days)
         if p == "小红书":
@@ -753,7 +758,7 @@ def build_dashboard(range_days=7, jobs_dir=DEFAULT_JOBS_DIR, outputs_dir=DEFAULT
             weak = _build_platform_weak(p, s)
         score, radar = _score_and_radar(metrics)
         recs = [{**r, "quick": _quick_label(p, r)} for r in s["recent"]]
-        platforms[p] = {
+        platform_data[p] = {
             "health_score": score,
             "focus": _focus(p, metrics, weak),
             "radar": radar,
@@ -769,21 +774,40 @@ def build_dashboard(range_days=7, jobs_dir=DEFAULT_JOBS_DIR, outputs_dir=DEFAULT
                 "engagement": s["engagement"],
                 "hits": s["hits"],
                 "hit_rate": s["hit_rate"],
+                "followers": s["followers_gained"],
             },
         }
-    overview = _overview(platforms, range_days)
+    overview = _overview(platform_data, range_days)
     overview["recent"] = sorted(
-        (r for p in platforms.values() for r in p["recent"]),
+        (r for p in platform_data.values() for r in p["recent"]),
         key=lambda r: str(r.get("collected_at") or ""), reverse=True)[:10]
-    result = {
-        "range_days": range_days,
-        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "tabs": tabs,
-        "weak_points": weak_points,
-        "sources": sources,
-        "overview": overview,
-        "platforms": platforms,
-    }
+    if platforms:
+        platform_data = {p: platform_data[p] for p in platforms if p in PLATFORM_ORDER}
+        overview = _overview(platform_data, range_days)
+        overview["recent"] = sorted(
+            (r for p in platform_data.values() for r in p["recent"]),
+            key=lambda r: str(r.get("collected_at") or ""), reverse=True)[:10]
+        result = {
+            "range_days": range_days,
+            "period": period,
+            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "tabs": tabs,
+            "weak_points": weak_points,
+            "sources": sources,
+            "overview": overview,
+            "platforms": platform_data,
+        }
+    else:
+        result = {
+            "range_days": range_days,
+            "period": period,
+            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "tabs": tabs,
+            "weak_points": weak_points,
+            "sources": sources,
+            "overview": overview,
+            "platforms": platform_data,
+        }
     result["diagnostics"] = _save_diagnostics(data_dir, result)
     return result
 

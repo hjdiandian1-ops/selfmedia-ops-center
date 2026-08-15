@@ -194,12 +194,15 @@ def _engagement(reads, likes, collects, comments):
     return round((likes + collects + comments) / reads, 4) if reads > 0 else 0.0
 
 
-def aggregate(events, jobs_dir, outputs_dir, data_dir=DATA_DIR):
+def aggregate(events, jobs_dir, outputs_dir, data_dir=DATA_DIR, platforms=None):
     """事件流 → 聚合统计（KPI / 平台 / 主题 / 趋势 / 内容特征 / 数据口径）。"""
     jobs = list(iter_jobs(jobs_dir))
     by_state = Counter(j["state"] for j in jobs)
     scores = [sc for j in jobs for sc in (j["scores"] or {}).values()]
 
+    enabled = set(platforms) if platforms else None
+    if enabled:
+        events = [e for e in events if not e["platform"] or e["platform"] in enabled]
     pubs = [e for e in events if e["type"] == "publish"]
     metrics = [e for e in events if e["type"] == "metric"]
 
@@ -247,7 +250,8 @@ def aggregate(events, jobs_dir, outputs_dir, data_dir=DATA_DIR):
 
     # 平台对比
     by_platform = []
-    for platform in PLATFORMS:
+    platform_order = tuple(enabled) if enabled else PLATFORMS
+    for platform in platform_order:
         pe = [e for e in pubs if e["platform"] == platform]
         me = [e for e in metrics if e["platform"] == platform]
         p_reads = sum(e["reads"] for e in me)
@@ -257,6 +261,7 @@ def aggregate(events, jobs_dir, outputs_dir, data_dir=DATA_DIR):
             "posts": len({e["job_id"] for e in pe + me}),
             "backfills": len(me),
             "reads": p_reads,
+            "followers_gained": sum(e["followers_gained"] for e in me),
             "likes": sum(e["likes"] for e in me),
             "collects": sum(e["collects"] for e in me),
             "comments": sum(e["comments"] for e in me),
@@ -433,6 +438,10 @@ def aggregate(events, jobs_dir, outputs_dir, data_dir=DATA_DIR):
         "pending_recycle": pending_recycle,
         "hits": len(hits),
         "total_reads": total_reads,
+        "followers_gained_total": sum(e["followers_gained"] for e in metrics),
+        "followers_total": xhs_account.get("followers")
+            if xhs_account.get("followers") is not None
+            else sum(e["followers_gained"] for e in metrics),
         "total_likes": total_likes,
         "total_collects": total_collects,
         "total_comments": total_comments,
@@ -453,10 +462,10 @@ def aggregate(events, jobs_dir, outputs_dir, data_dir=DATA_DIR):
     }
 
 
-def build_summary(jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR):
+def build_summary(jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR, platforms=None):
     """实时聚合（工作台 /api/stats 直接调用）。"""
     events = build_events(jobs_dir, outputs_dir, data_dir=data_dir)
-    return aggregate(events, jobs_dir, outputs_dir, data_dir=data_dir)
+    return aggregate(events, jobs_dir, outputs_dir, data_dir=data_dir, platforms=platforms)
 
 
 def render_markdown(s):

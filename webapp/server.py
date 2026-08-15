@@ -642,18 +642,34 @@ def _collect_job_rows():
 
 
 @app.get("/api/stats")
-def api_stats():
+def api_stats(platforms: str = ""):
     """自有数据统计：实时扫描 jobs/ + outputs/，聚合 KPI/平台/主题/趋势/内容特征。"""
-    return data_stats.build_summary(jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR)
+    plats = _parse_platforms(platforms)
+    return data_stats.build_summary(
+        jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR, platforms=plats)
 
 
 @app.get("/api/dashboard")
-def api_dashboard(range: int = 7):
-    """小红书式四页签数据分析 + 薄弱点诊断（近7日/近30日）。"""
-    if range not in (7, 30):
-        raise HTTPException(status_code=400, detail="range 仅支持 7 或 30")
+def api_dashboard(range: int = 7, period: str = "day", platforms: str = ""):
+    """平台看板：period=day|week|month|year，platforms=逗号分隔的平台过滤。"""
+    if period not in dashboard_analysis.PERIOD_DAYS:
+        raise HTTPException(status_code=400, detail="period 仅支持 day/week/month/year")
+    plats = _parse_platforms(platforms)
     return dashboard_analysis.build_dashboard(
-        range_days=range, jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR)
+        period=period, platforms=plats,
+        jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR)
+
+
+def _parse_platforms(platforms: str):
+    """解析逗号分隔的平台白名单；空串返回 None（全部平台）。"""
+    if not platforms.strip():
+        return None
+    names = [p.strip() for p in platforms.split(",") if p.strip()]
+    allowed = set(dashboard_analysis.PLATFORM_ORDER)
+    bad = [p for p in names if p not in allowed]
+    if bad:
+        raise HTTPException(status_code=400, detail=f"平台不合法: {bad}")
+    return names
 
 
 def _agent_outputs(job_id: str, limit: int = 3):

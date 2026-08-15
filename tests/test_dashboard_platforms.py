@@ -5,11 +5,17 @@ import os
 from datetime import datetime, timedelta
 
 import dashboard_analysis as DA
+import data_stats
 
 
 def _write_job(root, job_id, platform, records=None, publishes=None):
     jdir = os.path.join(root, "jobs", job_id)
     os.makedirs(jdir, exist_ok=True)
+    with open(os.path.join(jdir, "state.json"), "w", encoding="utf-8") as f:
+        json.dump({
+            "job_id": job_id, "theme": f"主题-{job_id}", "state": "archive",
+            "updated_at": _days_ago_str(0),
+        }, f, ensure_ascii=False, indent=2)
     data = {
         "job_id": job_id,
         "records": records or [],
@@ -111,3 +117,48 @@ def test_radar_values_normalized(tmp_path):
         for ax in p["radar"]["axes"]:
             if ax["value"] is not None:
                 assert 0 <= ax["value"] <= 125
+
+
+def test_period_mapping(tmp_path):
+    root = str(tmp_path)
+    d = DA.build_dashboard(period="week", jobs_dir=os.path.join(root, "jobs"),
+                           outputs_dir=os.path.join(root, "outputs"),
+                           data_dir=os.path.join(root, "data"))
+    assert d["range_days"] == 90 and d["period"] == "week"
+
+
+def test_platform_filter(tmp_path):
+    root = str(tmp_path)
+    _write_job(root, "job_gzh", "公众号", records=[
+        {"platform": "公众号", "collected_at": _days_ago_str(1), "reads": 800,
+         "likes": 20, "collects": 5, "comments": 2, "engagement": 0.034, "hit": False},
+    ], publishes=[{"platform": "公众号", "status": "success", "mode": "manual",
+                   "at": _days_ago_str(1)}])
+    d = DA.build_dashboard(range_days=7, platforms=["公众号"],
+                           jobs_dir=os.path.join(root, "jobs"),
+                           outputs_dir=os.path.join(root, "outputs"),
+                           data_dir=os.path.join(root, "data"))
+    assert set(d["platforms"]) == {"公众号"}
+    assert d["overview"]["health_score"] is not None
+
+
+def test_stats_platform_filter(tmp_path):
+    root = str(tmp_path)
+    _write_job(root, "job_xhs", "小红书", records=[
+        {"platform": "小红书", "collected_at": _days_ago_str(1), "reads": 2000,
+         "likes": 100, "collects": 20, "comments": 10, "engagement": 0.065, "hit": True},
+    ], publishes=[{"platform": "小红书", "status": "success", "mode": "manual",
+                   "at": _days_ago_str(1)}])
+    _write_job(root, "job_gzh", "公众号", records=[
+        {"platform": "公众号", "collected_at": _days_ago_str(1), "reads": 9999,
+         "likes": 500, "collects": 50, "comments": 20, "engagement": 0.057, "hit": True},
+    ], publishes=[{"platform": "公众号", "status": "success", "mode": "manual",
+                   "at": _days_ago_str(1)}])
+    s = data_stats.build_summary(jobs_dir=os.path.join(root, "jobs"),
+                                 outputs_dir=os.path.join(root, "outputs"),
+                                 data_dir=os.path.join(root, "data"),
+                                 platforms=["小红书"])
+    assert {p["platform"] for p in s["by_platform"]} == {"小红书"}
+    assert "followers_gained" in s["by_platform"][0]
+    assert "followers_total" in s
+    assert s["total_reads"] == 2000
