@@ -334,11 +334,12 @@ function renderOverviewTrend() {
     followers: sorted.map((dd) => byDate[dd].followers),
   };
   const bucketed = bucketTrend(raw, dashPeriod);
+  const c = cumulateTrend(bucketed);
   const series = {
-    publishes: { label: "发布数", data: bucketed.publishes },
-    reads: { label: "阅读/播放", data: bucketed.reads },
-    engagement: { label: "互动率%", data: bucketed.engagement },
-    followers: { label: "涨粉（新增）", data: bucketed.followers },
+    publishes: { label: "累计发布", data: c.publishes },
+    reads: { label: "累计阅读/播放", data: c.reads },
+    engagement: { label: "互动率%（累计）", data: c.engagement },
+    followers: { label: "累计涨粉", data: c.followers },
   };
   const keys = chartSeriesFor("overview");
   $("#ov-series").innerHTML = Object.entries(series).map(([k, s]) =>
@@ -380,6 +381,23 @@ function bucketTrend(raw, period) {
     reads: keys.map((k) => byKey[k].reads),
     followers: keys.map((k) => byKey[k].followers),
     engagement: keys.map((k) => byKey[k].reads ? +(byKey[k].readsEng / byKey[k].reads * 100).toFixed(2) : null),
+    _reads: keys.map((k) => byKey[k].reads),
+    _readsEng: keys.map((k) => byKey[k].readsEng),
+  };
+}
+
+function cumulateTrend(b) {
+  let pp = 0, pr = 0, pf = 0, pw = 0, pr2 = 0;
+  return {
+    labels: b.labels,
+    publishes: b.publishes.map((v) => (pp += v)),
+    reads: b.reads.map((v) => (pr += v)),
+    followers: b.followers.map((v) => (pf += v)),
+    engagement: b._reads.map((r, i) => {
+      pw += b._readsEng[i] || 0;
+      pr2 += r || 0;
+      return pr2 ? +(pw / pr2 * 100).toFixed(2) : null;
+    }),
   };
 }
 
@@ -710,11 +728,12 @@ function renderPlatformTrend(name, trend) {
     engagement: trend.engagement || [],
     followers: trend.followers || [],
   }, dashPeriod);
+  const c = cumulateTrend(bucketed);
   const seriesMap = {
-    publishes: { label: "发布数", data: bucketed.publishes },
-    reads: { label: "阅读/播放", data: bucketed.reads },
-    engagement: { label: "互动率%", data: bucketed.engagement },
-    followers: { label: "涨粉（新增）", data: bucketed.followers },
+    publishes: { label: "累计发布", data: c.publishes },
+    reads: { label: "累计阅读/播放", data: c.reads },
+    engagement: { label: "互动率%（累计）", data: c.engagement },
+    followers: { label: "累计涨粉", data: c.followers },
   };
   const keys = chartSeriesFor(name);
   $("#pf-series").innerHTML = Object.entries(seriesMap).map(([k, s]) =>
@@ -1101,12 +1120,14 @@ function renderDashTrend(trend) {
   const box = $("#dash-trend-chart");
   if (!trend || !trend.length) return box.innerHTML = '<span class="muted">暂无趋势数据</span>';
   const bucketed = bucketDaily(trend, dashPeriod);
-  const maxV = Math.max(1, ...bucketed.map((t) => Number(t.value || 0)));
-  box.innerHTML = bucketed.map((t) => {
-    const v = Number(t.value != null ? t.value : t.total || 0);
+  let run = 0;
+  const cum = bucketed.map((t) => ({ ...t, value: (run += Number(t.value != null ? t.value : t.total || 0)) }));
+  const maxV = Math.max(1, ...cum.map((t) => Number(t.value || 0)));
+  box.innerHTML = cum.map((t) => {
+    const v = Number(t.value || 0);
     const extra = t.video != null ? ` 视频 ${t.video} / 图文 ${t.image}` : "";
     return `
-      <div class="tcol" title="${esc(t.date + extra)}">
+      <div class="tcol" title="累计 ${esc(t.date + extra)}">
         <span class="val">${v ? fmtNum(v) : ""}</span>
         <div class="bar" style="height:${Math.max(4, Math.round(v / maxV * 92))}%"></div>
         <span class="day">${esc(t.label)}</span>
