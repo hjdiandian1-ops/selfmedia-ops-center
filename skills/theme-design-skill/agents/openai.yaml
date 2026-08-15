@@ -1,0 +1,4 @@
+interface:
+  display_name: "主题皮肤设计"
+  short_description: "为工作台设计/切换皮肤主题（CSS变量+data-theme）"
+  default_prompt: "给工作台设计一套新的皮肤主题，先出方案经批准后再实现"

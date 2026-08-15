@@ -1,0 +1,115 @@
+{
+  "themes": [
+    {
+      "id": "default",
+      "name": "蓝白默认",
+      "desc": "现状基线，Material 3 Light",
+      "tokens": {
+        "primary": "#1a73e8",
+        "primary-strong": "#1967d2",
+        "on-primary": "#ffffff",
+        "primary-container": "#e8f0fe",
+        "on-primary-container": "#041e49",
+        "surface": "#ffffff",
+        "surface-dim": "#f8f9fa",
+        "on-surface": "#202124",
+        "on-surface-variant": "#5f6368",
+        "outline": "#dadce0",
+        "outline-variant": "#e8eaed",
+        "error": "#b3261e",
+        "success": "#188038",
+        "brand-gradient": ["#1a73e8", "#66a4f5"]
+      }
+    },
+    {
+      "id": "brand-red",
+      "name": "红白小吴聊",
+      "desc": "品牌红白系，贴合 cover-design-skill 主色",
+      "tokens": {
+        "primary": "#dc2626",
+        "primary-strong": "#b91c1c",
+        "on-primary": "#ffffff",
+        "primary-container": "#fee2e2",
+        "on-primary-container": "#7f1d1d",
+        "surface": "#ffffff",
+        "surface-dim": "#faf7f5",
+        "on-surface": "#201a17",
+        "on-surface-variant": "#6b6159",
+        "outline": "#e0d7d0",
+        "outline-variant": "#efe9e4",
+        "error": "#b3261e",
+        "success": "#1a7f37",
+        "brand-gradient": ["#dc2626", "#f87171"]
+      }
+    },
+    {
+      "id": "midnight",
+      "name": "深空暗黑",
+      "desc": "Tokyo Night / Catppuccin Mocha 风格，专注夜间使用",
+      "tokens": {
+        "primary": "#7aa2f7",
+        "primary-strong": "#5d8fe0",
+        "on-primary": "#101422",
+        "primary-container": "#2a304a",
+        "on-primary-container": "#c6d0f5",
+        "surface": "#1a1b26",
+        "surface-dim": "#15161e",
+        "on-surface": "#c0caf5",
+        "on-surface-variant": "#9aa5ce",
+        "outline": "#3b4261",
+        "outline-variant": "#2a3042",
+        "error": "#f7768e",
+        "success": "#9ece6a",
+        "brand-gradient": ["#7aa2f7", "#3d59a1"]
+      }
+    },
+    {
+      "id": "paper",
+      "name": "纸张杂志",
+      "desc": "暖纸墨色 Editorial 风，适合长时间阅读",
+      "tokens": {
+        "primary": "#b45309",
+        "primary-strong": "#92400e",
+        "on-primary": "#ffffff",
+        "primary-container": "#f4e3c5",
+        "on-primary-container": "#5c4206",
+        "surface": "#f6f1e7",
+        "surface-dim": "#ede6d8",
+        "on-surface": "#2b2620",
+        "on-surface-variant": "#6f6557",
+        "outline": "#d8ccb6",
+        "outline-variant": "#e7decb",
+        "error": "#b3261e",
+        "success": "#3f6212",
+        "brand-gradient": ["#b45309", "#d97706"]
+      }
+    },
+    {
+      "id": "swiss",
+      "name": "极简瑞士",
+      "desc": "黑白灰 + 单一强调色，无阴影、细分割线",
+      "tokens": {
+        "primary": "#0066cc",
+        "primary-strong": "#004e99",
+        "on-primary": "#ffffff",
+        "primary-container": "#e5f0ff",
+        "on-primary-container": "#003b73",
+        "surface": "#ffffff",
+        "surface-dim": "#f4f4f2",
+        "on-surface": "#111111",
+        "on-surface-variant": "#555555",
+        "outline": "#d9d9d6",
+        "outline-variant": "#ebebe8",
+        "error": "#d00000",
+        "success": "#0f766e",
+        "brand-gradient": ["#0066cc", "#0066cc"]
+      }
+    }
+  ],
+  "pairs": [
+    ["on-surface", "surface"],
+    ["on-surface-variant", "surface"],
+    ["on-primary", "primary"],
+    ["on-primary-container", "primary-container"]
+  ]
+}
