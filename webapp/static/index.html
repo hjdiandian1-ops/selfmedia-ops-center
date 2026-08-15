@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
-<link rel="stylesheet" href="/static/style.css?v=3.28">
+<link rel="stylesheet" href="/static/style.css?v=3.29">
 </head>
 <body>
 <div class="app">
@@ -530,7 +530,7 @@
     </div>
         <div class="form">
           <p class="muted" style="margin-top:0">配置保存在本机 .env，不会上传。留空的输入框表示保持原值。</p>
-          <div class="form-section-title">🤖 AI 引擎</div>
+          <div class="form-section-title">AI 引擎</div>
           <label class="field-label">LLM API Key（DeepSeek / OpenAI 等）</label>
           <input id="set-llm-key" type="password" placeholder="sk-..." autocomplete="off">
           <span class="muted" id="set-key-mask"></span>
@@ -538,12 +538,12 @@
           <input id="set-llm-base" placeholder="https://api.deepseek.com/v1">
           <label class="field-label">模型名</label>
           <input id="set-llm-model" placeholder="deepseek-chat">
-          <div class="form-section-title">📱 公众号（可选）</div>
+          <div class="form-section-title">公众号（可选）</div>
           <label class="field-label">公众号 AppID（可选，认证号自动推草稿用）</label>
           <input id="set-gzh-id" placeholder="wx..." autocomplete="off">
           <label class="field-label">公众号 AppSecret（可选）</label>
           <input id="set-gzh-secret" type="password" placeholder="..." autocomplete="off">
-          <div class="form-section-title">🔑 Pro 会员授权</div>
+          <div class="form-section-title">Pro 会员授权</div>
           <label class="field-label">Pro 授权 token（付款后由卖家发放）</label>
           <div class="toolbar" style="gap:8px">
             <input id="set-license-token" type="password" placeholder="粘贴 token 即可激活为会员" autocomplete="off" style="flex:1">
@@ -561,7 +561,7 @@
           <div>6. 详细图文步骤见「发布指引」（成品库页）。</div>
                 </div>
               </details>
-              <div class="form-section-title">🗂 数据管理</div>
+              <div class="form-section-title">数据管理</div>
               <details class="card" style="margin-top:10px;padding:10px">
                 <summary style="cursor:pointer;font-weight:600">清理规则与操作</summary>
                 <div class="stack" style="margin-top:8px;font-size:13px;line-height:1.7">
@@ -585,6 +585,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.28"></script>
+    <script src="/static/app.js?v=3.29"></script>
 </body>
 </html>
