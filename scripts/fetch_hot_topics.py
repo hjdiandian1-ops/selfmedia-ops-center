@@ -17,7 +17,7 @@
     python3 scripts/fetch_hot_topics.py --json       # 只打印 JSON，不落盘
 
 环境变量：
-    NAS_IP / RSSHUB_PORT         NAS 与 RSSHub 地址（默认 192.168.50.229 / 1200）
+    NAS_IP / RSSHUB_PORT         NAS 与 RSSHub 地址（默认 localhost / 1200）
     SELFMEDIA_PROXY              海外源代理（复用 personal-website 的 X_SCRAPER_PROXY 模式）
     X_SCRAPER_PROXY / HTTP(S)_PROXY  代理备选链（未设 SELFMEDIA_PROXY 时使用）
     X_TRENDS_URL                 可选：X 趋势 HTTP 端点（返回 {"success":true,"trends":[...]}）
@@ -36,14 +36,16 @@ import re
 import sys
 import urllib.error
 import urllib.request
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # nosec B405  # RSS 来自固定公开源/内网 RSSHub，ElementTree 不解析外部实体
+from html import unescape
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from security_utils import safe_http_url  # noqa: E402
 try:
     from nas_config import NAS_IP, NAS_SSH_PORT, NAS_USER, NAS_PASS
 except ImportError:
-    NAS_IP = os.environ.get("NAS_IP", "192.168.50.229")
+    NAS_IP = os.environ.get("NAS_IP", "localhost")
     NAS_SSH_PORT = int(os.environ.get("NAS_SSH_PORT", "233"))
     NAS_USER = os.environ.get("NAS_USER", "")
     NAS_PASS = os.environ.get("NAS_PASS", "")
@@ -84,7 +86,7 @@ SOURCES = {
     "掘金趋势": "/juejin/trending/all/daily",
 }
 
-OVERSEAS_SOURCES = ("谷歌趋势", "X热点")
+OVERSEAS_SOURCES = ("谷歌趋势", "X热点", "推楼1号小时热点")
 
 # 合规初筛：命中关键词的条目直接剔除（海外源强制复核，机器只做保守初筛）
 COMPLIANCE_BLOCK = [
@@ -111,32 +113,36 @@ def resolve_proxy():
 PROXY_URL = resolve_proxy()
 
 
-def fetch_http(url, proxy=None, timeout=20):
-    """带代理的 HTTP GET，返回 bytes。"""
+def fetch_http(url, proxy=None, timeout=20, ua="selfmedia-hot-radar/1.0", allow_private=False):
+    """带代理的 HTTP GET，返回 bytes。默认拒绝内网/元数据地址（防 SSRF）。"""
+    if not allow_private and not safe_http_url(url):
+        raise ValueError(f"URL 不满足安全策略（仅 http/https 且非内网地址）: {url[:120]}")
     handlers = []
     if proxy:
         handlers.append(urllib.request.ProxyHandler({
             "http": proxy, "https": proxy}))
     opener = urllib.request.build_opener(*handlers)
-    req = urllib.request.Request(url, headers={"User-Agent": "selfmedia-hot-radar/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": ua})
     with opener.open(req, timeout=timeout) as resp:
         return resp.read()
 
 
 def fetch_source(name, route, top):
     """RSSHub 源（RSS 2.0 / Atom）。"""
-    raw = fetch_http(f"{BASE}{route}", proxy=None, timeout=15)
-    root = ET.fromstring(raw)
+    raw = fetch_http(f"{BASE}{route}", proxy=None, timeout=15, allow_private=True)
+    root = ET.fromstring(raw)  # nosec B314  # 固定源 RSS，见 B405 说明
     items = []
     for it in root.iter("item"):
         title = (it.findtext("title") or "").strip()
         link = (it.findtext("link") or "").strip()
         published_at = (it.findtext("pubDate") or "").strip()
+        summary = (it.findtext("description") or "").strip()
         if title:
             items.append({
                 "title": re.sub(r"\s+", " ", title),
                 "link": link,
                 "published_at": published_at,
+                "summary": _clean_html_text(summary)[:120] if summary else "",
             })
     if not items:
         for it in root.iter(f"{ATOM_NS}entry"):
@@ -145,11 +151,14 @@ def fetch_source(name, route, top):
             link = link_el.get("href", "") if link_el is not None else ""
             published_at = (it.findtext(f"{ATOM_NS}published")
                             or it.findtext(f"{ATOM_NS}updated") or "").strip()
+            summary_el = it.find(f"{ATOM_NS}summary") or it.find(f"{ATOM_NS}content")
+            summary = summary_el.text if summary_el is not None else ""
             if title:
                 items.append({
                     "title": re.sub(r"\s+", " ", title),
                     "link": link,
                     "published_at": published_at,
+                    "summary": _clean_html_text(summary)[:120] if summary else "",
                 })
     return items[:top]
 
@@ -157,7 +166,7 @@ def fetch_source(name, route, top):
 def fetch_google_trends(top):
     """谷歌趋势官方 RSS（海外源，走代理）。"""
     raw = fetch_http(GOOGLE_TRENDS_URL, proxy=PROXY_URL, timeout=20)
-    root = ET.fromstring(raw)
+    root = ET.fromstring(raw)  # nosec B314  # 固定源 RSS，见 B405 说明
     items = []
     for it in root.iter("item"):
         title = (it.findtext("title") or "").strip()
@@ -264,13 +273,13 @@ asyncio.run(main())
     import base64
 
     ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # nosec B507  # 内网 NAS 可选功能，凭据仅来自 .env
     ssh.connect(NAS_IP, port=NAS_SSH_PORT, username=NAS_USER, password=NAS_PASS, timeout=15)
     docker = "/volume1/@appstore/ContainerManager/usr/bin/docker"
     b64 = base64.b64encode(script.encode("utf-8")).decode("ascii")
 
     def run(cmd, timeout=40):
-        stdin, stdout, stderr = ssh.exec_command(cmd, timeout=timeout)
+        stdin, stdout, stderr = ssh.exec_command(cmd, timeout=timeout)  # nosec B601  # 命令由本模块固定拼接，无用户输入
         return stdout.read().decode(), stderr.read().decode()
 
     # 注意：不能走 `docker exec -i ... python3 -` 喂 stdin——sudo -S 会吃掉 stdin，
@@ -317,6 +326,110 @@ def fetch_x_trends(top):
     if X_TRENDS_URL:
         return fetch_x_trends_http(top)
     return fetch_x_trends_via_nas(top)
+
+
+def _clean_html_text(s):
+    return unescape(re.sub(r"<[^>]+>", "", s or "")).strip()
+
+
+def fetch_tophub(top):
+    """今日热榜 AI 频道（服务端渲染，解析 .cc-cd 板块条目）。"""
+    raw = fetch_http(
+        "https://tophub.today/c/ai", proxy=None, timeout=20,
+        ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/126 Safari/537.36")
+    html = raw.decode("utf-8", "ignore")
+    items = []
+    item_re = re.compile(
+        r'<a href="([^"]+)"[^>]*itemid="[^"]*">\s*'
+        r'<div class="cc-cd-cb-ll">\s*'
+        r'<span class="s[^"]*">(\d+)</span>\s*'
+        r'<span class="t">(.*?)</span>\s*'
+        r'(?:<span class="e">(.*?)</span>)?',
+        re.S)
+    for m in item_re.finditer(html):
+        title = _clean_html_text(m.group(3))
+        if not title:
+            continue
+        items.append({
+            "title": re.sub(r"\s+", " ", title),
+            "link": m.group(1),
+            "traffic": _clean_html_text(m.group(4)) or "",
+        })
+        if len(items) >= top:
+            break
+    if not items:
+        raise RuntimeError("tophub 页面未解析到条目")
+    return items
+
+
+def fetch_tl1(top):
+    """推楼1号小时热点（公开 JSON API，X 中文区热帖）。"""
+    raw = fetch_http("https://tl1.com/api/hotspot/hours?limit=1", proxy=None, timeout=20)
+    hours = json.loads(raw.decode("utf-8"))
+    if not hours:
+        raise RuntimeError("推楼1号暂无小时热点")
+    hour_key = hours[0].get("hour_key", "")
+    data = json.loads(fetch_http(
+        f"https://tl1.com/api/hotspot?hour={hour_key}", proxy=None, timeout=20).decode("utf-8"))
+    items = []
+    for it in (data.get("items") or [])[:top]:
+        title = (it.get("topic") or "").strip()
+        if not title:
+            continue
+        items.append({
+            "title": re.sub(r"\s+", " ", title),
+            "link": it.get("url", ""),
+            "traffic": str(it.get("score") or ""),
+            "published_at": hour_key,
+            "compliance": "海外源·需人工复核（推楼1号/X）",
+        })
+    if not items:
+        raise RuntimeError("推楼1号 API 返回为空")
+    return items
+
+
+def fetch_hex2077(top):
+    """何夕2077 AI 日报：索引定位最新一期，按段落提取新闻条目（带分组前缀）。"""
+    index_html = fetch_http("https://hex2077.dev/docs/", proxy=None, timeout=20).decode("utf-8", "ignore")
+    m = re.search(r'href="(/docs/\d{4}-\d{2}/\d{4}-\d{2}-\d{2}/)"', index_html)
+    if not m:
+        raise RuntimeError("hex2077 索引页未找到日报链接")
+    article_url = "https://hex2077.dev" + m.group(1)
+    article = fetch_http(article_url, proxy=None, timeout=25).decode("utf-8", "ignore")
+
+    section, items = "", []
+    token_re = re.compile(
+        r'<h[23][^>]*>(.*?)</h[23]>'
+        r'|<p class="my-5[^>]*>(.*?)</p>', re.S)
+    for tm in token_re.finditer(article):
+        if tm.group(1) is not None:
+            section = _clean_html_text(tm.group(1)).strip()
+            continue
+        para = tm.group(2)
+        link_m = re.search(r'href="(https?://[^"]+)"[^>]*>([^<]{2,50})<', para)
+        if not link_m or "hex2077.dev" in link_m.group(1):
+            continue
+        lead = ""
+        strong_m = re.search(r"<strong[^>]*>(.*?)</strong>", para)
+        if strong_m:
+            lead = _clean_html_text(strong_m.group(1))
+        title = (f"{lead}：" if lead else "") + _clean_html_text(link_m.group(2))
+        link = link_m.group(1)
+        compliance = ""
+        if "x.com" in link or "twitter.com" in link:
+            compliance = "海外源·需人工复核（X 链接）"
+        items.append({
+            "title": re.sub(r"\s+", " ", title)[:120],
+            "link": link,
+            "published_at": m.group(1).rstrip("/").split("/")[-1],
+            "section": section,
+            "compliance": compliance,
+        })
+        if len(items) >= top:
+            break
+    if not items:
+        raise RuntimeError("hex2077 日报未解析到条目")
+    return items
 
 
 def compliance_pass(items):
@@ -380,6 +493,51 @@ def main():
         failed.append("X热点")
         print(f"⚠️ X热点: {e}（已跳过，不影响其他源）", file=sys.stderr)
 
+    # 今日热榜 AI 频道（国内聚合源）
+    try:
+        items = compliance_pass(fetch_tophub(args.top))
+        blocked += items[1]
+        if items[0]:
+            results["今日热榜AI"] = items[0]
+            print(f"✅ 今日热榜AI: {len(items[0])} 条", file=sys.stderr)
+        else:
+            failed.append("今日热榜AI(空)")
+    except Exception as e:
+        failed.append("今日热榜AI")
+        print(f"❌ 今日热榜AI: {e}", file=sys.stderr)
+
+    # 推楼1号小时热点（X 中文区，海外源需人工复核）
+    try:
+        items = compliance_pass(fetch_tl1(args.top))
+        blocked += items[1]
+        if items[0]:
+            results["推楼1号小时热点"] = items[0]
+            print(f"✅ 推楼1号小时热点: {len(items[0])} 条", file=sys.stderr)
+        else:
+            failed.append("推楼1号小时热点(空)")
+    except Exception as e:
+        failed.append("推楼1号小时热点")
+        print(f"❌ 推楼1号小时热点: {e}", file=sys.stderr)
+
+    # 何夕2077 AI 日报（按栏目分组）
+    try:
+        hex_items = fetch_hex2077(args.top)
+        grouped = {}
+        for it in hex_items:
+            sec = it.pop("section", "") or "日报"
+            grouped.setdefault(f"hex2077·{sec}", []).append(it)
+        for name, its in grouped.items():
+            its, blocked_its = compliance_pass(its)
+            blocked += blocked_its
+            if its:
+                results[name] = its
+                print(f"✅ {name}: {len(its)} 条", file=sys.stderr)
+            else:
+                failed.append(f"{name}(空)")
+    except Exception as e:
+        failed.append("hex2077日报")
+        print(f"❌ hex2077日报: {e}", file=sys.stderr)
+
     if not results:
         print("\n🛑 所有热点源均失败。请检查：1) NAS/RSSHub 是否在线 2) 海外代理是否可用 3) X x_scraper 容器状态。", file=sys.stderr)
         sys.exit(1)
@@ -396,7 +554,7 @@ def main():
     lines = [
         f"# 📡 热点雷达（{today}）",
         "",
-        f"> 来源：国内 RSSHub（{BASE}）+ 谷歌趋势 + X热点 ｜ 成功 {len(results)} 源"
+        f"> 来源：国内 RSSHub（{BASE}）+ 谷歌趋势 + X热点 + 今日热榜 + 推楼1号 + hex2077日报 ｜ 成功 {len(results)} 源"
         + (f"，失败 {len(failed)} 源：{'、'.join(failed)}" if failed else ""),
         "> 用途：资深采编选题输入。标注 (source_type: 真实数据 | priority: 辅助)；经采编研判后入选素材包的条目再标 核心。",
         "> 合规：海外源（谷歌趋势/X热点）已做关键词初筛，入选选题前必须人工复核「国内可合规发布」。",
@@ -411,7 +569,8 @@ def main():
             flag = f" ｜ ⚠️ {it['compliance']}" if it.get("compliance") else ""
             extra = f"（{it['traffic']}）" if it.get("traffic") else ""
             pub = f"（发布于 {str(it['published_at'])[:16]}）" if it.get("published_at") else ""
-            lines.append(f"{i}. {it['title']}{extra}{link}{pub}{flag}")
+            summary = f"（摘要 {it['summary']}）" if it.get("summary") else ""
+            lines.append(f"{i}. {it['title']}{extra}{link}{pub}{summary}{flag}")
         lines.append("")
 
     with open(out_path, "w", encoding="utf-8") as f:

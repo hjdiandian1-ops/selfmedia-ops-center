@@ -1,0 +1,363 @@
+2026-08-13T17:05:25.887465Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:05:25.896981Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:05:25.918559Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:05:25.918576Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc15-f77a-7b43-b4d3-4e5c87be062f
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_a165e614db98
+- 平台：抖音
+- 标题：看看我拍到的英仙座流星雨吧
+- 链接：https://www.douyin.com/root/search/%E7%9C%8B%E7%9C%8B%E6%88%91%E6%8B%8D%E5%88%B0%E7%9A%84%E8%8B%B1%E4%BB%99%E5%BA%A7%E6%B5%81%E6%98%9F%E9%9B%A8%E5%90%A7
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:05:27.336734Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:05:27.348494Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:05:27.933579Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:05:27.936332Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+codex
+我按你给的内联 Skill 流程执行：先确认链接可访问性，再以 `title_only` 级别拆解（原文未提供），写入 JSON 与 Markdown。
+web search: 
+web search: https://www.douyin.com/root/search/%E7%9C%8B%E7%9C%8B%E6%88%91%E6%8B%8D%E5%88%B0%E7%9A%84%E8%8B%B1%E4%BB%99%E5%BA%A7%E6%B5%81%E6%98%9F%E9%9B%A8%E5%90%A7#ws_call_id=call_00_DifoNAmUDltZ8OrAvcMo7320
+exec
+/bin/zsh -lc 'mkdir -p data/flywheel/breakdowns' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+codex
+链接确认无法获取正文，拆解严格按 `title_only` 执行，现在写入两个文件。
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_a165e614db98.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_a165e614db98.md
+diff --git a/data/flywheel/breakdowns/v_a165e614db98.json b/data/flywheel/breakdowns/v_a165e614db98.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..f4716a077396faee65baee6863ab3578c23ec1ff
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_a165e614db98.json
+@@ -0,0 +1,10 @@
++{
++  "title": "看看我拍到的英仙座流星雨吧",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "标题以口语化祈使“看看”开场，形成邀请围观的互动感；“我拍到的”强调第一人称真实成果，诱发好奇：拍到了什么、效果如何。基于标题推断。",
++  "structure": "结果展示型：先抛出“我拍到的”这一结果，再点出英仙座流星雨这一热门天象；推测为成片先行、拍摄过程或技巧补充、结尾引导互动的顺序。基于标题推断，未获取原文。",
++  "why_viral": "基于标题推断：英仙座流星雨是每年8月中旬的时效性天象热点，叠加“我拍到的”个人真实成果展示，形成“热点+个人验证”的双重吸引力；口语化“看看吧”降低观看门槛，易引发“在哪拍的、什么参数、还拍得到吗”等评论。未获取原文（链接为抖音搜索页，无法访问），未编造数据、画面、封面或逐字内容。",
++  "formula": "蹭热点时效, 悬念好奇, 身份代入",
++  "summary": "借英仙座流星雨的时效热点，用“我拍到的”个人成果制造好奇与围观感，把公共天象流量转化为个人内容流量；可复用于周期性天象/事件+第一人称实拍组合。"
++}
+diff --git a/data/flywheel/breakdowns/v_a165e614db98.md b/data/flywheel/breakdowns/v_a165e614db98.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7e4f2d26e2a783d3b9f2a80c88c6ebcd8c2e977b
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_a165e614db98.md
+@@ -0,0 +1,37 @@
++## 拆解报告
++
++**依据级别：title_only**（仅标题与平台信息；原文/逐字稿未提供，链接为抖音搜索页，未能获取正文。以下所有维度均为基于标题的推断，不编造数据、画面、封面或逐字内容。）
++
++### 1. 前 3 秒钩子
++
++标题本身即钩子：“看看我拍到的……”用口语化祈使发出围观邀请，加上第一人称成果展示，让人想确认“你到底拍到了什么”。推测视频前 3 秒会用最震撼的流星画面兑现这一承诺。基于标题推断。
++
++### 2. 选题角度
++
++英仙座流星雨是每年 8 月中旬的固定天象热点（峰值约在 8 月 12-13 日前后），自带时效性与全民讨论度；“我拍到的”把大热点落到个人真实体验，普通观众也能代入：自己没拍到/没看到，但可以看别人拍到的。基于标题推断。
++
++### 3. 内容结构
++
++推测为“结果展示型”：先给成片结果，再补拍摄过程/地点/技巧，结尾引导互动。符合短视频“先给结果、再讲过程”的留存逻辑。基于标题推断，具体分段未获取。
++
++### 4. 情绪与人群
++
++主打“好奇 + 围观 + 治愈/羡慕”。目标人群：想看流星雨但没条件或没时间去拍的城市年轻人、摄影/天文兴趣用户。基于标题推断。
++
++### 5. 金句与留存节点
++
++“看看我拍到的”本身就是记忆点；推测视频中会以“拍到/没拍到”“运气好”“值了”等口语短句制造段落记忆点。具体文案未获取，不编造。
++
++### 6. 剪辑节奏
++
++视频节奏不可考，推测：前 3 秒流星实拍 + 强情绪音乐/音效抓人，中段多机位或延时素材交替，卡点剪辑提高完播。此为推断，未获取原文。
++
++### 7. 转化设计
++
++标题的“看看”天然指向评论区（“在哪拍的”“什么参数”“几点看的”）；推测尾部会引导点赞收藏（天象拍摄参数/攻略有收藏价值）与关注（追更更多实拍）。基于标题推断。
++
++### 8. 公式标签
++
++蹭热点时效、悬念好奇、身份代入
++
++**说明**：未获取原文，链接无法访问，拆解定位为选题角度与公式推断，非事实复述。
+
+diff --git a/data/flywheel/breakdowns/v_a165e614db98.json b/data/flywheel/breakdowns/v_a165e614db98.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..f4716a077396faee65baee6863ab3578c23ec1ff
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_a165e614db98.json
+@@ -0,0 +1,10 @@
++{
++  "title": "看看我拍到的英仙座流星雨吧",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "标题以口语化祈使“看看”开场，形成邀请围观的互动感；“我拍到的”强调第一人称真实成果，诱发好奇：拍到了什么、效果如何。基于标题推断。",
++  "structure": "结果展示型：先抛出“我拍到的”这一结果，再点出英仙座流星雨这一热门天象；推测为成片先行、拍摄过程或技巧补充、结尾引导互动的顺序。基于标题推断，未获取原文。",
++  "why_viral": "基于标题推断：英仙座流星雨是每年8月中旬的时效性天象热点，叠加“我拍到的”个人真实成果展示，形成“热点+个人验证”的双重吸引力；口语化“看看吧”降低观看门槛，易引发“在哪拍的、什么参数、还拍得到吗”等评论。未获取原文（链接为抖音搜索页，无法访问），未编造数据、画面、封面或逐字内容。",
++  "formula": "蹭热点时效, 悬念好奇, 身份代入",
++  "summary": "借英仙座流星雨的时效热点，用“我拍到的”个人成果制造好奇与围观感，把公共天象流量转化为个人内容流量；可复用于周期性天象/事件+第一人称实拍组合。"
++}
+diff --git a/data/flywheel/breakdowns/v_a165e614db98.md b/data/flywheel/breakdowns/v_a165e614db98.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7e4f2d26e2a783d3b9f2a80c88c6ebcd8c2e977b
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_a165e614db98.md
+@@ -0,0 +1,37 @@
++## 拆解报告
++
++**依据级别：title_only**（仅标题与平台信息；原文/逐字稿未提供，链接为抖音搜索页，未能获取正文。以下所有维度均为基于标题的推断，不编造数据、画面、封面或逐字内容。）
++
++### 1. 前 3 秒钩子
++
++标题本身即钩子：“看看我拍到的……”用口语化祈使发出围观邀请，加上第一人称成果展示，让人想确认“你到底拍到了什么”。推测视频前 3 秒会用最震撼的流星画面兑现这一承诺。基于标题推断。
++
++### 2. 选题角度
++
++英仙座流星雨是每年 8 月中旬的固定天象热点（峰值约在 8 月 12-13 日前后），自带时效性与全民讨论度；“我拍到的”把大热点落到个人真实体验，普通观众也能代入：自己没拍到/没看到，但可以看别人拍到的。基于标题推断。
++
++### 3. 内容结构
++
++推测为“结果展示型”：先给成片结果，再补拍摄过程/地点/技巧，结尾引导互动。符合短视频“先给结果、再讲过程”的留存逻辑。基于标题推断，具体分段未获取。
++
++### 4. 情绪与人群
++
++主打“好奇 + 围观 + 治愈/羡慕”。目标人群：想看流星雨但没条件或没时间去拍的城市年轻人、摄影/天文兴趣用户。基于标题推断。
++
++### 5. 金句与留存节点
++
++“看看我拍到的”本身就是记忆点；推测视频中会以“拍到/没拍到”“运气好”“值了”等口语短句制造段落记忆点。具体文案未获取，不编造。
++
++### 6. 剪辑节奏
++
++视频节奏不可考，推测：前 3 秒流星实拍 + 强情绪音乐/音效抓人，中段多机位或延时素材交替，卡点剪辑提高完播。此为推断，未获取原文。
++
++### 7. 转化设计
++
++标题的“看看”天然指向评论区（“在哪拍的”“什么参数”“几点看的”）；推测尾部会引导点赞收藏（天象拍摄参数/攻略有收藏价值）与关注（追更更多实拍）。基于标题推断。
++
++### 8. 公式标签
++
++蹭热点时效、悬念好奇、身份代入
++
++**说明**：未获取原文，链接无法访问，拆解定位为选题角度与公式推断，非事实复述。
+
+exec
+/bin/zsh -lc 'jq -e . data/flywheel/breakdowns/v_a165e614db98.json >/dev/null && echo "JSON OK"' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+JSON OK
+
+diff --git a/data/flywheel/breakdowns/v_a165e614db98.json b/data/flywheel/breakdowns/v_a165e614db98.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..f4716a077396faee65baee6863ab3578c23ec1ff
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_a165e614db98.json
+@@ -0,0 +1,10 @@
++{
++  "title": "看看我拍到的英仙座流星雨吧",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "标题以口语化祈使“看看”开场，形成邀请围观的互动感；“我拍到的”强调第一人称真实成果，诱发好奇：拍到了什么、效果如何。基于标题推断。",
++  "structure": "结果展示型：先抛出“我拍到的”这一结果，再点出英仙座流星雨这一热门天象；推测为成片先行、拍摄过程或技巧补充、结尾引导互动的顺序。基于标题推断，未获取原文。",
++  "why_viral": "基于标题推断：英仙座流星雨是每年8月中旬的时效性天象热点，叠加“我拍到的”个人真实成果展示，形成“热点+个人验证”的双重吸引力；口语化“看看吧”降低观看门槛，易引发“在哪拍的、什么参数、还拍得到吗”等评论。未获取原文（链接为抖音搜索页，无法访问），未编造数据、画面、封面或逐字内容。",
++  "formula": "蹭热点时效, 悬念好奇, 身份代入",
++  "summary": "借英仙座流星雨的时效热点，用“我拍到的”个人成果制造好奇与围观感，把公共天象流量转化为个人内容流量；可复用于周期性天象/事件+第一人称实拍组合。"
++}
+diff --git a/data/flywheel/breakdowns/v_a165e614db98.md b/data/flywheel/breakdowns/v_a165e614db98.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7e4f2d26e2a783d3b9f2a80c88c6ebcd8c2e977b
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_a165e614db98.md
+@@ -0,0 +1,37 @@
++## 拆解报告
++
++**依据级别：title_only**（仅标题与平台信息；原文/逐字稿未提供，链接为抖音搜索页，未能获取正文。以下所有维度均为基于标题的推断，不编造数据、画面、封面或逐字内容。）
++
++### 1. 前 3 秒钩子
++
++标题本身即钩子：“看看我拍到的……”用口语化祈使发出围观邀请，加上第一人称成果展示，让人想确认“你到底拍到了什么”。推测视频前 3 秒会用最震撼的流星画面兑现这一承诺。基于标题推断。
++
++### 2. 选题角度
++
++英仙座流星雨是每年 8 月中旬的固定天象热点（峰值约在 8 月 12-13 日前后），自带时效性与全民讨论度；“我拍到的”把大热点落到个人真实体验，普通观众也能代入：自己没拍到/没看到，但可以看别人拍到的。基于标题推断。
++
++### 3. 内容结构
++
++推测为“结果展示型”：先给成片结果，再补拍摄过程/地点/技巧，结尾引导互动。符合短视频“先给结果、再讲过程”的留存逻辑。基于标题推断，具体分段未获取。
++
++### 4. 情绪与人群
++
++主打“好奇 + 围观 + 治愈/羡慕”。目标人群：想看流星雨但没条件或没时间去拍的城市年轻人、摄影/天文兴趣用户。基于标题推断。
++
++### 5. 金句与留存节点
++
++“看看我拍到的”本身就是记忆点；推测视频中会以“拍到/没拍到”“运气好”“值了”等口语短句制造段落记忆点。具体文案未获取，不编造。
++
++### 6. 剪辑节奏
++
++视频节奏不可考，推测：前 3 秒流星实拍 + 强情绪音乐/音效抓人，中段多机位或延时素材交替，卡点剪辑提高完播。此为推断，未获取原文。
++
++### 7. 转化设计
++
++标题的“看看”天然指向评论区（“在哪拍的”“什么参数”“几点看的”）；推测尾部会引导点赞收藏（天象拍摄参数/攻略有收藏价值）与关注（追更更多实拍）。基于标题推断。
++
++### 8. 公式标签
++
++蹭热点时效、悬念好奇、身份代入
++
++**说明**：未获取原文，链接无法访问，拆解定位为选题角度与公式推断，非事实复述。
+
+codex
+拆解完成，链接（抖音搜索页）无法获取正文，已按 `title_only` 级别执行，所有维度均标注“基于标题推断”，未编造任何数据或画面细节。
+
+- [v_a165e614db98.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_a165e614db98.json)
+- [v_a165e614db98.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_a165e614db98.md)
+
+核心判断：标题踩中英仙座流星雨的 8 月时效热点，用“我拍到的”第一人称成果制造好奇与围观感，公式为“蹭热点时效 + 悬念好奇 + 身份代入”。
+
+可复用创作指令：每逢固定天象、节日或热点事件，做“我拍到的/我经历的”第一人称实拍。标题用口语化祈使“看看吧”降低门槛；前 3 秒直接给最震撼成片；中段补 1-2 个可收藏细节（地点、参数、避坑）；结尾问“你拍到没”引评论，借时效热点把公共流量转成个人内容资产。素材必须真实。
+diff --git a/data/flywheel/breakdowns/v_a165e614db98.json b/data/flywheel/breakdowns/v_a165e614db98.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..f4716a077396faee65baee6863ab3578c23ec1ff
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_a165e614db98.json
+@@ -0,0 +1,10 @@
++{
++  "title": "看看我拍到的英仙座流星雨吧",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "标题以口语化祈使“看看”开场，形成邀请围观的互动感；“我拍到的”强调第一人称真实成果，诱发好奇：拍到了什么、效果如何。基于标题推断。",
++  "structure": "结果展示型：先抛出“我拍到的”这一结果，再点出英仙座流星雨这一热门天象；推测为成片先行、拍摄过程或技巧补充、结尾引导互动的顺序。基于标题推断，未获取原文。",
++  "why_viral": "基于标题推断：英仙座流星雨是每年8月中旬的时效性天象热点，叠加“我拍到的”个人真实成果展示，形成“热点+个人验证”的双重吸引力；口语化“看看吧”降低观看门槛，易引发“在哪拍的、什么参数、还拍得到吗”等评论。未获取原文（链接为抖音搜索页，无法访问），未编造数据、画面、封面或逐字内容。",
++  "formula": "蹭热点时效, 悬念好奇, 身份代入",
++  "summary": "借英仙座流星雨的时效热点，用“我拍到的”个人成果制造好奇与围观感，把公共天象流量转化为个人内容流量；可复用于周期性天象/事件+第一人称实拍组合。"
++}
+diff --git a/data/flywheel/breakdowns/v_a165e614db98.md b/data/flywheel/breakdowns/v_a165e614db98.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7e4f2d26e2a783d3b9f2a80c88c6ebcd8c2e977b
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_a165e614db98.md
+@@ -0,0 +1,37 @@
++## 拆解报告
++
++**依据级别：title_only**（仅标题与平台信息；原文/逐字稿未提供，链接为抖音搜索页，未能获取正文。以下所有维度均为基于标题的推断，不编造数据、画面、封面或逐字内容。）
++
++### 1. 前 3 秒钩子
++
++标题本身即钩子：“看看我拍到的……”用口语化祈使发出围观邀请，加上第一人称成果展示，让人想确认“你到底拍到了什么”。推测视频前 3 秒会用最震撼的流星画面兑现这一承诺。基于标题推断。
++
++### 2. 选题角度
++
++英仙座流星雨是每年 8 月中旬的固定天象热点（峰值约在 8 月 12-13 日前后），自带时效性与全民讨论度；“我拍到的”把大热点落到个人真实体验，普通观众也能代入：自己没拍到/没看到，但可以看别人拍到的。基于标题推断。
++
++### 3. 内容结构
++
++推测为“结果展示型”：先给成片结果，再补拍摄过程/地点/技巧，结尾引导互动。符合短视频“先给结果、再讲过程”的留存逻辑。基于标题推断，具体分段未获取。
++
++### 4. 情绪与人群
++
++主打“好奇 + 围观 + 治愈/羡慕”。目标人群：想看流星雨但没条件或没时间去拍的城市年轻人、摄影/天文兴趣用户。基于标题推断。
++
++### 5. 金句与留存节点
++
++“看看我拍到的”本身就是记忆点；推测视频中会以“拍到/没拍到”“运气好”“值了”等口语短句制造段落记忆点。具体文案未获取，不编造。
++
++### 6. 剪辑节奏
++
++视频节奏不可考，推测：前 3 秒流星实拍 + 强情绪音乐/音效抓人，中段多机位或延时素材交替，卡点剪辑提高完播。此为推断，未获取原文。
++
++### 7. 转化设计
++
++标题的“看看”天然指向评论区（“在哪拍的”“什么参数”“几点看的”）；推测尾部会引导点赞收藏（天象拍摄参数/攻略有收藏价值）与关注（追更更多实拍）。基于标题推断。
++
++### 8. 公式标签
++
++蹭热点时效、悬念好奇、身份代入
++
++**说明**：未获取原文，链接无法访问，拆解定位为选题角度与公式推断，非事实复述。
+
+tokens used
+13,459
+拆解完成，链接（抖音搜索页）无法获取正文，已按 `title_only` 级别执行，所有维度均标注“基于标题推断”，未编造任何数据或画面细节。
+
+- [v_a165e614db98.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_a165e614db98.json)
+- [v_a165e614db98.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_a165e614db98.md)
+
+核心判断：标题踩中英仙座流星雨的 8 月时效热点，用“我拍到的”第一人称成果制造好奇与围观感，公式为“蹭热点时效 + 悬念好奇 + 身份代入”。
+
+可复用创作指令：每逢固定天象、节日或热点事件，做“我拍到的/我经历的”第一人称实拍。标题用口语化祈使“看看吧”降低门槛；前 3 秒直接给最震撼成片；中段补 1-2 个可收藏细节（地点、参数、避坑）；结尾问“你拍到没”引评论，借时效热点把公共流量转成个人内容资产。素材必须真实。
+
+===== 拆解开始 v_a165e614db98 =====

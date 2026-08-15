@@ -1,0 +1,383 @@
+<section style="max-width:677px;margin:0 auto;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#374151;line-height:1.75;letter-spacing:0.5px;overflow-x:hidden;">
+
+  <!-- 1. 开头引言卡片（组件2） -->
+  <section style="margin:10px 10px 32px;background:#ffffff;border-radius:12px;box-shadow:0 4px 24px -4px rgba(220,38,38,0.15);padding:28px 24px 22px;overflow:hidden;">
+    <p style="font-size:42px;color:#DC2626;font-weight:900;margin:0;line-height:0.6;">
+      <span leaf="">"</span>
+    </p>
+    <p style="font-size:16px;font-weight:800;color:#1C1917;margin:12px 0 8px;line-height:1.75;padding-left:4px;">
+      <span style="background:#DC2626;color:#FFFFFF;padding:2px 8px;border-radius:4px;"><span leaf="">6 天</span></span>
+      <span leaf="">、</span>
+      <span style="background:#DC2626;color:#FFFFFF;padding:2px 8px;border-radius:4px;"><span leaf="">70 个调试脚本</span></span>
+      <span leaf="">，我把双平台发布流水线搬上了自己的</span>
+      <span style="background:#DC2626;color:#FFFFFF;padding:2px 8px;border-radius:4px;"><span leaf="">NAS</span></span>
+      <span leaf="">。</span>
+    </p>
+    <p style="text-align:right;font-size:12px;color:#9CA3AF;margin:8px 0 0;letter-spacing:1px;">
+      <span leaf="">—— 小吴聊</span>
+    </p>
+  </section>
+
+  <!-- 2. 前言正文（组件6） -->
+  <section style="padding:0 10px;">
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">不讲概念，只算账。这是我用</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">6 天时间、70 个调试脚本</span></span>
+      <span leaf="">，在自己 NAS 上搭通小红书 + 公众号双平台自动发布流水线的真实记录——含架构图、踩坑清单与降本逻辑。</span>
+    </p>
+  </section>
+
+  <!-- 3. 前言导读（组件3，精选 3 看点） -->
+  <section style="padding:0 10px 32px;">
+    <p style="font-size:14px;color:#9CA3AF;margin:0 0 14px;letter-spacing:1px;">
+      <span leaf="">📌 本文看点</span>
+    </p>
+    <section style="display:flex;justify-content:space-between;">
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:16px 12px;margin-right:8px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:2px 10px;border-radius:4px;margin:0 0 8px;"><span leaf="">01</span></p>
+        <p style="font-size:13px;font-weight:700;color:#1C1917;margin:0;"><span leaf="">真实架构：4 个服务</span></p>
+      </section>
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:16px 12px;margin-right:8px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:2px 10px;border-radius:4px;margin:0 0 8px;"><span leaf="">02</span></p>
+        <p style="font-size:13px;font-weight:700;color:#1C1917;margin:0;"><span leaf="">稳定公式：80% + 20%</span></p>
+      </section>
+      <section style="flex:1;background:#FEF2F2;border-radius:10px;padding:16px 12px;text-align:center;border:1px solid #FEE2E2;">
+        <p style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:2px 10px;border-radius:4px;margin:0 0 8px;"><span leaf="">03</span></p>
+        <p style="font-size:13px;font-weight:700;color:#1C1917;margin:0;"><span leaf="">踩坑清单：70 个脚本</span></p>
+      </section>
+    </section>
+  </section>
+
+  <!-- 4. 第一章（组件5，margin-top:16px） -->
+  <section style="margin-top:16px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">01</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;text-transform:uppercase;">
+            <span leaf="">COUNTERINTUITIVE</span>
+          </p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;letter-spacing:0.5px;">
+            <span leaf="">网上教程一堆，但没人告诉你真实生产环境怎么配</span>
+          </h3>
+        </section>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">实话实说，决定搭这套系统之前，我试过了市面上主流的几种「AI 副业」玩法，结论很直接：</span>
+      <strong style="color:#DC2626;"><span leaf="">卖聊天框的都没赚到钱，卖「流水线结果」的才有戏。</span></strong>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">原因很简单：客户不想学 Prompt，也不想盯着一个对话框猜它这次返回什么格式。客户要的是「我提交文件，你给我排版好的结果」。所以我的思路从一开始就定了——</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">把 Agent 藏在后台，把结果交到前台</span></span>
+      <span leaf="">。</span>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">我是小吴，过去</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">6 天</span></span>
+      <span leaf="">（7 月 30 日到 8 月 4 日），我在自己的 NAS 上把这套想法跑成了现实。今天不聊虚的，直接拆架构、算成本、晒踩坑。</span>
+    </p>
+  </section>
+
+  <!-- 5. 章节分割线（组件4） -->
+  <section style="padding:0 10px;">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+
+  <!-- 6. 第二章（组件5） -->
+  <section style="margin-top:48px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">02</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;text-transform:uppercase;">
+            <span leaf="">THE LEDGER</span>
+          </p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;letter-spacing:0.5px;">
+            <span leaf="">真实架构：4 个服务，一条流水线</span>
+          </h3>
+        </section>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">整套系统用 docker-compose 部署在 NAS 上，核心只有</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">4 个服务</span></span>
+      <span leaf="">：</span>
+    </p>
+
+    <!-- 服务表格（组件12 表格 + data-viz） -->
+    <section data-viz="table" style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;overflow:hidden;">
+      <section style="padding:14px 18px;background:#FEF2F2;font-size:15px;font-weight:800;color:#1C1917;"><span leaf="">4 个服务，各司其职</span></section>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr style="background:#FAFAFA;">
+          <td style="padding:9px 10px;font-size:12px;color:#9CA3AF;width:24%;"><span leaf="">服务</span></td>
+          <td style="padding:9px 10px;font-size:12px;color:#9CA3AF;width:38%;"><span leaf="">职责</span></td>
+          <td style="padding:9px 10px;font-size:12px;color:#9CA3AF;width:38%;"><span leaf="">备注</span></td>
+        </tr>
+        <tr style="border-top:1px solid #FEE2E2;">
+          <td style="padding:9px 10px;color:#1C1917;font-weight:700;"><span leaf="">n8n 中文版</span></td>
+          <td style="padding:9px 10px;color:#374151;"><span leaf="">工作流引擎</span></td>
+          <td style="padding:9px 10px;color:#6B7280;"><span leaf="">blowsnow/n8n-chinese · 5678 端口</span></td>
+        </tr>
+        <tr style="border-top:1px solid #FEE2E2;background:#FEF2F2;">
+          <td style="padding:9px 10px;color:#1C1917;font-weight:700;"><span leaf="">PostgreSQL</span></td>
+          <td style="padding:9px 10px;color:#374151;"><span leaf="">工作流持久化</span></td>
+          <td style="padding:9px 10px;color:#6B7280;"><span leaf="">执行记录与凭据存储</span></td>
+        </tr>
+        <tr style="border-top:1px solid #FEE2E2;">
+          <td style="padding:9px 10px;color:#1C1917;font-weight:700;"><span leaf="">xhs-publisher</span></td>
+          <td style="padding:9px 10px;color:#374151;"><span leaf="">小红书自动发布</span></td>
+          <td style="padding:9px 10px;color:#6B7280;"><span leaf="">Playwright 驱动的发布 Worker</span></td>
+        </tr>
+        <tr style="border-top:1px solid #FEE2E2;background:#FEF2F2;">
+          <td style="padding:9px 10px;color:#1C1917;font-weight:700;"><span leaf="">RSSHub</span></td>
+          <td style="padding:9px 10px;color:#374151;"><span leaf="">热点雷达</span></td>
+          <td style="padding:9px 10px;color:#6B7280;"><span leaf="">选题素材抓取</span></td>
+        </tr>
+      </table>
+      <section style="padding:12px 18px 14px;font-size:12px;color:#9CA3AF;border-top:1px solid #FEE2E2;margin-top:12px;"><span leaf="">数据来源：n8n / RSSHub / Playwright 官方文档 + 本项目 docker-compose 部署（本地可核验）</span></section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">小红书登录态的方案也一并解决了：本地扫码登录创作者中心，把</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">xiaohongshu_cookies.json</span></span>
+      <span leaf="">挂载进 NAS 容器的 /data/shared/ 目录，Cookie 持久化完成。</span>
+    </p>
+  </section>
+
+  <!-- 7. 章节分割线（组件4） -->
+  <section style="padding:0 10px;">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+
+  <!-- 8. 第三章（组件5） -->
+  <section style="margin-top:48px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">03</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;text-transform:uppercase;">
+            <span leaf="">FORMULA</span>
+          </p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;letter-spacing:0.5px;">
+            <span leaf="">稳定公式：80% 确定性工作流 + 20% LLM 节点</span>
+          </h3>
+        </section>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">这套系统能跑稳，靠的是一个我在多个项目里验证过的公式：</span>
+      <strong style="color:#DC2626;"><span leaf="">80% 确定性代码 + 20% 大模型</span></strong>
+      <span leaf="">。</span>
+    </p>
+
+    <!-- 工作负载分配（data-viz bar） -->
+    <section data-viz="bar" style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;padding:18px;">
+      <section style="font-size:15px;font-weight:800;color:#1C1917;margin-bottom:14px;"><span leaf="">工作负载分配：80% 写死 + 20% 大模型</span></section>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:9px 10px 2px;font-size:13px;color:#6B7280;width:58%;"><span leaf="">确定性代码（Python / n8n）</span></td>
+          <td style="padding:9px 10px 2px;text-align:right;font-size:13px;font-weight:800;color:#DC2626;width:42%;"><span leaf="">80%</span></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:0 10px 10px;"><section style="background:#F5F5F5;border-radius:999px;height:8px;overflow:hidden;"><section style="width:80%;height:8px;background:#DC2626;border-radius:999px;"><span leaf=""><br></span></section></section></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 10px 2px;font-size:13px;color:#6B7280;width:58%;"><span leaf="">LLM 节点（非结构化摘要）</span></td>
+          <td style="padding:9px 10px 2px;text-align:right;font-size:13px;font-weight:800;color:#DC2626;width:42%;"><span leaf="">20%</span></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:0 10px 10px;"><section style="background:#F5F5F5;border-radius:999px;height:8px;overflow:hidden;"><section style="width:20%;height:8px;background:#DC2626;border-radius:999px;"><span leaf=""><br></span></section></section></td>
+        </tr>
+      </table>
+      <section style="padding:12px 18px 14px;font-size:12px;color:#9CA3AF;border-top:1px solid #FEE2E2;margin-top:12px;"><span leaf="">经验值：把大模型职责压缩到 20%，生产故障率降一个数量级</span></section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">80% 写死：文件解析、正则清洗、HTTP 抓取、异常重试——全部用 Python 和 n8n 工作流硬编码，不留悬念。20% 给 AI：只有非结构化文本总结、语义分类这类没法用代码硬写的节点，才交给 LLM。</span>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">纯 LLM 链路在生产环境里有两个死因：</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">幻觉，以及输出格式漂移导致下游节点连环崩溃</span></span>
+      <span leaf="">。</span>
+    </p>
+  </section>
+
+  <!-- 9. 章节分割线（组件4） -->
+  <section style="padding:0 10px;">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+
+  <!-- 10. 第四章（组件5） -->
+  <section style="margin-top:48px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">04</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;text-transform:uppercase;">
+            <span leaf="">PITFALLS</span>
+          </p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;letter-spacing:0.5px;">
+            <span leaf="">踩坑实录：70 个脚本换来的三个教训</span>
+          </h3>
+        </section>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">这套系统最大的成本不是硬件，是调试。我的 scripts 目录里现在躺着约</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">70 个 fix_* 和 test_* 脚本</span></span>
+      <span leaf="">——每一个都对应一个真实的坑。挑最值钱的三个说：</span>
+    </p>
+
+    <section style="margin-bottom:24px;">
+      <section style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#DC2626;color:#fff;font-size:12px;font-weight:700;border-radius:50%;flex-shrink:0;margin-top:2px;"><span leaf="">1</span></span>
+        <p style="font-size:15px;color:#374151;margin:0;line-height:1.8;flex:1;"><span leaf="">n8n 的 webhook 实体比想象中难缠。导入的工作流 JSON 里 webhookId 和数据库实体对不上，会导致 webhook 注册静默失败。我前后写了 6 个脚本修这个实体关系。</span></p>
+      </section>
+      <section style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#DC2626;color:#fff;font-size:12px;font-weight:700;border-radius:50%;flex-shrink:0;margin-top:2px;"><span leaf="">2</span></span>
+        <p style="font-size:15px;color:#374151;margin:0;line-height:1.8;flex:1;"><span leaf="">主链路会 404，降级链路是必需品。n8n webhook 最终没救回来，我直接改成「直连 xhs-publisher 发布微服务」的降级链路跑通了发布。生产系统永远要准备 Plan B。</span></p>
+      </section>
+      <section style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#DC2626;color:#fff;font-size:12px;font-weight:700;border-radius:50%;flex-shrink:0;margin-top:2px;"><span leaf="">3</span></span>
+        <p style="font-size:15px;color:#374151;margin:0;line-height:1.8;flex:1;"><span leaf="">中文社区镜像能省三天。n8n 官方镜像在局域网 HTTP 访问上有坑，换 blowsnow/n8n-chinese 中文版镜像直接绕过。</span></p>
+      </section>
+    </section>
+
+    <section style="background:#FEF2F2;border-left:4px solid #DC2626;border-radius:0 8px 8px 0;padding:14px 20px;margin-bottom:24px;">
+      <p style="font-size:14px;font-weight:700;color:#991B1B;margin:0;line-height:1.8;">
+        <span leaf="">💡 别把「调通一次」当成「生产可用」——降级链路和重试机制，才是系统真正上线的那一天。</span>
+      </p>
+    </section>
+  </section>
+
+  <!-- 11. 章节分割线（组件4） -->
+  <section style="padding:0 10px;">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+
+  <!-- 12. 第五章（组件5） -->
+  <section style="margin-top:48px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">05</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;text-transform:uppercase;">
+            <span leaf="">PROOF</span>
+          </p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;letter-spacing:0.5px;">
+            <span leaf="">内容实证：流水线也会生产内容</span>
+          </h3>
+        </section>
+      </section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">这套系统不只管发布，还管内容生产。8 月 3 日我用 Antigravity 跑了一次小红书图文自动化实验：</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">同一个主题，自动产出 3 套不同视觉风格、共 21 张 3:4 卡片</span></span>
+      <span leaf="">（瓷白、瑞士柠檬黄、午夜墨蓝三个系列）。</span>
+    </p>
+
+    <!-- 内容实证 KPI（data-viz kpi） -->
+    <section data-viz="kpi" style="margin:24px 0;background:#fff;border:1px solid #F3E2E2;border-radius:12px;padding:18px;">
+      <section style="font-size:15px;font-weight:800;color:#1C1917;margin-bottom:8px;"><span leaf="">一次实验的三组数字</span></section>
+      <table style="width:100%;border-collapse:collapse;margin:10px 0 4px;">
+        <tr>
+          <td style="width:33%;padding:8px 4px;text-align:center;"><section style="font-size:24px;font-weight:900;color:#DC2626;"><span leaf="">3</span></section><section style="font-size:12px;color:#6B7280;margin-top:4px;"><span leaf="">套视觉风格</span></section></td>
+          <td style="width:33%;padding:8px 4px;text-align:center;"><section style="font-size:24px;font-weight:900;color:#DC2626;"><span leaf="">21</span></section><section style="font-size:12px;color:#6B7280;margin-top:4px;"><span leaf="">张 3:4 卡片</span></section></td>
+          <td style="width:33%;padding:8px 4px;text-align:center;"><section style="font-size:24px;font-weight:900;color:#DC2626;"><span leaf="">19</span></section><section style="font-size:12px;color:#6B7280;margin-top:4px;"><span leaf="">篇风格样本</span></section></td>
+        </tr>
+      </table>
+      <section style="padding:12px 18px 14px;font-size:12px;color:#9CA3AF;border-top:1px solid #FEE2E2;margin-top:12px;"><span leaf="">数据来源：outputs/2026-08-03_Antigravity小红书图文自动化发布（本地可核验）</span></section>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">另外，我还把自己</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">19 篇历史公众号发文</span></span>
+      <span leaf="">喂给脚本，提炼出一份个人写作风格指南——什么词禁用、什么句式开场、什么标题公式有效，全部显式化。AI 按这份指南写作，人做最终审美把关。</span>
+    </p>
+  </section>
+
+  <!-- 13. 章节分割线（组件4） -->
+  <section style="padding:0 10px;">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+
+  <!-- 14. 结语章（组件5 变体：∞ THE END） -->
+  <section style="margin-top:48px;margin-bottom:28px;padding:0 10px;">
+    <section style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #DC2626;">
+      <section style="display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:18px;font-weight:900;padding:4px 14px;border-radius:6px;margin-right:14px;line-height:1.3;"><span leaf="">∞</span></span>
+        <section>
+          <p style="font-size:10px;color:#DC2626;font-weight:700;letter-spacing:3px;margin:0 0 2px;text-transform:uppercase;">
+            <span leaf="">THE END</span>
+          </p>
+          <h3 style="font-size:18px;font-weight:800;color:#1C1917;margin:0;letter-spacing:0.5px;">
+            <span leaf="">总结：6 天、4 个服务、70 个调试脚本的真实账单</span>
+          </h3>
+        </section>
+      </section>
+    </section>
+
+    <section style="background:#FEF2F2;border-radius:0 10px 10px 0;border-left:4px solid #DC2626;padding:18px 22px;margin-bottom:24px;">
+      <p style="font-size:16px;font-weight:800;color:#991B1B;margin:0;line-height:1.8;">
+        <span leaf="">「少做对话框，多做流水线；少依赖大模型的『聪明』，多依赖确定性代码的『可靠』。」</span>
+      </p>
+    </section>
+
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">如果你也在做 Agent 相关的副业探索，我的建议是：少做对话框，多做流水线；少依赖大模型的「聪明」，多依赖确定性代码的「可靠」。</span>
+      <span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">AI 是放大生产力的肉身，人才是最终的判断者与审美把关人</span></span>
+      <span leaf="">。</span>
+    </p>
+  </section>
+
+  <!-- 15. END 分割线（组件15） -->
+  <section style="padding:0 10px;">
+    <section style="text-align:center;margin:0 0 32px;">
+      <section style="display:flex;align-items:center;justify-content:center;">
+        <span style="height:2px;width:60px;background:linear-gradient(to right,transparent,#DC2626);margin-right:12px;"><span leaf=""><br></span></span>
+        <span style="font-size:11px;color:#DC2626;letter-spacing:3px;font-weight:700;"><span leaf="">END</span></span>
+        <span style="height:2px;width:60px;background:linear-gradient(to left,transparent,#DC2626);margin-left:12px;"><span leaf=""><br></span></span>
+      </section>
+    </section>
+  </section>
+
+  <!-- 16. 尾部作者签名区（组件16） -->
+  <section style="padding:0 10px;">
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">我是 小吴聊，AI 内容工厂厂长，一个人跑小红书 + 公众号双平台。</span>
+    </p>
+    <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+      <span leaf="">如果你觉得今天这篇有收获，欢迎</span>
+      <strong style="color:#DC2626;"><span leaf="">点赞、在看、转发</span></strong>
+      <span leaf="">三连，我们下篇见。</span>
+    </p>
+  </section>
+
+  <!-- 17. 参考来源（论文式小号灰字） -->
+  <section style="padding:0 10px 10px;border-top:1px solid #E5E7EB;margin:0 10px;">
+    <p style="font-size:14px;color:#9CA3AF;margin:16px 0 10px;letter-spacing:1px;"><span leaf="">参考来源</span></p>
+    <p style="font-size:11px;color:#6B7280;margin:0 0 6px;line-height:1.7;"><span leaf="">[1] n8n 官方文档 </span><a href="https://docs.n8n.io/" style="color:#9CA3AF;"><span leaf="">https://docs.n8n.io/</span></a></p>
+    <p style="font-size:11px;color:#6B7280;margin:0 0 6px;line-height:1.7;"><span leaf="">[2] blowsnow/n8n-chinese 镜像 </span><a href="https://hub.docker.com/r/blowsnow/n8n-chinese" style="color:#9CA3AF;"><span leaf="">https://hub.docker.com/r/blowsnow/n8n-chinese</span></a></p>
+    <p style="font-size:11px;color:#6B7280;margin:0 0 6px;line-height:1.7;"><span leaf="">[3] RSSHub 文档 </span><a href="https://docs.rsshub.app/" style="color:#9CA3AF;"><span leaf="">https://docs.rsshub.app/</span></a></p>
+    <p style="font-size:11px;color:#6B7280;margin:0 0 6px;line-height:1.7;"><span leaf="">[4] Playwright 官方文档 </span><a href="https://playwright.dev/" style="color:#9CA3AF;"><span leaf="">https://playwright.dev/</span></a></p>
+    <p style="font-size:11px;color:#6B7280;margin:0 0 6px;line-height:1.7;"><span leaf="">[5] 小红书创作者中心 </span><a href="https://creator.xiaohongshu.com/" style="color:#9CA3AF;"><span leaf="">https://creator.xiaohongshu.com/</span></a></p>
+    <p style="font-size:11px;color:#9CA3AF;margin:0;line-height:1.7;"><span leaf="">[6] 项目本地产物（可核验）：outputs/2026-08-03_Antigravity小红书图文自动化发布/ 与 scripts/ 目录</span></p>
+  </section>
+
+</section>

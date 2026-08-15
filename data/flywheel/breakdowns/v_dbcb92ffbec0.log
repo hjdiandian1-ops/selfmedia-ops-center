@@ -1,0 +1,723 @@
+2026-08-13T17:03:20.275959Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.22/.codex-plugin/plugin.json
+2026-08-13T17:03:20.284244Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.22/.codex-plugin/plugin.json
+2026-08-13T17:03:20.308254Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:03:20.308271Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc14-0cd0-7761-9fd2-2f7bee4e3d01
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_dbcb92ffbec0
+- 平台：小红书
+- 标题：定格这一刻的日照金山
+- 链接：https://www.xiaohongshu.com/search_result?keyword=%E5%AE%9A%E6%A0%BC%E8%BF%99%E4%B8%80%E5%88%BB%E7%9A%84%E6%97%A5%E7%85%A7%E9%87%91%E5%B1%B1&source=web_explore_feed
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:03:20.840552Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:03:21.311269Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:03:22.124064Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:03:22.126922Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+exec
+/bin/zsh -lc 'ls -la && rg --files data 2>/dev/null | head -50' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+total 224
+drwxr-xr-x  28 xiaowuliao  staff    896 Aug 12 23:38 .
+drwxr-xr-x  14 xiaowuliao  staff    448 Aug 10 16:47 ..
+-rw-r--r--@  1 xiaowuliao  staff  26628 Aug 13 01:17 .DS_Store
+drwxr-xr-x@ 14 xiaowuliao  staff    448 Aug 13 12:59 .git
+-rw-r--r--@  1 xiaowuliao  staff    746 Aug  8 20:36 .gitignore
+drwxr-xr-x@  6 xiaowuliao  staff    192 Aug  6 17:49 .pytest_cache
+drwxr-xr-x@  6 xiaowuliao  staff    192 Aug  9 14:54 .reasonix
+drwxr-xr-x@  4 xiaowuliao  staff    128 Aug  4 08:08 .workbuddy
+-rw-r--r--@  1 xiaowuliao  staff  21245 Aug 12 16:35 README.md
+-rw-r--r--@  1 xiaowuliao  staff   4950 Aug 10 11:50 TODO.md
+-rw-r--r--@  1 xiaowuliao  staff  17189 Aug 10 11:49 agent.md
+drwxr-xr-x@ 10 xiaowuliao  staff    320 Aug 14 00:32 agents
+drwxr-xr-x@  5 xiaowuliao  staff    160 Aug 13 01:08 data
+drwxr-xr-x@ 19 xiaowuliao  staff    608 Aug 13 12:50 jobs
+drwxr-xr-x@  3 xiaowuliao  staff     96 Aug  7 01:37 materials
+drwxr-xr-x@ 11 xiaowuliao  staff    352 Aug  8 20:36 nas-n8n
+drwxr-xr-x@  8 xiaowuliao  staff    256 Aug  1 16:49 output_images
+drwxr-xr-x@ 25 xiaowuliao  staff    800 Aug 13 12:52 outputs
+-rw-r--r--@  1 xiaowuliao  staff    312 Aug  6 17:49 pyproject.toml
+-rw-r--r--@  1 xiaowuliao  staff     34 Aug  6 15:38 reasonix.toml
+-rw-r--r--@  1 xiaowuliao  staff    292 Aug  6 17:47 requirements.txt
+drwxr-xr-x@  3 xiaowuliao  staff     96 Aug 12 23:38 research
+drwxr-xr-x@ 73 xiaowuliao  staff   2336 Aug 14 00:23 scripts
+drwxr-xr-x@ 12 xiaowuliao  staff    384 Aug 12 16:29 skills
+drwxr-xr-x@ 16 xiaowuliao  staff    512 Aug 14 00:25 tests
+drwxr-xr-x@  6 xiaowuliao  staff    192 Aug  6 17:18 webapp
+drwxr-xr-x@ 13 xiaowuliao  staff    416 Aug  8 20:37 workflows
+-rw-r--r--@  1 xiaowuliao  staff  14970 Aug  4 01:11 架构评估与优化方案.md
+data/stats/数据统计报告.md
+data/stats/xhs_notes.json
+data/stats/xhs_account.json
+data/stats/dashboard/publish.json
+data/stats/dashboard/import_report.json
+data/stats/summary.json
+data/production/queue.json
+data/flywheel/breakdown_batch.json
+data/flywheel/pipeline_feedback.md
+data/flywheel/viral_videos.json
+data/flywheel/viral_weekly_2026-W33.md
+data/flywheel/platform_virals.json
+data/flywheel/breakdowns/v_ccd0f0320b43.json
+data/flywheel/breakdowns/v_6292f86f3f75.md
+data/flywheel/breakdowns/v_20260813010837_de7be7.log
+data/flywheel/breakdowns/v_670d018e20ef.json
+data/flywheel/breakdowns/v_670d018e20ef.log
+data/flywheel/breakdowns/v_6292f86f3f75.json
+data/flywheel/breakdowns/v_ccd0f0320b43.md
+data/flywheel/breakdowns/v_670d018e20ef.md
+data/flywheel/breakdowns/v_6292f86f3f75.log
+data/flywheel/breakdowns/v_e102465d66e9.md
+data/flywheel/breakdowns/v_ccd0f0320b43.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.log
+data/flywheel/breakdowns/v_e102465d66e9.log
+data/flywheel/breakdowns/v_e102465d66e9.json
+data/flywheel/viral_candidates.json
+data/flywheel/lessons.json
+
+exec
+/bin/zsh -lc "cat data/flywheel/breakdowns/v_ccd0f0320b43.json && printf '\\n---MD---\\n' && cat data/flywheel/breakdowns/v_ccd0f0320b43.md" in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+{
+  "title": "超日常美食教程速来get",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "基于标题推断：无正文，标题承担第一道点击钩子——「超日常」给低门槛承诺，「教程」直接亮明干货价值，「速来get」以口语化行动指令制造轻紧迫感，三段组合让用户产生「点开学一下/收藏备用」的即时冲动。",
+  "structure": "基于标题推断：未获取原文，无法拆真实段落顺序。按小红书美食教程品类通式推断：封面成品图/首图钩子 → 食材清单 → 分步做法 → 成品展示与收藏提示；仅作品类推断，不编造具体步骤与画面。",
+  "why_viral": "基于标题推断：爆点归因集中在三点——①「美食教程」是小红书高频刚需搜索词，标题埋词可承接搜索流量；②「超日常」主打简单、易上手、贴近普通人生活，降低点开和试做的心理门槛；③「速来get」是轻催促的行动指令，利于点击与收藏。未获取原文与封面，不涉及具体数据、作者、画面或文案细节。",
+  "formula": "干货清单, 实操教学",
+  "summary": "以「超日常」低门槛承诺 + 「美食教程」搜索词 + 「速来get」行动催促组成点击三件套，落点是教程类内容天然的收藏价值；可复用为「易上手承诺+品类搜索词+行动指令」的标题公式，配清单化正文承接收藏。"
+}
+
+---MD---
+## 拆解报告
+
+依据级别：`title_only`（未获取原文，链接为小红书搜索页且未提供正文；基于标题与输入拆解，所有维度均为推断）
+
+### 1. 前 3 秒钩子（推断）
+
+标题即第一道点击闸，包含三层机制：
+
+- 「超日常」→ 低门槛承诺：强调普通、易上手，暗示「不需要专业厨艺也能做」，消除「美食教程=难」的心理障碍。
+- 「美食教程」→ 干货价值直给：品类与价值一目了然，点击预期明确。
+- 「速来get」→ 行动指令催促：口语化、带轻紧迫感，把「看看」推向「马上收藏/跟着做」。
+
+小红书真实的第一道闸是封面/首图，本维度仅基于标题判断，不推断封面细节。
+
+### 2. 选题角度（推断）
+
+「美食教程」是小红书长青刚需品类，自带稳定搜索与推荐流量；「超日常」切入「普通人日常也能做」的需求，不做高端或猎奇，而是降低参与门槛。这是搜索型选题，而非情绪热点型。未获取原文，无法确认是否蹭具体热点或季节话题。
+
+### 3. 内容结构（推断）
+
+按小红书图文美食教程品类通式推断：封面成品图制造食欲钩子 → 食材清单（可收藏）→ 分步做法（编号/要点）→ 成品展示与收藏提示。标题负责点击，正文负责「照着做」，信息密度集中在步骤段。未获取原文，不推断图数、具体步骤或文案。
+
+### 4. 情绪与人群（推断）
+
+- 主打情绪：获得感 + 好奇（想先看学的是什么）+ 轻微行动冲动（速来get）。
+- 目标人群：想学做饭的新手、独居/学生党、追求「日常简单出片」的年轻小红书用户。
+
+### 5. 金句与留存节点（推断）
+
+标题「超日常美食教程速来get」本身就是记忆点：短、口语化、含行动指令。图文教程的留存节点通常在「每一步完成」与「最终成品」——用户为「照着做/收藏备用」而看完。正文是否有其他金句无法确认。
+
+### 6. 排版节奏（推断）
+
+小红书图文场景：封面须在首屏传达成品吸引力（大字标题 + 食物高对比特写）；正文宜用清单/编号降低阅读成本，步骤间用短句与换行制造呼吸感。仅作平台通用推断，无原文可依据。
+
+### 7. 转化设计（推断）
+
+标题「速来get」本身即行动引导（get=学到/收藏）；教程类内容天然导向收藏，评论区常见「交作业/想吃什么」类话题空间。具体引导话术无证据，不编造。
+
+### 8. 公式标签
+
+干货清单 / 实操教学
+
+exec
+/bin/zsh -lc 'cat data/flywheel/breakdowns/v_dbcb92ffbec0.log' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+2026-08-13T17:03:20.275959Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.22/.codex-plugin/plugin.json
+2026-08-13T17:03:20.284244Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.22/.codex-plugin/plugin.json
+2026-08-13T17:03:20.308254Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:03:20.308271Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc14-0cd0-7761-9fd2-2f7bee4e3d01
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_dbcb92ffbec0
+- 平台：小红书
+- 标题：定格这一刻的日照金山
+- 链接：https://www.xiaohongshu.com/search_result?keyword=%E5%AE%9A%E6%A0%BC%E8%BF%99%E4%B8%80%E5%88%BB%E7%9A%84%E6%97%A5%E7%85%A7%E9%87%91%E5%B1%B1&source=web_explore_feed
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:03:20.840552Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:03:21.311269Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:03:22.124064Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:03:22.126922Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+exec
+/bin/zsh -lc 'ls -la && rg --files data 2>/dev/null | head -50' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+total 224
+drwxr-xr-x  28 xiaowuliao  staff    896 Aug 12 23:38 .
+drwxr-xr-x  14 xiaowuliao  staff    448 Aug 10 16:47 ..
+-rw-r--r--@  1 xiaowuliao  staff  26628 Aug 13 01:17 .DS_Store
+drwxr-xr-x@ 14 xiaowuliao  staff    448 Aug 13 12:59 .git
+-rw-r--r--@  1 xiaowuliao  staff    746 Aug  8 20:36 .gitignore
+drwxr-xr-x@  6 xiaowuliao  staff    192 Aug  6 17:49 .pytest_cache
+drwxr-xr-x@  6 xiaowuliao  staff    192 Aug  9 14:54 .reasonix
+drwxr-xr-x@  4 xiaowuliao  staff    128 Aug  4 08:08 .workbuddy
+-rw-r--r--@  1 xiaowuliao  staff  21245 Aug 12 16:35 README.md
+-rw-r--r--@  1 xiaowuliao  staff   4950 Aug 10 11:50 TODO.md
+-rw-r--r--@  1 xiaowuliao  staff  17189 Aug 10 11:49 agent.md
+drwxr-xr-x@ 10 xiaowuliao  staff    320 Aug 14 00:32 agents
+drwxr-xr-x@  5 xiaowuliao  staff    160 Aug 13 01:08 data
+drwxr-xr-x@ 19 xiaowuliao  staff    608 Aug 13 12:50 jobs
+drwxr-xr-x@  3 xiaowuliao  staff     96 Aug  7 01:37 materials
+drwxr-xr-x@ 11 xiaowuliao  staff    352 Aug  8 20:36 nas-n8n
+drwxr-xr-x@  8 xiaowuliao  staff    256 Aug  1 16:49 output_images
+drwxr-xr-x@ 25 xiaowuliao  staff    800 Aug 13 12:52 outputs
+-rw-r--r--@  1 xiaowuliao  staff    312 Aug  6 17:49 pyproject.toml
+-rw-r--r--@  1 xiaowuliao  staff     34 Aug  6 15:38 reasonix.toml
+-rw-r--r--@  1 xiaowuliao  staff    292 Aug  6 17:47 requirements.txt
+drwxr-xr-x@  3 xiaowuliao  staff     96 Aug 12 23:38 research
+drwxr-xr-x@ 73 xiaowuliao  staff   2336 Aug 14 00:23 scripts
+drwxr-xr-x@ 12 xiaowuliao  staff    384 Aug 12 16:29 skills
+drwxr-xr-x@ 16 xiaowuliao  staff    512 Aug 14 00:25 tests
+drwxr-xr-x@  6 xiaowuliao  staff    192 Aug  6 17:18 webapp
+drwxr-xr-x@ 13 xiaowuliao  staff    416 Aug  8 20:37 workflows
+-rw-r--r--@  1 xiaowuliao  staff  14970 Aug  4 01:11 架构评估与优化方案.md
+data/stats/数据统计报告.md
+data/stats/xhs_notes.json
+data/stats/xhs_account.json
+data/stats/dashboard/publish.json
+data/stats/dashboard/import_report.json
+data/stats/summary.json
+data/production/queue.json
+data/flywheel/breakdown_batch.json
+data/flywheel/pipeline_feedback.md
+data/flywheel/viral_videos.json
+data/flywheel/viral_weekly_2026-W33.md
+data/flywheel/platform_virals.json
+data/flywheel/breakdowns/v_ccd0f0320b43.json
+data/flywheel/breakdowns/v_6292f86f3f75.md
+data/flywheel/breakdowns/v_20260813010837_de7be7.log
+data/flywheel/breakdowns/v_670d018e20ef.json
+data/flywheel/breakdowns/v_670d018e20ef.log
+data/flywheel/breakdowns/v_6292f86f3f75.json
+data/flywheel/breakdowns/v_ccd0f0320b43.md
+data/flywheel/breakdowns/v_670d018e20ef.md
+data/flywheel/breakdowns/v_6292f86f3f75.log
+data/flywheel/breakdowns/v_e102465d66e9.md
+data/flywheel/breakdowns/v_ccd0f0320b43.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.log
+data/flywheel/breakdowns/v_e102465d66e9.log
+data/flywheel/breakdowns/v_e102465d66e9.json
+data/flywheel/viral_candidates.json
+data/flywheel/lessons.json
+
+exec
+/bin/zsh -lc "cat data/flywheel/breakdowns/v_ccd0f0320b43.json && printf '\\n---MD---\\n' && cat data/flywheel/breakdowns/v_ccd0f0320b43.md" in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+{
+  "title": "超日常美食教程速来get",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "基于标题推断：无正文，标题承担第一道点击钩子——「超日常」给低门槛承诺，「教程」直接亮明干货价值，「速来get」以口语化行动指令制造轻紧迫感，三段组合让用户产生「点开学一下/收藏备用」的即时冲动。",
+  "structure": "基于标题推断：未获取原文，无法拆真实段落顺序。按小红书美食教程品类通式推断：封面成品图/首图钩子 → 食材清单 → 分步做法 → 成品展示与收藏提示；仅作品类推断，不编造具体步骤与画面。",
+  "why_viral": "基于标题推断：爆点归因集中在三点——①「美食教程」是小红书高频刚需搜索词，标题埋词可承接搜索流量；②「超日常」主打简单、易上手、贴近普通人生活，降低点开和试做的心理门槛；③「速来get」是轻催促的行动指令，利于点击与收藏。未获取原文与封面，不涉及具体数据、作者、画面或文案细节。",
+  "formula": "干货清单, 实操教学",
+  "summary": "以「超日常」低门槛承诺 + 「美食教程」搜索词 + 「速来get」行动催促组成点击三件套，落点是教程类内容天然的收藏价值；可复用为「易上手承诺+品类搜索词+行动指令」的标题公式，配清单化正文承接收藏。"
+}
+
+---MD---
+## 拆解报告
+
+依据级别：`title_only`（未获取原文，链接为小红书搜索页且未提供正文；基于标题与输入拆解，所有维度均为推断）
+
+### 1. 前 3 秒钩子（推断）
+
+标题即第一道点击闸，包含三层机制：
+
+- 「超日常」→ 低门槛承诺：强调普通、易上手，暗示「不需要专业厨艺也能做」，消除「美食教程=难」的心理障碍。
+- 「美食教程」→ 干货价值直给：品类与价值一目了然，点击预期明确。
+- 「速来get」→ 行动指令催促：口语化、带轻紧迫感，把「看看」推向「马上收藏/跟着做」。
+
+小红书真实的第一道闸是封面/首图，本维度仅基于标题判断，不推断封面细节。
+
+### 2. 选题角度（推断）
+
+「美食教程」是小红书长青刚需品类，自带稳定搜索与推荐流量；「超日常」切入「普通人日常也能做」的需求，不做高端或猎奇，而是降低参与门槛。这是搜索型选题，而非情绪热点型。未获取原文，无法确认是否蹭具体热点或季节话题。
+
+### 3. 内容结构（推断）
+
+按小红书图文美食教程品类通式推断：封面成品图制造食欲钩子 → 食材清单（可收藏）→ 分步做法（编号/要点）→ 成品展示与收藏提示。标题负责点击，正文负责「照着做」，信息密度集中在步骤段。未获取原文，不推断图数、具体步骤或文案。
+
+### 4. 情绪与人群（推断）
+
+- 主打情绪：获得感 + 好奇（想先看学的是什么）+ 轻微行动冲动（速来get）。
+- 目标人群：想学做饭的新手、独居/学生党、追求「日常简单出片」的年轻小红书用户。
+
+### 5. 金句与留存节点（推断）
+
+标题「超日常美食教程速来get」本身就是记忆点：短、口语化、含行动指令。图文教程的留存节点通常在「每一步完成」与「最终成品」——用户为「照着做/收藏备用」而看完。正文是否有其他金句无法确认。
+
+### 6. 排版节奏（推断）
+
+小红书图文场景：封面须在首屏传达成品吸引力（大字标题 + 食物高对比特写）；正文宜用清单/编号降低阅读成本，步骤间用短句与换行制造呼吸感。仅作平台通用推断，无原文可依据。
+
+### 7. 转化设计（推断）
+
+标题「速来get」本身即行动引导（get=学到/收藏）；教程类内容天然导向收藏，评论区常见「交作业/想吃什么」类话题空间。具体引导话术无证据，不编造。
+
+### 8. 公式标签
+
+干货清单 / 实操教学
+
+
+2026-08-13T17:03:48.549738Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/.staging/marketplace-upgrade-WE8rwL/codex/.codex-plugin/plugin.json
+2026-08-13T17:03:48.574830Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:03:48.574900Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:03:48.574919Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="browser" marketplace="openai-bundled"
+2026-08-13T17:03:48.574988Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:03:48.588412Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="chrome" marketplace="openai-bundled"
+2026-08-13T17:03:48.588425Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="computer-use" marketplace="openai-bundled"
+2026-08-13T17:03:48.588429Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="documents" marketplace="openai-primary-runtime"
+2026-08-13T17:03:48.588432Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="pdf" marketplace="openai-primary-runtime"
+2026-08-13T17:03:48.588439Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="presentations" marketplace="openai-primary-runtime"
+2026-08-13T17:03:48.588441Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="record-and-replay" marketplace="openai-bundled"
+2026-08-13T17:03:48.588444Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="spreadsheets" marketplace="openai-primary-runtime"
+2026-08-13T17:03:48.588446Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="template-creator" marketplace="openai-primary-runtime"
+2026-08-13T17:03:48.588448Z  WARN codex_core_plugins::loader: configured non-curated plugin no longer exists in discovered marketplaces during cache refresh plugin="visualize" marketplace="openai-bundled"
+codex
+按 Skill 规格拆解:原文未提供、链接是小红书搜索页而非单条笔记,所以定为 `title_only`,所有维度标注推断,不编造任何数据、画面与作者细节。现在写入 JSON 与 Markdown 报告。
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_dbcb92ffbec0.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_dbcb92ffbec0.md
+diff --git a/data/flywheel/breakdowns/v_dbcb92ffbec0.json b/data/flywheel/breakdowns/v_dbcb92ffbec0.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..5744b6cdecb0752fe28e5b69f03f40c6fef665a9
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_dbcb92ffbec0.json
+@@ -0,0 +1,10 @@
++{
++  "title": "定格这一刻的日照金山",
++  "platform": "小红书",
++  "evidence_level": "title_only",
++  "hook": "基于标题推断：标题承担第一道点击闸——「日照金山」是稀缺自然景观的画面承诺，直接给出高期待视觉锚点；「定格这一刻」用「瞬间不可复制」的仪式感制造错过即遗憾的情绪，让用户想点开替自己看这一眼。封面细节无证据，不做推断。",
++  "structure": "基于标题推断：未获取原文，链接为小红书搜索页。按旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾；信息密度低、情绪浓度高，靠画面递进而非段落逻辑。不编造具体分镜、图数与段落。",
++  "why_viral": "基于标题推断：①「日照金山」自带稀缺性与幸运寓意，是旅行摄影圈高向往度意象，标题直接触发「我也想亲眼看到」的身份代入；②「定格这一刻」放大瞬间仪式感，与收藏、许愿、分享同款经历等行为天然契合；③短句凝练、画面感强，适合作为封面文案与金句传播；④可能承接「日照金山」等旅行搜索词（推断，未获原文佐证）。链接为搜索页，未获取单条笔记正文，不编造作者、数据、封面或画面细节。",
++  "formula": "悬念好奇, 身份代入",
++  "summary": "以稀缺自然奇观「日照金山」做高向往选题，以「定格这一刻」的仪式感触发代入与收藏欲，靠画面与情绪而非信息量取胜；可复用为「稀缺景观+定格瞬间」的情绪型标题公式，正文以地点时刻与高光画面承接收藏。"
++}
+diff --git a/data/flywheel/breakdowns/v_dbcb92ffbec0.md b/data/flywheel/breakdowns/v_dbcb92ffbec0.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec91c8c441b06007744544237a9d47e69c202536
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_dbcb92ffbec0.md
+@@ -0,0 +1,41 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接为小红书搜索页且未提供正文；基于标题与输入拆解，所有维度均为推断）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即第一道点击闸，包含两层机制：
++
++- 「日照金山」→ 稀缺景观的画面承诺：金色雪山是强视觉意象，点开预期明确——「这一眼值得看」。
++- 「定格这一刻」→ 瞬间仪式感：强调「这一刻不可复制、稍纵即逝」，制造错过即遗憾的情绪，把「看看」推向「想亲眼看/替我看一眼」。
++
++小红书真实的第一道闸是封面/首图，本维度仅基于标题判断，不推断封面细节。
++
++### 2. 选题角度（推断）
++
++「日照金山」是旅行、摄影、祈福圈公认的高向往意象，常与雪山目的地、好运寓意绑定，自带「看到即幸运」的社交谈资。选题本质是「稀缺美景 + 情绪价值」，而非信息差或干货；标题短句也可能承接「日照金山」等搜索词（推断）。未获取原文，无法确认是否蹭具体热点、季节或特定地点。
++
++### 3. 内容结构（推断）
++
++按小红书旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾。信息密度低、情绪浓度高，靠画面递进与「金山变亮」的视觉高潮留住用户，而非段落逻辑。未获取原文，不推断具体分镜、图数或段落。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：敬畏、向往、治愈，以及「幸运」期待。
++- 目标人群：旅行爱好者、雪山/摄影爱好者、向往川西/西藏/云南等地的用户，以及用风光内容自我疗愈的泛小红书用户。
++
++### 5. 金句与留存节点（推断）
++
++标题「定格这一刻的日照金山」本身即是可截图、可转述的短金句，颗粒度适合传播。图文/视频的留存节点大概率在「金山亮起的瞬间」与「地点、时刻信息」——用户为收藏攻略或重看美景而停留。正文是否有其他金句无法确认。
++
++### 6. 排版节奏（推断）
++
++小红书图文场景：封面用一张最强的日照金山画面并配大字标题；正文字数宜少，用空行与短句保持呼吸感，地点与时刻可单独成段；若含拍摄攻略则清单化呈现。仅作平台通用推断，无原文可依据。
++
++### 7. 转化设计（推断）
++
++高向往风光内容天然导向收藏（想去/想再看）与评论（问地点、许愿、分享同款经历）；「定格这一刻」的仪式感也容易引发评论区「接好运」式互动。具体引导话术无证据，不编造。
++
++### 8. 公式标签
++
++悬念好奇 / 身份代入
+
+diff --git a/data/flywheel/breakdowns/v_dbcb92ffbec0.json b/data/flywheel/breakdowns/v_dbcb92ffbec0.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..5744b6cdecb0752fe28e5b69f03f40c6fef665a9
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_dbcb92ffbec0.json
+@@ -0,0 +1,10 @@
++{
++  "title": "定格这一刻的日照金山",
++  "platform": "小红书",
++  "evidence_level": "title_only",
++  "hook": "基于标题推断：标题承担第一道点击闸——「日照金山」是稀缺自然景观的画面承诺，直接给出高期待视觉锚点；「定格这一刻」用「瞬间不可复制」的仪式感制造错过即遗憾的情绪，让用户想点开替自己看这一眼。封面细节无证据，不做推断。",
++  "structure": "基于标题推断：未获取原文，链接为小红书搜索页。按旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾；信息密度低、情绪浓度高，靠画面递进而非段落逻辑。不编造具体分镜、图数与段落。",
++  "why_viral": "基于标题推断：①「日照金山」自带稀缺性与幸运寓意，是旅行摄影圈高向往度意象，标题直接触发「我也想亲眼看到」的身份代入；②「定格这一刻」放大瞬间仪式感，与收藏、许愿、分享同款经历等行为天然契合；③短句凝练、画面感强，适合作为封面文案与金句传播；④可能承接「日照金山」等旅行搜索词（推断，未获原文佐证）。链接为搜索页，未获取单条笔记正文，不编造作者、数据、封面或画面细节。",
++  "formula": "悬念好奇, 身份代入",
++  "summary": "以稀缺自然奇观「日照金山」做高向往选题，以「定格这一刻」的仪式感触发代入与收藏欲，靠画面与情绪而非信息量取胜；可复用为「稀缺景观+定格瞬间」的情绪型标题公式，正文以地点时刻与高光画面承接收藏。"
++}
+diff --git a/data/flywheel/breakdowns/v_dbcb92ffbec0.md b/data/flywheel/breakdowns/v_dbcb92ffbec0.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec91c8c441b06007744544237a9d47e69c202536
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_dbcb92ffbec0.md
+@@ -0,0 +1,41 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接为小红书搜索页且未提供正文；基于标题与输入拆解，所有维度均为推断）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即第一道点击闸，包含两层机制：
++
++- 「日照金山」→ 稀缺景观的画面承诺：金色雪山是强视觉意象，点开预期明确——「这一眼值得看」。
++- 「定格这一刻」→ 瞬间仪式感：强调「这一刻不可复制、稍纵即逝」，制造错过即遗憾的情绪，把「看看」推向「想亲眼看/替我看一眼」。
++
++小红书真实的第一道闸是封面/首图，本维度仅基于标题判断，不推断封面细节。
++
++### 2. 选题角度（推断）
++
++「日照金山」是旅行、摄影、祈福圈公认的高向往意象，常与雪山目的地、好运寓意绑定，自带「看到即幸运」的社交谈资。选题本质是「稀缺美景 + 情绪价值」，而非信息差或干货；标题短句也可能承接「日照金山」等搜索词（推断）。未获取原文，无法确认是否蹭具体热点、季节或特定地点。
++
++### 3. 内容结构（推断）
++
++按小红书旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾。信息密度低、情绪浓度高，靠画面递进与「金山变亮」的视觉高潮留住用户，而非段落逻辑。未获取原文，不推断具体分镜、图数或段落。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：敬畏、向往、治愈，以及「幸运」期待。
++- 目标人群：旅行爱好者、雪山/摄影爱好者、向往川西/西藏/云南等地的用户，以及用风光内容自我疗愈的泛小红书用户。
++
++### 5. 金句与留存节点（推断）
++
++标题「定格这一刻的日照金山」本身即是可截图、可转述的短金句，颗粒度适合传播。图文/视频的留存节点大概率在「金山亮起的瞬间」与「地点、时刻信息」——用户为收藏攻略或重看美景而停留。正文是否有其他金句无法确认。
++
++### 6. 排版节奏（推断）
++
++小红书图文场景：封面用一张最强的日照金山画面并配大字标题；正文字数宜少，用空行与短句保持呼吸感，地点与时刻可单独成段；若含拍摄攻略则清单化呈现。仅作平台通用推断，无原文可依据。
++
++### 7. 转化设计（推断）
++
++高向往风光内容天然导向收藏（想去/想再看）与评论（问地点、许愿、分享同款经历）；「定格这一刻」的仪式感也容易引发评论区「接好运」式互动。具体引导话术无证据，不编造。
++
++### 8. 公式标签
++
++悬念好奇 / 身份代入
+
+2026-08-13T17:04:05.139297Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:04:05.143331Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:04:05.156931Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:04:05.156939Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+exec
+/bin/zsh -lc 'python3 -m json.tool data/flywheel/breakdowns/v_dbcb92ffbec0.json >/dev/null && echo OK && wc -l data/flywheel/breakdowns/v_dbcb92ffbec0.md' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+OK
+      41 data/flywheel/breakdowns/v_dbcb92ffbec0.md
+
+diff --git a/data/flywheel/breakdowns/v_dbcb92ffbec0.json b/data/flywheel/breakdowns/v_dbcb92ffbec0.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..5744b6cdecb0752fe28e5b69f03f40c6fef665a9
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_dbcb92ffbec0.json
+@@ -0,0 +1,10 @@
++{
++  "title": "定格这一刻的日照金山",
++  "platform": "小红书",
++  "evidence_level": "title_only",
++  "hook": "基于标题推断：标题承担第一道点击闸——「日照金山」是稀缺自然景观的画面承诺，直接给出高期待视觉锚点；「定格这一刻」用「瞬间不可复制」的仪式感制造错过即遗憾的情绪，让用户想点开替自己看这一眼。封面细节无证据，不做推断。",
++  "structure": "基于标题推断：未获取原文，链接为小红书搜索页。按旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾；信息密度低、情绪浓度高，靠画面递进而非段落逻辑。不编造具体分镜、图数与段落。",
++  "why_viral": "基于标题推断：①「日照金山」自带稀缺性与幸运寓意，是旅行摄影圈高向往度意象，标题直接触发「我也想亲眼看到」的身份代入；②「定格这一刻」放大瞬间仪式感，与收藏、许愿、分享同款经历等行为天然契合；③短句凝练、画面感强，适合作为封面文案与金句传播；④可能承接「日照金山」等旅行搜索词（推断，未获原文佐证）。链接为搜索页，未获取单条笔记正文，不编造作者、数据、封面或画面细节。",
++  "formula": "悬念好奇, 身份代入",
++  "summary": "以稀缺自然奇观「日照金山」做高向往选题，以「定格这一刻」的仪式感触发代入与收藏欲，靠画面与情绪而非信息量取胜；可复用为「稀缺景观+定格瞬间」的情绪型标题公式，正文以地点时刻与高光画面承接收藏。"
++}
+diff --git a/data/flywheel/breakdowns/v_dbcb92ffbec0.md b/data/flywheel/breakdowns/v_dbcb92ffbec0.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec91c8c441b06007744544237a9d47e69c202536
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_dbcb92ffbec0.md
+@@ -0,0 +1,41 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接为小红书搜索页且未提供正文；基于标题与输入拆解，所有维度均为推断）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即第一道点击闸，包含两层机制：
++
++- 「日照金山」→ 稀缺景观的画面承诺：金色雪山是强视觉意象，点开预期明确——「这一眼值得看」。
++- 「定格这一刻」→ 瞬间仪式感：强调「这一刻不可复制、稍纵即逝」，制造错过即遗憾的情绪，把「看看」推向「想亲眼看/替我看一眼」。
++
++小红书真实的第一道闸是封面/首图，本维度仅基于标题判断，不推断封面细节。
++
++### 2. 选题角度（推断）
++
++「日照金山」是旅行、摄影、祈福圈公认的高向往意象，常与雪山目的地、好运寓意绑定，自带「看到即幸运」的社交谈资。选题本质是「稀缺美景 + 情绪价值」，而非信息差或干货；标题短句也可能承接「日照金山」等搜索词（推断）。未获取原文，无法确认是否蹭具体热点、季节或特定地点。
++
++### 3. 内容结构（推断）
++
++按小红书旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾。信息密度低、情绪浓度高，靠画面递进与「金山变亮」的视觉高潮留住用户，而非段落逻辑。未获取原文，不推断具体分镜、图数或段落。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：敬畏、向往、治愈，以及「幸运」期待。
++- 目标人群：旅行爱好者、雪山/摄影爱好者、向往川西/西藏/云南等地的用户，以及用风光内容自我疗愈的泛小红书用户。
++
++### 5. 金句与留存节点（推断）
++
++标题「定格这一刻的日照金山」本身即是可截图、可转述的短金句，颗粒度适合传播。图文/视频的留存节点大概率在「金山亮起的瞬间」与「地点、时刻信息」——用户为收藏攻略或重看美景而停留。正文是否有其他金句无法确认。
++
++### 6. 排版节奏（推断）
++
++小红书图文场景：封面用一张最强的日照金山画面并配大字标题；正文字数宜少，用空行与短句保持呼吸感，地点与时刻可单独成段；若含拍摄攻略则清单化呈现。仅作平台通用推断，无原文可依据。
++
++### 7. 转化设计（推断）
++
++高向往风光内容天然导向收藏（想去/想再看）与评论（问地点、许愿、分享同款经历）；「定格这一刻」的仪式感也容易引发评论区「接好运」式互动。具体引导话术无证据，不编造。
++
++### 8. 公式标签
++
++悬念好奇 / 身份代入
+
+codex
+已完成拆解,依据级别为 `title_only`(原文未提供,链接为搜索页),所有维度均标注“推断”,未编造任何数据、封面或画面细节。
+
+已写入:
+- [v_dbcb92ffbec0.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_dbcb92ffbec0.json)
+- [v_dbcb92ffbec0.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_dbcb92ffbec0.md)
+
+核心结论:该标题靠「日照金山」的稀缺画面承诺 + 「定格这一刻」的仪式感情绪取胜,公式为“悬念好奇 + 身份代入”,落点在收藏与许愿式互动。
+
+可复用创作指令:
+
+标题用“稀缺景观+定格瞬间”句式,如「定格这一刻的日照金山」;首图放最强高光画面配大字,正文短句交代地点与时刻,结尾留一句点题金句。正文埋「日照金山」等搜索词,评论区用「在哪拍的、看到会幸运」引导许愿与问地点,收藏导向写「存下这份攻略」。适合风光/旅行账号复刻:高向往选题+瞬间情绪+地点攻略承接。
+diff --git a/data/flywheel/breakdowns/v_dbcb92ffbec0.json b/data/flywheel/breakdowns/v_dbcb92ffbec0.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..5744b6cdecb0752fe28e5b69f03f40c6fef665a9
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_dbcb92ffbec0.json
+@@ -0,0 +1,10 @@
++{
++  "title": "定格这一刻的日照金山",
++  "platform": "小红书",
++  "evidence_level": "title_only",
++  "hook": "基于标题推断：标题承担第一道点击闸——「日照金山」是稀缺自然景观的画面承诺，直接给出高期待视觉锚点；「定格这一刻」用「瞬间不可复制」的仪式感制造错过即遗憾的情绪，让用户想点开替自己看这一眼。封面细节无证据，不做推断。",
++  "structure": "基于标题推断：未获取原文，链接为小红书搜索页。按旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾；信息密度低、情绪浓度高，靠画面递进而非段落逻辑。不编造具体分镜、图数与段落。",
++  "why_viral": "基于标题推断：①「日照金山」自带稀缺性与幸运寓意，是旅行摄影圈高向往度意象，标题直接触发「我也想亲眼看到」的身份代入；②「定格这一刻」放大瞬间仪式感，与收藏、许愿、分享同款经历等行为天然契合；③短句凝练、画面感强，适合作为封面文案与金句传播；④可能承接「日照金山」等旅行搜索词（推断，未获原文佐证）。链接为搜索页，未获取单条笔记正文，不编造作者、数据、封面或画面细节。",
++  "formula": "悬念好奇, 身份代入",
++  "summary": "以稀缺自然奇观「日照金山」做高向往选题，以「定格这一刻」的仪式感触发代入与收藏欲，靠画面与情绪而非信息量取胜；可复用为「稀缺景观+定格瞬间」的情绪型标题公式，正文以地点时刻与高光画面承接收藏。"
++}
+diff --git a/data/flywheel/breakdowns/v_dbcb92ffbec0.md b/data/flywheel/breakdowns/v_dbcb92ffbec0.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec91c8c441b06007744544237a9d47e69c202536
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_dbcb92ffbec0.md
+@@ -0,0 +1,41 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接为小红书搜索页且未提供正文；基于标题与输入拆解，所有维度均为推断）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即第一道点击闸，包含两层机制：
++
++- 「日照金山」→ 稀缺景观的画面承诺：金色雪山是强视觉意象，点开预期明确——「这一眼值得看」。
++- 「定格这一刻」→ 瞬间仪式感：强调「这一刻不可复制、稍纵即逝」，制造错过即遗憾的情绪，把「看看」推向「想亲眼看/替我看一眼」。
++
++小红书真实的第一道闸是封面/首图，本维度仅基于标题判断，不推断封面细节。
++
++### 2. 选题角度（推断）
++
++「日照金山」是旅行、摄影、祈福圈公认的高向往意象，常与雪山目的地、好运寓意绑定，自带「看到即幸运」的社交谈资。选题本质是「稀缺美景 + 情绪价值」，而非信息差或干货；标题短句也可能承接「日照金山」等搜索词（推断）。未获取原文，无法确认是否蹭具体热点、季节或特定地点。
++
++### 3. 内容结构（推断）
++
++按小红书旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾。信息密度低、情绪浓度高，靠画面递进与「金山变亮」的视觉高潮留住用户，而非段落逻辑。未获取原文，不推断具体分镜、图数或段落。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：敬畏、向往、治愈，以及「幸运」期待。
++- 目标人群：旅行爱好者、雪山/摄影爱好者、向往川西/西藏/云南等地的用户，以及用风光内容自我疗愈的泛小红书用户。
++
++### 5. 金句与留存节点（推断）
++
++标题「定格这一刻的日照金山」本身即是可截图、可转述的短金句，颗粒度适合传播。图文/视频的留存节点大概率在「金山亮起的瞬间」与「地点、时刻信息」——用户为收藏攻略或重看美景而停留。正文是否有其他金句无法确认。
++
++### 6. 排版节奏（推断）
++
++小红书图文场景：封面用一张最强的日照金山画面并配大字标题；正文字数宜少，用空行与短句保持呼吸感，地点与时刻可单独成段；若含拍摄攻略则清单化呈现。仅作平台通用推断，无原文可依据。
++
++### 7. 转化设计（推断）
++
++高向往风光内容天然导向收藏（想去/想再看）与评论（问地点、许愿、分享同款经历）；「定格这一刻」的仪式感也容易引发评论区「接好运」式互动。具体引导话术无证据，不编造。
++
++### 8. 公式标签
++
++悬念好奇 / 身份代入
+
+tokens used
+14,352
+已完成拆解,依据级别为 `title_only`(原文未提供,链接为搜索页),所有维度均标注“推断”,未编造任何数据、封面或画面细节。
+
+已写入:
+- [v_dbcb92ffbec0.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_dbcb92ffbec0.json)
+- [v_dbcb92ffbec0.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_dbcb92ffbec0.md)
+
+核心结论:该标题靠「日照金山」的稀缺画面承诺 + 「定格这一刻」的仪式感情绪取胜,公式为“悬念好奇 + 身份代入”,落点在收藏与许愿式互动。
+
+可复用创作指令:
+
+标题用“稀缺景观+定格瞬间”句式,如「定格这一刻的日照金山」;首图放最强高光画面配大字,正文短句交代地点与时刻,结尾留一句点题金句。正文埋「日照金山」等搜索词,评论区用「在哪拍的、看到会幸运」引导许愿与问地点,收藏导向写「存下这份攻略」。适合风光/旅行账号复刻:高向往选题+瞬间情绪+地点攻略承接。
+
+===== 拆解开始 v_dbcb92ffbec0 =====

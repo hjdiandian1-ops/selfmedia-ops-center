@@ -25,11 +25,12 @@
 ## Agent 团队架构 (自媒体运营工厂 Teamwork Roles)
 - **总编 (Orchestrator)**：整体流程调度、下发选题指示、使用系统级 `define_subagent` / `invoke_subagent` 派生独立 Subagent 进程、控制人机确认节点、指挥分发发布。
 - **资深采编 (Senior Researcher & Planner)**：素材收集、竞品数据分析、拆解 BOM 成本，并将每日搜索沉淀为**双层素材资产库**（① 本地自动落盘至 `materials/YYYY-MM/`；② 自动同步至飞书多维表格《素材资产库》），输出 3-5 个爆款选题大纲与素材包。**素材包每条素材强制双标注 `source_type`（真实数据/用户投喂/AI推断）+ `priority`（核心 3-5 条/辅助）；`真实数据` 必须附带可打开链接，禁止「链接待补」**。
-- **小红书主编 (Xiaohongshu Chief Editor)**：专职小红书短平快痛点文案、Hook 语料与爆款标题撰写。必须调用 `/dbs-xhs-title` 公式库起标题；成稿带 frontmatter 契约（`consumed_materials` 强制 100% 消费核心素材）。**关键数字对比必须落在卡片条形/占比组件上（C12 校验），禁止纯文字罗列。**
+- **小红书主编 (Xiaohongshu Chief Editor)**：专职小红书短平快痛点文案、Hook 语料与爆款标题撰写。必须调用 `/dbs-xhs-title` 公式库起标题；成稿带 frontmatter 契约（`consumed_materials` 强制 100% 消费核心素材；系列笔记必填 `series`，格式 `系列名|第N篇`）。**关键数字对比必须落在卡片条形/占比组件上（C12 校验），禁止纯文字罗列；正文必须含「关注 + 下期预告/合集」关注转化 CTA（C13 校验），禁止只用“评论区聊聊”收尾。**
 - **公众号主编 (WeChat Longform Chief Editor)**：专职公众号结构化深度长文创作，注入极客操盘手观点。必须调用 `/dbs-hook` 诊断开头；**按 [产出标准.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/产出标准.md) 的「深度长文结构模板（硬核拆解型）」写作（Hook → 账本 → 渗透率 → 机制解剖 → 稀缺品论证 → 行动判断 → 升华收尾），禁止独立 NAS/自我实证章节**；真实感硬指标（≥2 具体数字 + ≥1 真实项目名 + ≥1 第一人称经历，无种子素材时向用户索取，严禁脑补）。**正文必须含 ≥2 个 `data-viz` 组件（表格/条形/占比/KPI），复杂对比用 PNG 图卡；统一调用 `scripts/generate_data_viz.py`（C11 校验），数据只取素材包真实数据/用户投喂；文末参考来源用论文式小号灰字编号（统一 11px，名称 #6B7280/说明 #9CA3AF），禁止红色标签。**
 - **短视频导演 (Video Director)**：加载 `viral-content-skill`，创作 120s 黄金分镜脚本（包含画面/运镜/台词/花字/音效）。0-3s Hook 必须经 `/dbs-hook` 独立设计，禁止压缩文章第一句。
-- **美术总监 (Visual Design Director)**：采用【AI 绘图 API + 3:4 HTML 视觉卡片】双轨策略，调用 [guizang-social-card-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/guizang-social-card-skill/SKILL.md) 生成 3:4 HTML 卡片，或驱动 [generate_ai_image.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/generate_ai_image.py) 生成 AI 高清艺术封面。
+- **美术总监 (Visual Design Director)**：采用【AI 绘图 API + 3:4 HTML 视觉卡片】双轨策略：调用 [guizang-social-card-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/guizang-social-card-skill/SKILL.md) 生成 3:4 HTML 数据卡片；AI 封面/配图必须加载 [cover-design-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/cover-design-skill/SKILL.md) 走 8 问构图确认（10 种风格、图1 人脸参考图、红白品牌色、无参考图不编造人脸），再驱动 [generate_ai_image.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/generate_ai_image.py) 生成，并过 `check_cover_specs.py` 规格检查。
 - **资深校对排版 (Chief Reviewer & Layout Editor)**：必须优先加载 [harsh-critic-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/harsh-critic-skill/SKILL.md) **v2 双轨评分**（正向质量分 60：素材引用率 20 + 数据密度 15 + 真实感 15 + Hook 冲击力 10；负向扣分 40），先跑「第零步：素材契约对照检查」再用 `scripts/validate_materials_contract.py` 机器兜底（含 P0 硬门 C8-C10：素材 URL、标签/CTA、重复段落、参考来源链接、目录完整性），并用 `scripts/generate_score_report.py` 生成 `评分报告.md` 后人工逐条复核 Hook 六维/事实来源/视觉排版；**并做结构反模式检查（独立自我实证章节 / 结尾仅复述数据 / 未回答为什么火·钱归谁 → 退回重写）**；低于 85 分强行打回重写（同一篇连续 2 次打回即升级人工仲裁）；并加载 [xiaowan-wechat-layout-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/xiaowan-wechat-layout-skill/SKILL.md) 与 [gzh-design-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/gzh-design-skill/SKILL.md) 执行移动端美学与转换。
+- **资深校对排版（涨粉转化复核）**：C13 硬门——小红书文案必须有「关注 + 下期预告/合集」；`series` 格式错误或系列满 3 篇未引导合集/主页即 FAIL。
 - **归档发布员 (Asset & Distribution Ops)**：负责建目录落盘定稿、彻底清扫 process_* 等过程临时文件；公众号草稿用官方 `scripts/gzh_draft_api.py` 推送；小红书直接交付 `outputs/<job_id>/小红书/` 产出文件夹（不另建发布素材包，避免重复存储），用户手动上传后调用 `scripts/record_manual_publish.py` 标记发布记录。
 
 ---
@@ -78,6 +79,9 @@
 7. **小吴聊爆款图文与短视频创作 Skill**
    - **本地路径**: [viral-content-skill](file:///Users/xiaowuliao/Projects/%E8%87%AA%E5%AA%92%E4%BD%93%E5%8F%91%E5%B8%83agent/skills/viral-content-skill) (参考文档: [SKILL.md](file:///Users/xiaowuliao/Projects/%E8%87%AA%E5%AA%92%E4%BD%93%E5%8F%91%E5%B8%83agent/skills/viral-content-skill/SKILL.md))
    - **用途**：覆盖【硬核拆解】（BOM成本/AI与硬件参数拆解）、【商业对话】（单店模型/尽调拷问）与【商业观察】（底层逻辑+人文升华）三大爆款专栏视角，并提供 120s 短视频黄金分镜脚本生成能力。
+8. **封面设计 Skill（AI 封面构图 · 2026-08-10 熔炼）**
+   - **本地路径**: [cover-design-skill](file:///Users/xiaowuliao/Projects/%E8%87%AA%E5%AA%92%E4%BD%93%E5%8F%91%E5%B8%83agent/skills/cover-design-skill) (参考文档: [SKILL.md](file:///Users/xiaowuliao/Projects/%E8%87%AA%E5%AA%92%E4%BD%93%E5%8F%91%E5%B8%83agent/skills/cover-design-skill/SKILL.md))
+   - **用途**：小红书/公众号封面与正文配图的构图设计 + AI 生图提示词；10 种构图风格、8 问逐步确认、真人出镜参考图（图1=人脸，图2+=UI/产品截图）、双平台规格硬门（3:4 / 21:9+1:1 / 宽幅 ≥1.6:1 / 底部留白 ≤120px）。
 
 ---
 
@@ -110,6 +114,7 @@
 - **优化视觉与排版**：`优化这篇笔记的视觉和排版`
 - **公众号草稿推送**：`确认发布` 或 `同步公众号草稿`（Agent 调用 `scripts/gzh_draft_api.py --job-id <job_id>`，通过官方 draft/add 存入公众号草稿箱，人工手机终审）
 - **小红书人工发布**：`小红书已发布`（Agent 直接交付 `outputs/<job_id>/小红书/`：卡片 PNG + 文案.md，用户手动上传发布）→ 用户告知已发布后，Agent 调用 `scripts/record_manual_publish.py <job_id> --platform 小红书` 标记记录
+- **小红书数据导入（免手工回填）**：`python3 scripts/import_xhs_notes.py --file 笔记列表明细表.xlsx`（或看板「数据 → 导入小红书明细表」按钮），自动落盘 `data/stats/xhs_notes.json`、匹配 Job 写入 `publish_log.json`，可顺带 `--account-followers/--account-profile-visits` 更新账号快照
 - **风控铁律**：小红书禁止任何自动化工具写入/发布（含 Playwright 填表单与点击发布），只允许人工上传。
 - **内容计划**：`本周内容计划`
 

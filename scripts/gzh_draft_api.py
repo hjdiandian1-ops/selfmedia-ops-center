@@ -20,7 +20,6 @@ import json
 import os
 import re
 import sys
-import time
 import urllib.request
 import urllib.parse
 import uuid
@@ -35,7 +34,7 @@ API_BASE = "https://api.weixin.qq.com"
 def http_json(url, data=None, method="GET", headers=None, timeout=60):
     req = urllib.request.Request(url, data=data, method=method,
                                  headers=headers or {"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
+    with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec B310  # nosemgrep: dynamic-urllib-use-detected  # 固定微信官方 API 地址
         return json.loads(r.read().decode("utf-8"))
 
 

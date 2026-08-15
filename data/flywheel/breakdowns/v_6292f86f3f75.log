@@ -1,0 +1,532 @@
+2026-08-13T17:01:05.737330Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.22/.codex-plugin/plugin.json
+2026-08-13T17:01:05.743523Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.22/.codex-plugin/plugin.json
+2026-08-13T17:01:05.766690Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:01:05.766707Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc11-ff47-7502-8132-d0a8ea3a7913
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_6292f86f3f75
+- 平台：小红书
+- 标题：我拍到了海鸥雨
+- 链接：https://www.xiaohongshu.com/search_result?keyword=%E6%88%91%E6%8B%8D%E5%88%B0%E4%BA%86%E6%B5%B7%E9%B8%A5%E9%9B%A8&source=web_explore_feed
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:01:06.954056Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:01:06.978103Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:01:07.368008Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:01:07.372395Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+codex
+我先按标题优先的 `title_only` 标准拆解：尝试访问链接（小红书多半需要登录，可能拿不到正文），同时确认目标目录，然后写入 JSON 与 Markdown。
+web search: 
+web search: https://www.xiaohongshu.com/search_result?keyword=%E6%88%91%E6%8B%8D%E5%88%B0%E4%BA%86%E6%B5%B7%E9%B8%A5%E9%9B%A8&source=web_explore_feed#ws_call_id=call_00_S1Okb4OctQN63eJDrQq99344
+codex
+链接无法访问（小红书搜索页抓取失败），未获取正文——按 `title_only` 处理，所有维度标注为推断。现在写入文件：
+exec
+/bin/zsh -lc 'mkdir -p data/flywheel/breakdowns && ls -la data/flywheel/breakdowns' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+total 216
+drwxr-xr-x@ 10 xiaowuliao  staff    320 Aug 14 01:01 .
+drwxr-xr-x@ 10 xiaowuliao  staff    320 Aug 14 01:01 ..
+-rw-r--r--@  1 xiaowuliao  staff    360 Aug 13 01:08 v_20260813010837_de7be7.log
+-rw-r--r--@  1 xiaowuliao  staff   6518 Aug 14 01:01 v_6292f86f3f75.log
+-rw-r--r--@  1 xiaowuliao  staff   1225 Aug 14 01:00 v_670d018e20ef.json
+-rw-r--r--@  1 xiaowuliao  staff  41671 Aug 14 01:00 v_670d018e20ef.log
+-rw-r--r--@  1 xiaowuliao  staff   2931 Aug 14 01:00 v_670d018e20ef.md
+-rw-r--r--@  1 xiaowuliao  staff   1188 Aug 14 00:59 v_e102465d66e9.json
+-rw-r--r--@  1 xiaowuliao  staff  35274 Aug 14 00:59 v_e102465d66e9.log
+-rw-r--r--@  1 xiaowuliao  staff   2151 Aug 14 00:59 v_e102465d66e9.md
+
+codex
+目录里已存在同名 `.log` 文件，可能含有此前抓取的页面数据，先检查它是否有可用原文：
+exec
+/bin/zsh -lc 'head -c 4000 data/flywheel/breakdowns/v_6292f86f3f75.log' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+2026-08-13T17:01:05.737330Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.22/.codex-plugin/plugin.json
+2026-08-13T17:01:05.743523Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.22/.codex-plugin/plugin.json
+2026-08-13T17:01:05.766690Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:01:05.766707Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc11-ff47-7502-8132-d0a8ea3a7913
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`
+codex
+这是此前一次会话的运行日志，继续看后面是否抓到了正文或产出过文件：
+exec
+/bin/zsh -lc 'tail -c 3500 data/flywheel/breakdowns/v_6292f86f3f75.log' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+in assets/
+2026-08-13T17:01:05.766707Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc11-ff47-7502-8132-d0a8ea3a7913
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`
+codex
+这是此前一次会话的运行日志，继续看后面是否抓到了正文或产出过文件：
+
+2026-08-13T17:01:37.039495Z  WARN codex_core_plugins::manager: failed to auto-upgrade configured marketplace marketplace="chatcut-inc" error=git clone marketplace source timed out after 30s: Cloning into '/Users/xiaowuliao/.codex/.tmp/marketplaces/.staging/marketplace-upgrade-3EWhu0'...
+fatal: early EOF
+codex
+日志只是上一次会话的副本，没有额外正文。现在写入两个拆解文件：
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_6292f86f3f75.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_6292f86f3f75.md
+diff --git a/data/flywheel/breakdowns/v_6292f86f3f75.json b/data/flywheel/breakdowns/v_6292f86f3f75.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f0f8c27a93e005a852475958ff3ca730c579b68
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_6292f86f3f75.json
+@@ -0,0 +1,10 @@
++{
++  "title": "我拍到了海鸥雨",
++  "platform": "小红书",
++  "evidence_level": "title_only",
++  "hook": "第一人称「我拍到了」建立亲历感与稀缺感；「海鸥雨」把两种熟悉意象强行组合成陌生词组，制造反常识悬念——点开前用户无法确定它到底是画面还是比喻。",
++  "structure": "仅标题，正文结构不可知。按小红书图文规律推断：首图承担钩子，应直接展示「海鸥雨」的最强视觉帧；标题负责点击，正文大概率补地点、拍摄瞬间与情绪收尾。未获取原文，不作画面细节推断。",
++  "why_viral": "基于标题推断：爆点来自「海鸥雨」这个自造的视觉化词组——它把常见场景（群鸥飞过）升级成有诗意、有画面感的奇观命名，配合「我拍到了」的稀缺亲历感，精准触发小红书治愈/惊艳类内容的点击与收藏动机。未获取原文，基于标题与输入拆解；不涉及具体数据、封面细节、作者或逐字内容。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用「我拍到了+海鸥雨」一个亲历句加一个自造奇观词完成点击与情绪种草，可复用为「日常景象+陌生化命名」的标题公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_6292f86f3f75.md b/data/flywheel/breakdowns/v_6292f86f3f75.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..48c7c9677d24a4a99274f2e0d62aa46404476dc3
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_6292f86f3f75.md
+@@ -0,0 +1,39 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接无法访问；基于标题与输入拆解，所有维度均为推断）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即第一道闸，包含两个机制：
++
++- 第一人称「我拍到了」→ 亲历感与稀缺感：这是别人亲眼撞见的瞬间，用户想看看究竟发生了什么。
++- 「海鸥雨」→ 反常识组合：海鸥是鸟，「雨」是降水，两者叠在一起让读者无法预判画面，形成必须点开才能消除的认知缺口。
++
++### 2. 选题角度（推断）
++
++打的是治愈/惊艳赛道：自然景象、城市观察、摄影记录类内容在小红书有稳定受众。「海鸥雨」这类好听的新词比普通风景照更容易被记住、被讨论、被转发。未获取原文，无法确认是否蹭热点或具体拍摄地点，不作进一步断言。
++
++### 3. 内容结构（推断）
++
++按小红书图文规律推断：封面/首图直接给「海鸥雨」最强画面 → 正文交代拍摄场景与感受 → 以短句或感叹收尾。标题承担点击，图片承担停留，信息密度集中在第一屏。未获取原文，不推断图数、分镜或顺序细节。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：好奇 + 治愈 + 惊艳。
++- 目标人群：喜欢自然风景、城市观察、摄影与解压内容的小红书用户；对「拍到罕见瞬间」有共情的人。
++
++### 5. 金句与留存节点（推断）
++
++标题本身就是最高记忆点：「我拍到了海鸥雨」七字、有画面、有完成时态的收获感。图文留存主要靠视觉奇观本身——足以让用户看完并可能收藏。正文是否有其他金句无法确认。
++
++### 6. 排版节奏（推断）
++
++小红书图文场景：首图即封面，须在 3 秒内传达「海鸥雨」的奇观感；后续图宜按信息递进排列（全景 → 细节 → 场景），避免稀释第一眼的冲击。仅作平台通用推断，无原文可依据。
++
++### 7. 转化设计（推断）
++
++标题的「我拍到了」天然带出评论区问题空间：在哪里拍的？什么时候？什么设备？——「地点/时刻」追问是小红书风景笔记最常见的互动燃料。是否有点赞、收藏引导语无法确认。
++
++### 8. 公式标签
++
++反常识 / 悬念好奇 / 身份代入
+
+diff --git a/data/flywheel/breakdowns/v_6292f86f3f75.json b/data/flywheel/breakdowns/v_6292f86f3f75.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f0f8c27a93e005a852475958ff3ca730c579b68
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_6292f86f3f75.json
+@@ -0,0 +1,10 @@
++{
++  "title": "我拍到了海鸥雨",
++  "platform": "小红书",
++  "evidence_level": "title_only",
++  "hook": "第一人称「我拍到了」建立亲历感与稀缺感；「海鸥雨」把两种熟悉意象强行组合成陌生词组，制造反常识悬念——点开前用户无法确定它到底是画面还是比喻。",
++  "structure": "仅标题，正文结构不可知。按小红书图文规律推断：首图承担钩子，应直接展示「海鸥雨」的最强视觉帧；标题负责点击，正文大概率补地点、拍摄瞬间与情绪收尾。未获取原文，不作画面细节推断。",
++  "why_viral": "基于标题推断：爆点来自「海鸥雨」这个自造的视觉化词组——它把常见场景（群鸥飞过）升级成有诗意、有画面感的奇观命名，配合「我拍到了」的稀缺亲历感，精准触发小红书治愈/惊艳类内容的点击与收藏动机。未获取原文，基于标题与输入拆解；不涉及具体数据、封面细节、作者或逐字内容。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用「我拍到了+海鸥雨」一个亲历句加一个自造奇观词完成点击与情绪种草，可复用为「日常景象+陌生化命名」的标题公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_6292f86f3f75.md b/data/flywheel/breakdowns/v_6292f86f3f75.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..48c7c9677d24a4a99274f2e0d62aa46404476dc3
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_6292f86f3f75.md
+@@ -0,0 +1,39 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接无法访问；基于标题与输入拆解，所有维度均为推断）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即第一道闸，包含两个机制：
++
++- 第一人称「我拍到了」→ 亲历感与稀缺感：这是别人亲眼撞见的瞬间，用户想看看究竟发生了什么。
++- 「海鸥雨」→ 反常识组合：海鸥是鸟，「雨」是降水，两者叠在一起让读者无法预判画面，形成必须点开才能消除的认知缺口。
++
++### 2. 选题角度（推断）
++
++打的是治愈/惊艳赛道：自然景象、城市观察、摄影记录类内容在小红书有稳定受众。「海鸥雨」这类好听的新词比普通风景照更容易被记住、被讨论、被转发。未获取原文，无法确认是否蹭热点或具体拍摄地点，不作进一步断言。
++
++### 3. 内容结构（推断）
++
++按小红书图文规律推断：封面/首图直接给「海鸥雨」最强画面 → 正文交代拍摄场景与感受 → 以短句或感叹收尾。标题承担点击，图片承担停留，信息密度集中在第一屏。未获取原文，不推断图数、分镜或顺序细节。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：好奇 + 治愈 + 惊艳。
++- 目标人群：喜欢自然风景、城市观察、摄影与解压内容的小红书用户；对「拍到罕见瞬间」有共情的人。
++
++### 5. 金句与留存节点（推断）
++
++标题本身就是最高记忆点：「我拍到了海鸥雨」七字、有画面、有完成时态的收获感。图文留存主要靠视觉奇观本身——足以让用户看完并可能收藏。正文是否有其他金句无法确认。
++
++### 6. 排版节奏（推断）
++
++小红书图文场景：首图即封面，须在 3 秒内传达「海鸥雨」的奇观感；后续图宜按信息递进排列（全景 → 细节 → 场景），避免稀释第一眼的冲击。仅作平台通用推断，无原文可依据。
++
++### 7. 转化设计（推断）
++
++标题的「我拍到了」天然带出评论区问题空间：在哪里拍的？什么时候？什么设备？——「地点/时刻」追问是小红书风景笔记最常见的互动燃料。是否有点赞、收藏引导语无法确认。
++
++### 8. 公式标签
++
++反常识 / 悬念好奇 / 身份代入
+
+exec
+/bin/zsh -lc 'jq -e . data/flywheel/breakdowns/v_6292f86f3f75.json >/dev/null && echo JSON_OK && ls -l data/flywheel/breakdowns/v_6292f86f3f75.json data/flywheel/breakdowns/v_6292f86f3f75.md' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+JSON_OK
+-rw-r--r--@ 1 xiaowuliao  staff  1261 Aug 14 01:01 data/flywheel/breakdowns/v_6292f86f3f75.json
+-rw-r--r--@ 1 xiaowuliao  staff  2321 Aug 14 01:01 data/flywheel/breakdowns/v_6292f86f3f75.md
+
+diff --git a/data/flywheel/breakdowns/v_6292f86f3f75.json b/data/flywheel/breakdowns/v_6292f86f3f75.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f0f8c27a93e005a852475958ff3ca730c579b68
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_6292f86f3f75.json
+@@ -0,0 +1,10 @@
++{
++  "title": "我拍到了海鸥雨",
++  "platform": "小红书",
++  "evidence_level": "title_only",
++  "hook": "第一人称「我拍到了」建立亲历感与稀缺感；「海鸥雨」把两种熟悉意象强行组合成陌生词组，制造反常识悬念——点开前用户无法确定它到底是画面还是比喻。",
++  "structure": "仅标题，正文结构不可知。按小红书图文规律推断：首图承担钩子，应直接展示「海鸥雨」的最强视觉帧；标题负责点击，正文大概率补地点、拍摄瞬间与情绪收尾。未获取原文，不作画面细节推断。",
++  "why_viral": "基于标题推断：爆点来自「海鸥雨」这个自造的视觉化词组——它把常见场景（群鸥飞过）升级成有诗意、有画面感的奇观命名，配合「我拍到了」的稀缺亲历感，精准触发小红书治愈/惊艳类内容的点击与收藏动机。未获取原文，基于标题与输入拆解；不涉及具体数据、封面细节、作者或逐字内容。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用「我拍到了+海鸥雨」一个亲历句加一个自造奇观词完成点击与情绪种草，可复用为「日常景象+陌生化命名」的标题公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_6292f86f3f75.md b/data/flywheel/breakdowns/v_6292f86f3f75.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..48c7c9677d24a4a99274f2e0d62aa46404476dc3
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_6292f86f3f75.md
+@@ -0,0 +1,39 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接无法访问；基于标题与输入拆解，所有维度均为推断）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即第一道闸，包含两个机制：
++
++- 第一人称「我拍到了」→ 亲历感与稀缺感：这是别人亲眼撞见的瞬间，用户想看看究竟发生了什么。
++- 「海鸥雨」→ 反常识组合：海鸥是鸟，「雨」是降水，两者叠在一起让读者无法预判画面，形成必须点开才能消除的认知缺口。
++
++### 2. 选题角度（推断）
++
++打的是治愈/惊艳赛道：自然景象、城市观察、摄影记录类内容在小红书有稳定受众。「海鸥雨」这类好听的新词比普通风景照更容易被记住、被讨论、被转发。未获取原文，无法确认是否蹭热点或具体拍摄地点，不作进一步断言。
++
++### 3. 内容结构（推断）
++
++按小红书图文规律推断：封面/首图直接给「海鸥雨」最强画面 → 正文交代拍摄场景与感受 → 以短句或感叹收尾。标题承担点击，图片承担停留，信息密度集中在第一屏。未获取原文，不推断图数、分镜或顺序细节。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：好奇 + 治愈 + 惊艳。
++- 目标人群：喜欢自然风景、城市观察、摄影与解压内容的小红书用户；对「拍到罕见瞬间」有共情的人。
++
++### 5. 金句与留存节点（推断）
++
++标题本身就是最高记忆点：「我拍到了海鸥雨」七字、有画面、有完成时态的收获感。图文留存主要靠视觉奇观本身——足以让用户看完并可能收藏。正文是否有其他金句无法确认。
++
++### 6. 排版节奏（推断）
++
++小红书图文场景：首图即封面，须在 3 秒内传达「海鸥雨」的奇观感；后续图宜按信息递进排列（全景 → 细节 → 场景），避免稀释第一眼的冲击。仅作平台通用推断，无原文可依据。
++
++### 7. 转化设计（推断）
++
++标题的「我拍到了」天然带出评论区问题空间：在哪里拍的？什么时候？什么设备？——「地点/时刻」追问是小红书风景笔记最常见的互动燃料。是否有点赞、收藏引导语无法确认。
++
++### 8. 公式标签
++
++反常识 / 悬念好奇 / 身份代入
+
+codex
+拆解完成，链接无法访问且未提供正文，因此按 `title_only` 处理，所有维度均标注为推断，未编造任何数据、画面或作者信息。
+
+已写入：
+- [v_6292f86f3f75.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_6292f86f3f75.json)
+- [v_6292f86f3f75.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_6292f86f3f75.md)
+
+核心结论：标题「我拍到了海鸥雨」用第一人称亲历感 + 反常识自造词组（海鸥×雨）制造点击悬念，主打治愈/惊艳赛道，公式为「反常识、悬念好奇、身份代入」。
+
+可复用创作指令：
+
+把日常场景压缩成一个陌生词组：先选一个观众熟悉的现象（海鸥、晚霞、下班人潮），再给它一个不按常理的后缀（雨、海、雪），用「我拍到了/我看见了」开头制造亲历感。标题只留一个画面、不给答案；首图放最有冲击力的一帧，正文补地点与当下感受，结尾抛一句互动问题（你在哪里见过类似画面？）。适合治愈系、城市观察、摄影类账号，发布时间选傍晚通勤时段。
+diff --git a/data/flywheel/breakdowns/v_6292f86f3f75.json b/data/flywheel/breakdowns/v_6292f86f3f75.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f0f8c27a93e005a852475958ff3ca730c579b68
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_6292f86f3f75.json
+@@ -0,0 +1,10 @@
++{
++  "title": "我拍到了海鸥雨",
++  "platform": "小红书",
++  "evidence_level": "title_only",
++  "hook": "第一人称「我拍到了」建立亲历感与稀缺感；「海鸥雨」把两种熟悉意象强行组合成陌生词组，制造反常识悬念——点开前用户无法确定它到底是画面还是比喻。",
++  "structure": "仅标题，正文结构不可知。按小红书图文规律推断：首图承担钩子，应直接展示「海鸥雨」的最强视觉帧；标题负责点击，正文大概率补地点、拍摄瞬间与情绪收尾。未获取原文，不作画面细节推断。",
++  "why_viral": "基于标题推断：爆点来自「海鸥雨」这个自造的视觉化词组——它把常见场景（群鸥飞过）升级成有诗意、有画面感的奇观命名，配合「我拍到了」的稀缺亲历感，精准触发小红书治愈/惊艳类内容的点击与收藏动机。未获取原文，基于标题与输入拆解；不涉及具体数据、封面细节、作者或逐字内容。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用「我拍到了+海鸥雨」一个亲历句加一个自造奇观词完成点击与情绪种草，可复用为「日常景象+陌生化命名」的标题公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_6292f86f3f75.md b/data/flywheel/breakdowns/v_6292f86f3f75.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..48c7c9677d24a4a99274f2e0d62aa46404476dc3
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_6292f86f3f75.md
+@@ -0,0 +1,39 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接无法访问；基于标题与输入拆解，所有维度均为推断）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即第一道闸，包含两个机制：
++
++- 第一人称「我拍到了」→ 亲历感与稀缺感：这是别人亲眼撞见的瞬间，用户想看看究竟发生了什么。
++- 「海鸥雨」→ 反常识组合：海鸥是鸟，「雨」是降水，两者叠在一起让读者无法预判画面，形成必须点开才能消除的认知缺口。
++
++### 2. 选题角度（推断）
++
++打的是治愈/惊艳赛道：自然景象、城市观察、摄影记录类内容在小红书有稳定受众。「海鸥雨」这类好听的新词比普通风景照更容易被记住、被讨论、被转发。未获取原文，无法确认是否蹭热点或具体拍摄地点，不作进一步断言。
++
++### 3. 内容结构（推断）
++
++按小红书图文规律推断：封面/首图直接给「海鸥雨」最强画面 → 正文交代拍摄场景与感受 → 以短句或感叹收尾。标题承担点击，图片承担停留，信息密度集中在第一屏。未获取原文，不推断图数、分镜或顺序细节。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：好奇 + 治愈 + 惊艳。
++- 目标人群：喜欢自然风景、城市观察、摄影与解压内容的小红书用户；对「拍到罕见瞬间」有共情的人。
++
++### 5. 金句与留存节点（推断）
++
++标题本身就是最高记忆点：「我拍到了海鸥雨」七字、有画面、有完成时态的收获感。图文留存主要靠视觉奇观本身——足以让用户看完并可能收藏。正文是否有其他金句无法确认。
++
++### 6. 排版节奏（推断）
++
++小红书图文场景：首图即封面，须在 3 秒内传达「海鸥雨」的奇观感；后续图宜按信息递进排列（全景 → 细节 → 场景），避免稀释第一眼的冲击。仅作平台通用推断，无原文可依据。
++
++### 7. 转化设计（推断）
++
++标题的「我拍到了」天然带出评论区问题空间：在哪里拍的？什么时候？什么设备？——「地点/时刻」追问是小红书风景笔记最常见的互动燃料。是否有点赞、收藏引导语无法确认。
++
++### 8. 公式标签
++
++反常识 / 悬念好奇 / 身份代入
+
+tokens used
+10,335
+拆解完成，链接无法访问且未提供正文，因此按 `title_only` 处理，所有维度均标注为推断，未编造任何数据、画面或作者信息。
+
+已写入：
+- [v_6292f86f3f75.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_6292f86f3f75.json)
+- [v_6292f86f3f75.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_6292f86f3f75.md)
+
+核心结论：标题「我拍到了海鸥雨」用第一人称亲历感 + 反常识自造词组（海鸥×雨）制造点击悬念，主打治愈/惊艳赛道，公式为「反常识、悬念好奇、身份代入」。
+
+可复用创作指令：
+
+把日常场景压缩成一个陌生词组：先选一个观众熟悉的现象（海鸥、晚霞、下班人潮），再给它一个不按常理的后缀（雨、海、雪），用「我拍到了/我看见了」开头制造亲历感。标题只留一个画面、不给答案；首图放最有冲击力的一帧，正文补地点与当下感受，结尾抛一句互动问题（你在哪里见过类似画面？）。适合治愈系、城市观察、摄影类账号，发布时间选傍晚通勤时段。
+
+===== 拆解开始 v_6292f86f3f75 =====

@@ -9,9 +9,10 @@ Agent 定时任务只需调用本脚本，减少人工步骤、保证无人值�
 用法：
     python3 scripts/run_daily_pipeline.py --topics               # 定时生产(8/12/20点)：热点→选题推荐→(可选)自动建 Job
     python3 scripts/run_daily_pipeline.py --topics --auto-select # 可选：用户明确要求时才自动选热度第 1 建 Job（默认由用户拍板选题）
-    python3 scripts/run_daily_pipeline.py --qa outputs/YYYY-MM-DD_主题名/   # 质检链：契约校验 + harsh-critic 机器评分
+    python3 scripts/run_daily_pipeline.py --qa outputs/YYYY-MM-DD_主题名/   # 质检链：契约校验 + harsh-critic + 去AI味 + 合规
     python3 scripts/run_daily_pipeline.py --recycle              # 48h 回收(21:30)：扫描发布 ≥48h 且未回收的 Job
     python3 scripts/run_daily_pipeline.py --weekly               # 周度复盘(周日21点)：生成质量周报
+    python3 scripts/run_daily_pipeline.py --retention            # 数据保留：dry-run 报告；周日自动 --apply
     python3 scripts/run_daily_pipeline.py --all                  # topics + recycle + weekly
 
 退出码：0 = 全部成功（含"无待回收项"）；1 = 有失败/有阻塞项。
@@ -19,7 +20,7 @@ Agent 定时任务只需调用本脚本，减少人工步骤、保证无人值�
 import argparse
 import json
 import os
-import subprocess
+import subprocess  # nosec B404  # 固定命令列表 + 无 shell
 import sys
 from datetime import datetime, timedelta
 
@@ -31,10 +32,17 @@ STATE_ARTIFACT_48H = 48  # 小时
 
 def run(cmd, desc):
     print(f"\n▶ {desc}: {' '.join(cmd)}")
-    r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+    r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)  # nosec B603  # cmd 为内部固定参数列表
     sys.stdout.write(r.stdout)
     sys.stderr.write(r.stderr)
     return r.returncode == 0
+
+
+def spawn(cmd, desc):
+    """后台启动（不阻塞主流程），用于耗时较长的批量 AI 拆解。"""
+    print(f"\n▶ {desc}（后台）: {' '.join(cmd)}")
+    subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.DEVNULL,  # nosec B603  # cmd 为内部固定参数列表
+                     stderr=subprocess.DEVNULL, start_new_session=True)
 
 
 def read_json(path):
@@ -59,6 +67,20 @@ def cmd_topics(args):
     ok2 = run([sys.executable, os.path.join(SCRIPTS, "suggest_topics.py")], "选题推荐生成")
     if not ok2:
         return False
+    ok3 = run([sys.executable, os.path.join(SCRIPTS, "collect_viral_candidates.py")],
+              "爆款候选采集（高热自动转入跟踪库）")
+    if not ok3:
+        print("⚠️ 爆款候选采集失败（不影响选题主流程）")
+    ok4 = run([sys.executable, os.path.join(SCRIPTS, "collect_platform_virals.py"), "--json"],
+              "三平台爆款榜单采集（小红书/抖音/公众号 Top10）")
+    if not ok4:
+        print("⚠️ 三平台爆款榜单采集失败（不影响选题主流程）")
+    # 每平台 Top5 自动 AI 拆解：后台执行，进度见 data/flywheel/breakdown_batch.json
+    spawn([sys.executable, os.path.join(SCRIPTS, "run_viral_breakdown_daily.py"), "--json"],
+          "三平台爆款 Top5 自动拆解")
+    if datetime.now().weekday() == 0:
+        run([sys.executable, os.path.join(SCRIPTS, "aggregate_viral_lessons.py"), "--json"],
+            "周一爆款周经验包聚合（写经验库 + 升级 Agent SOP）")
     if getattr(args, "auto_select", False):
         # 读最新选题推荐，取热度第 1 建 Job（对齐"30 分钟未回复自动选第 1"）
         import glob
@@ -94,15 +116,29 @@ def cmd_qa(args):
               "--out", os.path.join(out_dir, "validate_report.json")], "素材契约校验")
     r2 = run([sys.executable, os.path.join(SCRIPTS, "harsh_critic_score.py"), out_dir,
               "--out", os.path.join(out_dir, "harsh_report.json")], "Harsh Critic 机器评分")
+    r_a = run([sys.executable, os.path.join(SCRIPTS, "ai_flavor_check.py"), out_dir,
+               "--out", os.path.join(out_dir, "ai_flavor_report.json")], "去 AI 味机器初筛（结构级 AI 腔）")
+    r_c = run([sys.executable, os.path.join(SCRIPTS, "compliance_check.py"), out_dir,
+               "--out", os.path.join(out_dir, "compliance_report.json")], "内容合规审核（发布硬门槛）")
     r3 = run([sys.executable, os.path.join(SCRIPTS, "generate_score_report.py"), out_dir],
              "评分报告生成（机器初筛版）")
     vr = read_json(os.path.join(out_dir, "validate_report.json")) or {}
     hr = read_json(os.path.join(out_dir, "harsh_report.json")) or {}
+    ar = read_json(os.path.join(out_dir, "ai_flavor_report.json")) or {}
+    cr = read_json(os.path.join(out_dir, "compliance_report.json")) or {}
     print("-" * 60)
     print(f"📋 质检汇总：contract={vr.get('verdict', '?')}（FAIL {vr.get('fails', '?')}）｜ "
-          f"harsh={hr.get('score', '?')}/100 → {hr.get('verdict', '?')}")
-    if not (r1 and r2):
+          f"harsh={hr.get('score', '?')}/100 → {hr.get('verdict', '?')}｜ "
+          f"去AI味={ar.get('verdict', '?')}（high {ar.get('summary', {}).get('high', 0)}）｜ "
+          f"合规={cr.get('verdict', '?')}（高 {cr.get('summary', {}).get('high', 0)}）")
+    if not (r1 and r2 and r_a and r_c):
         print(f"❌ 质检链有失败项：{out_dir}")
+        return False
+    if cr.get("verdict") == "REJECTED":
+        print("🛑 内容合规审核未通过（存在高风险违规），禁止发布，退回对应主编修改。")
+        return False
+    if ar.get("verdict") == "REJECTED":
+        print("🛑 去 AI 味检查未通过（存在结构级 AI 腔），退回对应主编按 skills/anti-ai-flavor-skill 修改。")
         return False
     if not (r3 and os.path.exists(os.path.join(out_dir, "评分报告.md"))):
         print("❌ 评分报告.md 生成失败，无法定稿。")
@@ -166,6 +202,15 @@ def cmd_weekly(_args):
     return run([sys.executable, os.path.join(SCRIPTS, "quality_weekly_report.py")], "周度质量复盘")
 
 
+def cmd_retention(_args):
+    """数据保留：平时 dry-run，周日自动执行清理。"""
+    cmd = [sys.executable, os.path.join(SCRIPTS, "retention.py")]
+    is_sunday = datetime.now().weekday() == 6
+    if is_sunday:
+        cmd.append("--apply")
+    return run(cmd, f"数据保留清理（{'apply·周日' if is_sunday else 'dry-run'}）")
+
+
 def main():
     ap = argparse.ArgumentParser(description="每日流水线编排器")
     ap.add_argument("--topics", action="store_true", help="热点→选题→(可选)建 Job")
@@ -174,13 +219,14 @@ def main():
     ap.add_argument("--qa", metavar="OUTPUT_DIR", help="质检链（契约校验 + 机器评分）")
     ap.add_argument("--recycle", action="store_true", help="48h 回收检查")
     ap.add_argument("--weekly", action="store_true", help="周度质量复盘")
+    ap.add_argument("--retention", action="store_true", help="数据保留清理（dry-run，周日自动执行）")
     ap.add_argument("--all", action="store_true", help="topics + recycle + weekly")
     args = ap.parse_args()
-    if not (args.topics or args.qa or args.recycle or args.weekly or args.all or args.auto_select):
-        ap.error("至少指定一个动作：--topics | --qa | --recycle | --weekly | --all")
+    if not (args.topics or args.qa or args.recycle or args.weekly or args.retention or args.all or args.auto_select):
+        ap.error("至少指定一个动作：--topics | --qa | --recycle | --weekly | --retention | --all")
 
     if args.all:
-        args.topics = args.recycle = args.weekly = True
+        args.topics = args.recycle = args.weekly = args.retention = True
         args.auto_select = True
     if args.auto_select and not args.topics:
         args.topics = True  # 单独 --auto-select 视为 topics
@@ -194,6 +240,8 @@ def main():
         results.append(("recycle", cmd_recycle(args)))
     if args.weekly:
         results.append(("weekly", cmd_weekly(args)))
+    if args.retention:
+        results.append(("retention", cmd_retention(args)))
 
     print("\n" + "=" * 60)
     ok_all = all(ok for _, ok in results)

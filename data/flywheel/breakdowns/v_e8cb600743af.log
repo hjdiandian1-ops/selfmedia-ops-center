@@ -1,0 +1,1163 @@
+2026-08-13T17:08:28.214465Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:08:28.222993Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:08:28.246534Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:08:28.246558Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc18-bfb3-71f2-846b-51a47a7ad498
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_e8cb600743af
+- 平台：公众号
+- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
+- 链接：https://mp.weixin.qq.com/s?__biz=MzE5MTY5NDg0NQ==&mid=2247485792&idx=1&sn=66d09a1c888892980e1c209d42d6567d#rd
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:08:29.781076Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:08:29.804456Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:08:29.806109Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:08:29.866275Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+codex
+我先看一下目标目录和现有拆解文件格式，然后把结果写进去。
+exec
+/bin/zsh -lc 'ls -la data/flywheel/breakdowns 2>/dev/null || echo "NO_DIR"' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+total 936
+drwxr-xr-x@ 32 xiaowuliao  staff   1024 Aug 14 01:08 .
+drwxr-xr-x@ 10 xiaowuliao  staff    320 Aug 14 01:08 ..
+-rw-r--r--@  1 xiaowuliao  staff   6034 Aug 14 01:08 v_0d8565de6a1f.log
+-rw-r--r--@  1 xiaowuliao  staff   1050 Aug 14 01:07 v_1ef336069327.json
+-rw-r--r--@  1 xiaowuliao  staff  40801 Aug 14 01:07 v_1ef336069327.log
+-rw-r--r--@  1 xiaowuliao  staff   2591 Aug 14 01:07 v_1ef336069327.md
+-rw-r--r--@  1 xiaowuliao  staff    360 Aug 13 01:08 v_20260813010837_de7be7.log
+-rw-r--r--@  1 xiaowuliao  staff   1261 Aug 14 01:01 v_6292f86f3f75.json
+-rw-r--r--@  1 xiaowuliao  staff  35772 Aug 14 01:01 v_6292f86f3f75.log
+-rw-r--r--@  1 xiaowuliao  staff   2321 Aug 14 01:01 v_6292f86f3f75.md
+-rw-r--r--@  1 xiaowuliao  staff   1225 Aug 14 01:00 v_670d018e20ef.json
+-rw-r--r--@  1 xiaowuliao  staff  41671 Aug 14 01:00 v_670d018e20ef.log
+-rw-r--r--@  1 xiaowuliao  staff   2931 Aug 14 01:00 v_670d018e20ef.md
+-rw-r--r--@  1 xiaowuliao  staff   1304 Aug 14 01:06 v_a165e614db98.json
+-rw-r--r--@  1 xiaowuliao  staff  25661 Aug 14 01:06 v_a165e614db98.log
+-rw-r--r--@  1 xiaowuliao  staff   2203 Aug 14 01:06 v_a165e614db98.md
+-rw-r--r--@  1 xiaowuliao  staff   1461 Aug 14 01:03 v_ccd0f0320b43.json
+-rw-r--r--@  1 xiaowuliao  staff  41877 Aug 14 01:03 v_ccd0f0320b43.log
+-rw-r--r--@  1 xiaowuliao  staff   2620 Aug 14 01:03 v_ccd0f0320b43.md
+-rw-r--r--@  1 xiaowuliao  staff   1721 Aug 14 01:08 v_da3cd5f6ae85.json
+-rw-r--r--@  1 xiaowuliao  staff  47233 Aug 14 01:08 v_da3cd5f6ae85.log
+-rw-r--r--@  1 xiaowuliao  staff   2757 Aug 14 01:08 v_da3cd5f6ae85.md
+-rw-r--r--@  1 xiaowuliao  staff   1697 Aug 14 01:04 v_dbcb92ffbec0.json
+-rw-r--r--@  1 xiaowuliao  staff  53693 Aug 14 01:04 v_dbcb92ffbec0.log
+-rw-r--r--@  1 xiaowuliao  staff   2732 Aug 14 01:04 v_dbcb92ffbec0.md
+-rw-r--r--@  1 xiaowuliao  staff   1188 Aug 14 00:59 v_e102465d66e9.json
+-rw-r--r--@  1 xiaowuliao  staff  35274 Aug 14 00:59 v_e102465d66e9.log
+-rw-r--r--@  1 xiaowuliao  staff   2151 Aug 14 00:59 v_e102465d66e9.md
+-rw-r--r--@  1 xiaowuliao  staff   6161 Aug 14 01:08 v_e8cb600743af.log
+-rw-r--r--@  1 xiaowuliao  staff   1352 Aug 14 01:05 v_f6062e356b69.json
+-rw-r--r--@  1 xiaowuliao  staff  42840 Aug 14 01:05 v_f6062e356b69.log
+-rw-r--r--@  1 xiaowuliao  staff   2378 Aug 14 01:05 v_f6062e356b69.md
+
+exec
+/bin/zsh -lc 'rg --files data 2>/dev/null | head -50' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+data/stats/数据统计报告.md
+data/stats/xhs_notes.json
+data/stats/xhs_account.json
+data/stats/dashboard/publish.json
+data/stats/dashboard/import_report.json
+data/stats/summary.json
+data/production/queue.json
+data/flywheel/breakdown_batch.json
+data/flywheel/pipeline_feedback.md
+data/flywheel/viral_videos.json
+data/flywheel/viral_weekly_2026-W33.md
+data/flywheel/platform_virals.json
+data/flywheel/breakdowns/v_ccd0f0320b43.json
+data/flywheel/breakdowns/v_6292f86f3f75.md
+data/flywheel/breakdowns/v_1ef336069327.md
+data/flywheel/breakdowns/v_e8cb600743af.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.json
+data/flywheel/breakdowns/v_f6062e356b69.log
+data/flywheel/breakdowns/v_20260813010837_de7be7.log
+data/flywheel/breakdowns/v_670d018e20ef.json
+data/flywheel/breakdowns/v_670d018e20ef.log
+data/flywheel/breakdowns/v_6292f86f3f75.json
+data/flywheel/breakdowns/v_a165e614db98.log
+data/flywheel/breakdowns/v_ccd0f0320b43.md
+data/flywheel/breakdowns/v_670d018e20ef.md
+data/flywheel/breakdowns/v_1ef336069327.json
+data/flywheel/breakdowns/v_6292f86f3f75.log
+data/flywheel/breakdowns/v_da3cd5f6ae85.log
+data/flywheel/breakdowns/v_e102465d66e9.md
+data/flywheel/breakdowns/v_da3cd5f6ae85.md
+data/flywheel/breakdowns/v_ccd0f0320b43.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.log
+data/flywheel/breakdowns/v_e102465d66e9.log
+data/flywheel/breakdowns/v_f6062e356b69.md
+data/flywheel/breakdowns/v_da3cd5f6ae85.json
+data/flywheel/breakdowns/v_e102465d66e9.json
+data/flywheel/breakdowns/v_a165e614db98.json
+data/flywheel/breakdowns/v_0d8565de6a1f.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.md
+data/flywheel/breakdowns/v_f6062e356b69.json
+data/flywheel/breakdowns/v_a165e614db98.md
+data/flywheel/breakdowns/v_1ef336069327.log
+data/flywheel/viral_candidates.json
+data/flywheel/lessons.json
+
+codex
+目标目录已有对应 `v_e8cb600743af.log`，我先看一下里面有没有抓到的原文，避免在只有标题时误判依据级别。
+exec
+/bin/zsh -lc 'cat data/flywheel/breakdowns/v_e8cb600743af.log' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+2026-08-13T17:08:28.214465Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:08:28.222993Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:08:28.246534Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:08:28.246558Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc18-bfb3-71f2-846b-51a47a7ad498
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_e8cb600743af
+- 平台：公众号
+- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
+- 链接：https://mp.weixin.qq.com/s?__biz=MzE5MTY5NDg0NQ==&mid=2247485792&idx=1&sn=66d09a1c888892980e1c209d42d6567d#rd
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:08:29.781076Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:08:29.804456Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:08:29.806109Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:08:29.866275Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+codex
+我先看一下目标目录和现有拆解文件格式，然后把结果写进去。
+exec
+/bin/zsh -lc 'ls -la data/flywheel/breakdowns 2>/dev/null || echo "NO_DIR"' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+total 936
+drwxr-xr-x@ 32 xiaowuliao  staff   1024 Aug 14 01:08 .
+drwxr-xr-x@ 10 xiaowuliao  staff    320 Aug 14 01:08 ..
+-rw-r--r--@  1 xiaowuliao  staff   6034 Aug 14 01:08 v_0d8565de6a1f.log
+-rw-r--r--@  1 xiaowuliao  staff   1050 Aug 14 01:07 v_1ef336069327.json
+-rw-r--r--@  1 xiaowuliao  staff  40801 Aug 14 01:07 v_1ef336069327.log
+-rw-r--r--@  1 xiaowuliao  staff   2591 Aug 14 01:07 v_1ef336069327.md
+-rw-r--r--@  1 xiaowuliao  staff    360 Aug 13 01:08 v_20260813010837_de7be7.log
+-rw-r--r--@  1 xiaowuliao  staff   1261 Aug 14 01:01 v_6292f86f3f75.json
+-rw-r--r--@  1 xiaowuliao  staff  35772 Aug 14 01:01 v_6292f86f3f75.log
+-rw-r--r--@  1 xiaowuliao  staff   2321 Aug 14 01:01 v_6292f86f3f75.md
+-rw-r--r--@  1 xiaowuliao  staff   1225 Aug 14 01:00 v_670d018e20ef.json
+-rw-r--r--@  1 xiaowuliao  staff  41671 Aug 14 01:00 v_670d018e20ef.log
+-rw-r--r--@  1 xiaowuliao  staff   2931 Aug 14 01:00 v_670d018e20ef.md
+-rw-r--r--@  1 xiaowuliao  staff   1304 Aug 14 01:06 v_a165e614db98.json
+-rw-r--r--@  1 xiaowuliao  staff  25661 Aug 14 01:06 v_a165e614db98.log
+-rw-r--r--@  1 xiaowuliao  staff   2203 Aug 14 01:06 v_a165e614db98.md
+-rw-r--r--@  1 xiaowuliao  staff   1461 Aug 14 01:03 v_ccd0f0320b43.json
+-rw-r--r--@  1 xiaowuliao  staff  41877 Aug 14 01:03 v_ccd0f0320b43.log
+-rw-r--r--@  1 xiaowuliao  staff   2620 Aug 14 01:03 v_ccd0f0320b43.md
+-rw-r--r--@  1 xiaowuliao  staff   1721 Aug 14 01:08 v_da3cd5f6ae85.json
+-rw-r--r--@  1 xiaowuliao  staff  47233 Aug 14 01:08 v_da3cd5f6ae85.log
+-rw-r--r--@  1 xiaowuliao  staff   2757 Aug 14 01:08 v_da3cd5f6ae85.md
+-rw-r--r--@  1 xiaowuliao  staff   1697 Aug 14 01:04 v_dbcb92ffbec0.json
+-rw-r--r--@  1 xiaowuliao  staff  53693 Aug 14 01:04 v_dbcb92ffbec0.log
+-rw-r--r--@  1 xiaowuliao  staff   2732 Aug 14 01:04 v_dbcb92ffbec0.md
+-rw-r--r--@  1 xiaowuliao  staff   1188 Aug 14 00:59 v_e102465d66e9.json
+-rw-r--r--@  1 xiaowuliao  staff  35274 Aug 14 00:59 v_e102465d66e9.log
+-rw-r--r--@  1 xiaowuliao  staff   2151 Aug 14 00:59 v_e102465d66e9.md
+-rw-r--r--@  1 xiaowuliao  staff   6161 Aug 14 01:08 v_e8cb600743af.log
+-rw-r--r--@  1 xiaowuliao  staff   1352 Aug 14 01:05 v_f6062e356b69.json
+-rw-r--r--@  1 xiaowuliao  staff  42840 Aug 14 01:05 v_f6062e356b69.log
+-rw-r--r--@  1 xiaowuliao  staff   2378 Aug 14 01:05 v_f6062e356b69.md
+
+exec
+/bin/zsh -lc 'rg --files data 2>/dev/null | head -50' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+data/stats/数据统计报告.md
+data/stats/xhs_notes.json
+data/stats/xhs_account.json
+data/stats/dashboard/publish.json
+data/stats/dashboard/import_report.json
+data/stats/summary.json
+data/production/queue.json
+data/flywheel/breakdown_batch.json
+data/flywheel/pipeline_feedback.md
+data/flywheel/viral_videos.json
+data/flywheel/viral_weekly_2026-W33.md
+data/flywheel/platform_virals.json
+data/flywheel/breakdowns/v_ccd0f0320b43.json
+data/flywheel/breakdowns/v_6292f86f3f75.md
+data/flywheel/breakdowns/v_1ef336069327.md
+data/flywheel/breakdowns/v_e8cb600743af.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.json
+data/flywheel/breakdowns/v_f6062e356b69.log
+data/flywheel/breakdowns/v_20260813010837_de7be7.log
+data/flywheel/breakdowns/v_670d018e20ef.json
+data/flywheel/breakdowns/v_670d018e20ef.log
+data/flywheel/breakdowns/v_6292f86f3f75.json
+data/flywheel/breakdowns/v_a165e614db98.log
+data/flywheel/breakdowns/v_ccd0f0320b43.md
+data/flywheel/breakdowns/v_670d018e20ef.md
+data/flywheel/breakdowns/v_1ef336069327.json
+data/flywheel/breakdowns/v_6292f86f3f75.log
+data/flywheel/breakdowns/v_da3cd5f6ae85.log
+data/flywheel/breakdowns/v_e102465d66e9.md
+data/flywheel/breakdowns/v_da3cd5f6ae85.md
+data/flywheel/breakdowns/v_ccd0f0320b43.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.log
+data/flywheel/breakdowns/v_e102465d66e9.log
+data/flywheel/breakdowns/v_f6062e356b69.md
+data/flywheel/breakdowns/v_da3cd5f6ae85.json
+data/flywheel/breakdowns/v_e102465d66e9.json
+data/flywheel/breakdowns/v_a165e614db98.json
+data/flywheel/breakdowns/v_0d8565de6a1f.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.md
+data/flywheel/breakdowns/v_f6062e356b69.json
+data/flywheel/breakdowns/v_a165e614db98.md
+data/flywheel/breakdowns/v_1ef336069327.log
+data/flywheel/viral_candidates.json
+data/flywheel/lessons.json
+
+codex
+目标目录已有对应 `v_e8cb600743af.log`，我先看一下里面有没有抓到的原文，避免在只有标题时误判依据级别。
+
+exec
+/bin/zsh -lc 'cat data/flywheel/breakdowns/v_1ef336069327.json' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+{
+  "title": "中国制造再添全球之最",
+  "platform": "抖音",
+  "evidence_level": "title_only",
+  "hook": "推断：标题以“全球之最”制造悬念——哪个领域、哪项纪录、何时达成均未点破，勾住用户点开验证；“再添”暗示又一项新纪录，自带连续叙事感。",
+  "structure": "推断：典型“悬念开头→揭晓纪录→背景/规模→对比或意义升华→引导互动”的短结构；因无逐字稿，无法确认实际分镜与信息密度安排。",
+  "why_viral": "基于标题推断：击中“中国制造崛起”这一长期情绪热点，天然带民族自豪与爽感，适配抖音泛人群的快速情绪触发；未获取原文，链接为抖音搜索页，未核实具体纪录、作者、画面与数据。",
+  "formula": "蹭热点时效, 身份代入, 悬念好奇",
+  "summary": "用“全球之最”留悬念、用“中国制造”唤起身份自豪，靠热点+情绪驱动点击与传播，可复用为制造业成就类选题的标题与开头模板。"
+}
+
+exec
+/bin/zsh -lc 'cat data/flywheel/breakdowns/v_1ef336069327.md' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+## 拆解报告
+
+- viral_id：v_1ef336069327
+- 标题：中国制造再添全球之最
+- 平台：抖音
+- 依据级别：`title_only`（未获取原文；链接为抖音搜索页，无法访问到原视频内容，以下所有维度均为基于标题的推断，非事实复述）
+
+### 1. 前 3 秒钩子（推断）
+标题本身即钩子：“全球之最”是不给答案的悬念，具体领域、具体纪录、何时达成全不点破，逼用户点开求证；“再添”制造“又一项新纪录”的连续感，暗示内容有增量信息。
+
+### 2. 选题角度（推断）
+蹭“中国制造/产业崛起”这一长期热点话题。该选题自带国家叙事，不需要解释背景就能触发关注制造业、国货、时事新闻的泛抖音人群；时效性成就类内容适合在事件发酵期内发布。
+
+### 3. 内容结构（推断）
+推测为短视频常见结构：悬念式开头（不直接揭晓纪录）→ 揭晓具体纪录与背景 → 规模/难度/对比佐证 → 意义升华（中国制造/产业自信）→ 互动引导。无逐字稿，实际分段与信息密度无法核实。
+
+### 4. 情绪与人群（推断）
+主打自豪感与爽感：民族成就带来的集体荣誉感。目标人群为关注制造业、国家成就、科技突破的抖音泛用户，男女跨度大，中年与年轻用户都可能被触动。
+
+### 5. 金句与留存节点（推断）
+标题句“中国制造再添全球之最”本身即最高记忆点，适合做片头大字幕和结尾回扣；推测中途会以具体数字（纪录数值、规模、排名）制造第二个记忆点，但无原文无法确认。
+
+### 6. 剪辑节奏（推断）
+无逐字稿与画面，无法拆解实际剪辑。若按该类题材常见做法，推测会用快切素材、大字幕强调关键数字、BGM 渐强配合揭晓时刻；仅作方向性推断，不构成对原视频的复述。
+
+### 7. 转化设计（推断）
+无法确证原视频引导动作。结合标题情绪，推测常见做法为“点赞让更多人看到中国制造”“评论区猜是哪个领域”一类互动引导，以及关注账号追后续成就类内容；均为推断。
+
+### 8. 公式标签
+- 蹭热点时效（产业成就/国家叙事类热点）
+- 身份代入（“中国制造”唤起集体身份）
+- 悬念好奇（“全球之最”不揭晓具体答案）
+
+### 依据级别与局限
+`title_only`：所有维度均为推断，未编造作者、数据、画面、字幕或逐字内容。链接未访问成功，仅基于标题与平台语境拆解选题角度与公式。
+
+codex
+确认没有原文，只有标题，按 `title_only` 拆解。现在写入 JSON 和 Markdown 报告。
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.md
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.json b/data/flywheel/breakdowns/v_e8cb600743af.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..715fd5eda46ba034a939ffd24e9242de132153aa
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_e8cb600743af.json
+@@ -0,0 +1,10 @@
++{
++  "title": "末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "推断：标题即钩子——'末代皇帝'身份代入，'棉衣夹层藏玉玺'给出画面细节，'听闻出兵朝鲜才上交'点出历史情境，层层递进制造悬念：玉玺为何私藏？为何偏偏此时交出？",
++  "structure": "推断：推测为'人物与时代背景→事件触发（出兵朝鲜）→拆衣取玺的细节描写→心理转折（放弃皇室念想）→主动上交与意义升华'的历史叙事结构；未获取原文，实际分段与行文顺序无法核实。",
++  "why_viral": "基于标题推断：真实历史人物（溥仪）+ 国宝（故宫玉玺）+ 具体历史节点（出兵朝鲜）组合成强故事线，兼具历史猎奇与情感张力；'私藏国宝 vs 主动上交'构成冲突反转，命中历史、宫廷秘闻类公众号读者的好奇与转发欲。未获取原文，链接未访问，未核实事件细节、作者、数据与封面，不构成事实复述。",
++  "formula": "身份代入, 冲突对比, 悬念好奇",
++  "summary": "用真实人物、国宝与历史节点组成完整故事线，标题自带冲突与悬念；可复用为历史秘闻类选题：身份开场、细节佐证、转折收束。"
++}
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.md b/data/flywheel/breakdowns/v_e8cb600743af.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f57d6f244169bfbd4d81cca621414bc65ebd14c
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_e8cb600743af.md
+@@ -0,0 +1,35 @@
++## 拆解报告
++
++- viral_id：v_e8cb600743af
++- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
++- 平台：公众号
++- 依据级别：`title_only`（原文未提供、链接未访问，以下所有维度均为基于标题的推断，非事实复述，不编造作者、数据、画面或逐字内容）
++
++### 1. 前 3 秒钩子（推断）
++公众号的“前 3 秒”即标题与开头。该标题信息完整但不失悬念：末代皇帝（身份）、抚顺改造（处境）、出兵朝鲜（历史事件）、棉衣夹层藏玉玺（细节画面）、主动上交（结局），五个信息点连续递进，读者一眼能判断“这是一个有转折的真实故事”，并留下“为什么此时才上交”的疑问。
++
++### 2. 选题角度（推断）
++属于历史人物秘闻/国宝故事赛道：溥仪自带国民级知名度，“故宫带出的玉玺”叠加国宝元素，“出兵朝鲜”给出具体历史锚点增强真实感。选题价值在于“尽人皆知的人物 + 少为人知的细节”，对历史爱好者、民国史/清史兴趣人群、喜欢宫廷秘闻的中老年公众号读者都有天然吸引力。
++
++### 3. 内容结构（推断）
++推测为经典历史叙事结构：时代与人物背景铺垫 → 事件触发（听闻出兵朝鲜）→ 核心动作细节（亲手拆开棉衣夹层、取出玉玺）→ 心理描写（放弃最后的皇室念想）→ 主动上交与意义升华。标题已把起承转合全部预告，正文大概率按此顺序逐层兑现，重点放大“拆衣取玺”这一画面感最强的段落。
++
++### 4. 情绪与人群（推断）
++主打好奇 + 历史情结 + 轻微爽感（旧时代象征被主动舍弃的戏剧性）。目标人群：历史爱好者、宫廷秘闻读者、关注国宝/故宫话题人群、中老年公众号用户；这类人群对“真实事件 + 人物命运转折”的转发意愿高于泛资讯内容。
++
++### 5. 金句与留存节点（推断）
++标题本身已含三个记忆点：“棉衣夹层”“绝世玉玺”“放弃最后的皇室念想”。推测正文会在拆衣动作处放大细节（如夹层位置、随身多年）制造第二记忆点，结尾以“告别旧时代”一类升华句收束；具体文案未获取，不做复述。
++
++### 6. 排版节奏（推断）
++公众号图文推测采用：短段落、关键动作独立成段、历史照片/史料图片穿插、结尾引用出处增强可信感。标题长且信息密，正文宜先短句交代背景再展开细节，避免开头信息过载。实际排版未获取，均为方向性推断。
++
++### 7. 转化设计（推断）
++公众号的主要转化是转发与在看：历史秘闻类内容的转发欲来自“故事可讲给家人朋友听”；“溥仪该不该交玉玺”“这段历史是否属实”天然适合评论区讨论；结尾常见引导为关注账号追历史系列连载。具体引导文案未获取，仅为推断。
++
++### 8. 公式标签
++- 身份代入（末代皇帝 + 国宝持有者，自带传奇身份）
++- 冲突对比（私藏国宝 vs 主动上交；旧皇帝 vs 新时代）
++- 悬念好奇（为何听闻出兵朝鲜才交出？玉玺藏在哪？）
++
++### 依据级别与局限
++`title_only`：所有维度均为基于标题的推断。未获取原文、未访问链接，禁止据此复述事件细节、数据、画面或具体文案；本拆解仅提炼选题角度与可复用公式。
+
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.json b/data/flywheel/breakdowns/v_e8cb600743af.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..715fd5eda46ba034a939ffd24e9242de132153aa
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_e8cb600743af.json
+@@ -0,0 +1,10 @@
++{
++  "title": "末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "推断：标题即钩子——'末代皇帝'身份代入，'棉衣夹层藏玉玺'给出画面细节，'听闻出兵朝鲜才上交'点出历史情境，层层递进制造悬念：玉玺为何私藏？为何偏偏此时交出？",
++  "structure": "推断：推测为'人物与时代背景→事件触发（出兵朝鲜）→拆衣取玺的细节描写→心理转折（放弃皇室念想）→主动上交与意义升华'的历史叙事结构；未获取原文，实际分段与行文顺序无法核实。",
++  "why_viral": "基于标题推断：真实历史人物（溥仪）+ 国宝（故宫玉玺）+ 具体历史节点（出兵朝鲜）组合成强故事线，兼具历史猎奇与情感张力；'私藏国宝 vs 主动上交'构成冲突反转，命中历史、宫廷秘闻类公众号读者的好奇与转发欲。未获取原文，链接未访问，未核实事件细节、作者、数据与封面，不构成事实复述。",
++  "formula": "身份代入, 冲突对比, 悬念好奇",
++  "summary": "用真实人物、国宝与历史节点组成完整故事线，标题自带冲突与悬念；可复用为历史秘闻类选题：身份开场、细节佐证、转折收束。"
++}
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.md b/data/flywheel/breakdowns/v_e8cb600743af.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f57d6f244169bfbd4d81cca621414bc65ebd14c
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_e8cb600743af.md
+@@ -0,0 +1,35 @@
++## 拆解报告
++
++- viral_id：v_e8cb600743af
++- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
++- 平台：公众号
++- 依据级别：`title_only`（原文未提供、链接未访问，以下所有维度均为基于标题的推断，非事实复述，不编造作者、数据、画面或逐字内容）
++
++### 1. 前 3 秒钩子（推断）
++公众号的“前 3 秒”即标题与开头。该标题信息完整但不失悬念：末代皇帝（身份）、抚顺改造（处境）、出兵朝鲜（历史事件）、棉衣夹层藏玉玺（细节画面）、主动上交（结局），五个信息点连续递进，读者一眼能判断“这是一个有转折的真实故事”，并留下“为什么此时才上交”的疑问。
++
++### 2. 选题角度（推断）
++属于历史人物秘闻/国宝故事赛道：溥仪自带国民级知名度，“故宫带出的玉玺”叠加国宝元素，“出兵朝鲜”给出具体历史锚点增强真实感。选题价值在于“尽人皆知的人物 + 少为人知的细节”，对历史爱好者、民国史/清史兴趣人群、喜欢宫廷秘闻的中老年公众号读者都有天然吸引力。
++
++### 3. 内容结构（推断）
++推测为经典历史叙事结构：时代与人物背景铺垫 → 事件触发（听闻出兵朝鲜）→ 核心动作细节（亲手拆开棉衣夹层、取出玉玺）→ 心理描写（放弃最后的皇室念想）→ 主动上交与意义升华。标题已把起承转合全部预告，正文大概率按此顺序逐层兑现，重点放大“拆衣取玺”这一画面感最强的段落。
++
++### 4. 情绪与人群（推断）
++主打好奇 + 历史情结 + 轻微爽感（旧时代象征被主动舍弃的戏剧性）。目标人群：历史爱好者、宫廷秘闻读者、关注国宝/故宫话题人群、中老年公众号用户；这类人群对“真实事件 + 人物命运转折”的转发意愿高于泛资讯内容。
++
++### 5. 金句与留存节点（推断）
++标题本身已含三个记忆点：“棉衣夹层”“绝世玉玺”“放弃最后的皇室念想”。推测正文会在拆衣动作处放大细节（如夹层位置、随身多年）制造第二记忆点，结尾以“告别旧时代”一类升华句收束；具体文案未获取，不做复述。
++
++### 6. 排版节奏（推断）
++公众号图文推测采用：短段落、关键动作独立成段、历史照片/史料图片穿插、结尾引用出处增强可信感。标题长且信息密，正文宜先短句交代背景再展开细节，避免开头信息过载。实际排版未获取，均为方向性推断。
++
++### 7. 转化设计（推断）
++公众号的主要转化是转发与在看：历史秘闻类内容的转发欲来自“故事可讲给家人朋友听”；“溥仪该不该交玉玺”“这段历史是否属实”天然适合评论区讨论；结尾常见引导为关注账号追历史系列连载。具体引导文案未获取，仅为推断。
++
++### 8. 公式标签
++- 身份代入（末代皇帝 + 国宝持有者，自带传奇身份）
++- 冲突对比（私藏国宝 vs 主动上交；旧皇帝 vs 新时代）
++- 悬念好奇（为何听闻出兵朝鲜才交出？玉玺藏在哪？）
++
++### 依据级别与局限
++`title_only`：所有维度均为基于标题的推断。未获取原文、未访问链接，禁止据此复述事件细节、数据、画面或具体文案；本拆解仅提炼选题角度与可复用公式。
+
+exec
+/bin/zsh -lc 'python3 -m json.tool data/flywheel/breakdowns/v_e8cb600743af.json >/dev/null && echo JSON_OK' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+JSON_OK
+
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.json b/data/flywheel/breakdowns/v_e8cb600743af.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..715fd5eda46ba034a939ffd24e9242de132153aa
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_e8cb600743af.json
+@@ -0,0 +1,10 @@
++{
++  "title": "末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "推断：标题即钩子——'末代皇帝'身份代入，'棉衣夹层藏玉玺'给出画面细节，'听闻出兵朝鲜才上交'点出历史情境，层层递进制造悬念：玉玺为何私藏？为何偏偏此时交出？",
++  "structure": "推断：推测为'人物与时代背景→事件触发（出兵朝鲜）→拆衣取玺的细节描写→心理转折（放弃皇室念想）→主动上交与意义升华'的历史叙事结构；未获取原文，实际分段与行文顺序无法核实。",
++  "why_viral": "基于标题推断：真实历史人物（溥仪）+ 国宝（故宫玉玺）+ 具体历史节点（出兵朝鲜）组合成强故事线，兼具历史猎奇与情感张力；'私藏国宝 vs 主动上交'构成冲突反转，命中历史、宫廷秘闻类公众号读者的好奇与转发欲。未获取原文，链接未访问，未核实事件细节、作者、数据与封面，不构成事实复述。",
++  "formula": "身份代入, 冲突对比, 悬念好奇",
++  "summary": "用真实人物、国宝与历史节点组成完整故事线，标题自带冲突与悬念；可复用为历史秘闻类选题：身份开场、细节佐证、转折收束。"
++}
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.md b/data/flywheel/breakdowns/v_e8cb600743af.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f57d6f244169bfbd4d81cca621414bc65ebd14c
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_e8cb600743af.md
+@@ -0,0 +1,35 @@
++## 拆解报告
++
++- viral_id：v_e8cb600743af
++- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
++- 平台：公众号
++- 依据级别：`title_only`（原文未提供、链接未访问，以下所有维度均为基于标题的推断，非事实复述，不编造作者、数据、画面或逐字内容）
++
++### 1. 前 3 秒钩子（推断）
++公众号的“前 3 秒”即标题与开头。该标题信息完整但不失悬念：末代皇帝（身份）、抚顺改造（处境）、出兵朝鲜（历史事件）、棉衣夹层藏玉玺（细节画面）、主动上交（结局），五个信息点连续递进，读者一眼能判断“这是一个有转折的真实故事”，并留下“为什么此时才上交”的疑问。
++
++### 2. 选题角度（推断）
++属于历史人物秘闻/国宝故事赛道：溥仪自带国民级知名度，“故宫带出的玉玺”叠加国宝元素，“出兵朝鲜”给出具体历史锚点增强真实感。选题价值在于“尽人皆知的人物 + 少为人知的细节”，对历史爱好者、民国史/清史兴趣人群、喜欢宫廷秘闻的中老年公众号读者都有天然吸引力。
++
++### 3. 内容结构（推断）
++推测为经典历史叙事结构：时代与人物背景铺垫 → 事件触发（听闻出兵朝鲜）→ 核心动作细节（亲手拆开棉衣夹层、取出玉玺）→ 心理描写（放弃最后的皇室念想）→ 主动上交与意义升华。标题已把起承转合全部预告，正文大概率按此顺序逐层兑现，重点放大“拆衣取玺”这一画面感最强的段落。
++
++### 4. 情绪与人群（推断）
++主打好奇 + 历史情结 + 轻微爽感（旧时代象征被主动舍弃的戏剧性）。目标人群：历史爱好者、宫廷秘闻读者、关注国宝/故宫话题人群、中老年公众号用户；这类人群对“真实事件 + 人物命运转折”的转发意愿高于泛资讯内容。
++
++### 5. 金句与留存节点（推断）
++标题本身已含三个记忆点：“棉衣夹层”“绝世玉玺”“放弃最后的皇室念想”。推测正文会在拆衣动作处放大细节（如夹层位置、随身多年）制造第二记忆点，结尾以“告别旧时代”一类升华句收束；具体文案未获取，不做复述。
++
++### 6. 排版节奏（推断）
++公众号图文推测采用：短段落、关键动作独立成段、历史照片/史料图片穿插、结尾引用出处增强可信感。标题长且信息密，正文宜先短句交代背景再展开细节，避免开头信息过载。实际排版未获取，均为方向性推断。
++
++### 7. 转化设计（推断）
++公众号的主要转化是转发与在看：历史秘闻类内容的转发欲来自“故事可讲给家人朋友听”；“溥仪该不该交玉玺”“这段历史是否属实”天然适合评论区讨论；结尾常见引导为关注账号追历史系列连载。具体引导文案未获取，仅为推断。
++
++### 8. 公式标签
++- 身份代入（末代皇帝 + 国宝持有者，自带传奇身份）
++- 冲突对比（私藏国宝 vs 主动上交；旧皇帝 vs 新时代）
++- 悬念好奇（为何听闻出兵朝鲜才交出？玉玺藏在哪？）
++
++### 依据级别与局限
++`title_only`：所有维度均为基于标题的推断。未获取原文、未访问链接，禁止据此复述事件细节、数据、画面或具体文案；本拆解仅提炼选题角度与可复用公式。
+
+codex
+已按 `title_only`（原文未提供、链接未访问）完成拆解并写入：
+
+- [v_e8cb600743af.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.json)
+- [v_e8cb600743af.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.md)
+
+所有维度均标注“推断”，`why_viral` 已注明“基于标题推断”，未编造作者、数据、画面或逐字内容。
+
+可复用创作指令：
+
+选国民级历史人物 + 少为人知的真实细节，标题按“身份—处境—事件—秘密—反转结局”五段递进，信息完整但留一问；正文先交代时代背景，再放大最有画面感的关键动作，结尾用时代变迁式升华句收束，并引导评论区讨论细节、转发给身边人。历史秘闻类公众号选题可直接套用此结构。
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.json b/data/flywheel/breakdowns/v_e8cb600743af.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..715fd5eda46ba034a939ffd24e9242de132153aa
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_e8cb600743af.json
+@@ -0,0 +1,10 @@
++{
++  "title": "末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "推断：标题即钩子——'末代皇帝'身份代入，'棉衣夹层藏玉玺'给出画面细节，'听闻出兵朝鲜才上交'点出历史情境，层层递进制造悬念：玉玺为何私藏？为何偏偏此时交出？",
++  "structure": "推断：推测为'人物与时代背景→事件触发（出兵朝鲜）→拆衣取玺的细节描写→心理转折（放弃皇室念想）→主动上交与意义升华'的历史叙事结构；未获取原文，实际分段与行文顺序无法核实。",
++  "why_viral": "基于标题推断：真实历史人物（溥仪）+ 国宝（故宫玉玺）+ 具体历史节点（出兵朝鲜）组合成强故事线，兼具历史猎奇与情感张力；'私藏国宝 vs 主动上交'构成冲突反转，命中历史、宫廷秘闻类公众号读者的好奇与转发欲。未获取原文，链接未访问，未核实事件细节、作者、数据与封面，不构成事实复述。",
++  "formula": "身份代入, 冲突对比, 悬念好奇",
++  "summary": "用真实人物、国宝与历史节点组成完整故事线，标题自带冲突与悬念；可复用为历史秘闻类选题：身份开场、细节佐证、转折收束。"
++}
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.md b/data/flywheel/breakdowns/v_e8cb600743af.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f57d6f244169bfbd4d81cca621414bc65ebd14c
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_e8cb600743af.md
+@@ -0,0 +1,35 @@
++## 拆解报告
++
++- viral_id：v_e8cb600743af
++- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
++- 平台：公众号
++- 依据级别：`title_only`（原文未提供、链接未访问，以下所有维度均为基于标题的推断，非事实复述，不编造作者、数据、画面或逐字内容）
++
++### 1. 前 3 秒钩子（推断）
++公众号的“前 3 秒”即标题与开头。该标题信息完整但不失悬念：末代皇帝（身份）、抚顺改造（处境）、出兵朝鲜（历史事件）、棉衣夹层藏玉玺（细节画面）、主动上交（结局），五个信息点连续递进，读者一眼能判断“这是一个有转折的真实故事”，并留下“为什么此时才上交”的疑问。
++
++### 2. 选题角度（推断）
++属于历史人物秘闻/国宝故事赛道：溥仪自带国民级知名度，“故宫带出的玉玺”叠加国宝元素，“出兵朝鲜”给出具体历史锚点增强真实感。选题价值在于“尽人皆知的人物 + 少为人知的细节”，对历史爱好者、民国史/清史兴趣人群、喜欢宫廷秘闻的中老年公众号读者都有天然吸引力。
++
++### 3. 内容结构（推断）
++推测为经典历史叙事结构：时代与人物背景铺垫 → 事件触发（听闻出兵朝鲜）→ 核心动作细节（亲手拆开棉衣夹层、取出玉玺）→ 心理描写（放弃最后的皇室念想）→ 主动上交与意义升华。标题已把起承转合全部预告，正文大概率按此顺序逐层兑现，重点放大“拆衣取玺”这一画面感最强的段落。
++
++### 4. 情绪与人群（推断）
++主打好奇 + 历史情结 + 轻微爽感（旧时代象征被主动舍弃的戏剧性）。目标人群：历史爱好者、宫廷秘闻读者、关注国宝/故宫话题人群、中老年公众号用户；这类人群对“真实事件 + 人物命运转折”的转发意愿高于泛资讯内容。
++
++### 5. 金句与留存节点（推断）
++标题本身已含三个记忆点：“棉衣夹层”“绝世玉玺”“放弃最后的皇室念想”。推测正文会在拆衣动作处放大细节（如夹层位置、随身多年）制造第二记忆点，结尾以“告别旧时代”一类升华句收束；具体文案未获取，不做复述。
++
++### 6. 排版节奏（推断）
++公众号图文推测采用：短段落、关键动作独立成段、历史照片/史料图片穿插、结尾引用出处增强可信感。标题长且信息密，正文宜先短句交代背景再展开细节，避免开头信息过载。实际排版未获取，均为方向性推断。
++
++### 7. 转化设计（推断）
++公众号的主要转化是转发与在看：历史秘闻类内容的转发欲来自“故事可讲给家人朋友听”；“溥仪该不该交玉玺”“这段历史是否属实”天然适合评论区讨论；结尾常见引导为关注账号追历史系列连载。具体引导文案未获取，仅为推断。
++
++### 8. 公式标签
++- 身份代入（末代皇帝 + 国宝持有者，自带传奇身份）
++- 冲突对比（私藏国宝 vs 主动上交；旧皇帝 vs 新时代）
++- 悬念好奇（为何听闻出兵朝鲜才交出？玉玺藏在哪？）
++
++### 依据级别与局限
++`title_only`：所有维度均为基于标题的推断。未获取原文、未访问链接，禁止据此复述事件细节、数据、画面或具体文案；本拆解仅提炼选题角度与可复用公式。
+
+tokens used
+12,130
+已按 `title_only`（原文未提供、链接未访问）完成拆解并写入：
+
+- [v_e8cb600743af.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.json)
+- [v_e8cb600743af.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.md)
+
+所有维度均标注“推断”，`why_viral` 已注明“基于标题推断”，未编造作者、数据、画面或逐字内容。
+
+可复用创作指令：
+
+选国民级历史人物 + 少为人知的真实细节，标题按“身份—处境—事件—秘密—反转结局”五段递进，信息完整但留一问；正文先交代时代背景，再放大最有画面感的关键动作，结尾用时代变迁式升华句收束，并引导评论区讨论细节、转发给身边人。历史秘闻类公众号选题可直接套用此结构。
+
+===== 拆解开始 v_e8cb600743af =====
+2026-08-13T17:09:34.111895Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:09:34.120961Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:09:34.147931Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:09:34.147959Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc19-c11c-7eb3-83b5-b81c41675ece
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_e8cb600743af
+- 平台：公众号
+- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
+- 链接：https://mp.weixin.qq.com/s?__biz=MzE5MTY5NDg0NQ==&mid=2247485792&idx=1&sn=66d09a1c888892980e1c209d42d6567d#rd
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:09:34.763629Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:09:35.247349Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:09:35.746337Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:09:35.749472Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+codex
+我先确认工作区目录结构，然后把拆解结果写到指定路径。
+exec
+/bin/zsh -lc 'mkdir -p data/flywheel/breakdowns' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+codex
+目录已就绪，现在写入 JSON 与 Markdown 两份拆解文件。
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.md
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.json b/data/flywheel/breakdowns/v_e8cb600743af.json
+index 715fd5eda46ba034a939ffd24e9242de132153aa..566910b091ff1942aac804f1ab552f6eacc5212d
+--- a/data/flywheel/breakdowns/v_e8cb600743af.json
++++ b/data/flywheel/breakdowns/v_e8cb600743af.json
+@@ -2,9 +2,9 @@
+   "title": "末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！",
+   "platform": "公众号",
+   "evidence_level": "title_only",
+-  "hook": "推断：标题即钩子——'末代皇帝'身份代入，'棉衣夹层藏玉玺'给出画面细节，'听闻出兵朝鲜才上交'点出历史情境，层层递进制造悬念：玉玺为何私藏？为何偏偏此时交出？",
+-  "structure": "推断：推测为'人物与时代背景→事件触发（出兵朝鲜）→拆衣取玺的细节描写→心理转折（放弃皇室念想）→主动上交与意义升华'的历史叙事结构；未获取原文，实际分段与行文顺序无法核实。",
+-  "why_viral": "基于标题推断：真实历史人物（溥仪）+ 国宝（故宫玉玺）+ 具体历史节点（出兵朝鲜）组合成强故事线，兼具历史猎奇与情感张力；'私藏国宝 vs 主动上交'构成冲突反转，命中历史、宫廷秘闻类公众号读者的好奇与转发欲。未获取原文，链接未访问，未核实事件细节、作者、数据与封面，不构成事实复述。",
+-  "formula": "身份代入, 冲突对比, 悬念好奇",
+-  "summary": "用真实人物、国宝与历史节点组成完整故事线，标题自带冲突与悬念；可复用为历史秘闻类选题：身份开场、细节佐证、转折收束。"
++  "hook": "标题即钩子：用\"末代皇帝+抚顺改造+出兵朝鲜\"叠出身份与历史场景，紧接\"亲手拆开棉衣夹层\"的动作悬念，再用\"绝世玉玺\"堆出价值感，最后以\"放弃最后的皇室念想主动上交\"收出情感反转；四段信息连环推进，几乎无废字（基于标题推断）。",
++  "structure": "推断为时间线叙事：场景铺垫（抚顺改造期）→ 事件触发（听闻出兵朝鲜）→ 动作细节（拆棉衣夹层、取出玉玺）→ 心理转折（放弃皇室念想）→ 结局升华（主动上交）；标题本身已按起承转合排布，正文大概率延续此递进，每段落一个信息点（基于标题推断）。",
++  "why_viral": "基于标题推断：选题踩中三个流量杠杆——历史秘闻（溥仪/故宫/玉玺自带认知度与想象空间）、时代叙事（抗美援朝背景触发家国情绪）、人物反转（末代皇帝主动放弃最后皇权象征，构成\"改造成功+爱国奉献\"的爽点）；长句堆叠钩子适合公众号订阅流点击与家族群转发。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用末代皇帝+故宫玉玺+抗美援朝三重符号制造悬念与情绪反转，靠\"主动上交\"的戏剧化结局驱动点击和转发；可复用公式为：高认知历史人物×私密细节×时代大事件×情感反转。"
+ }
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.md b/data/flywheel/breakdowns/v_e8cb600743af.md
+index 1f57d6f244169bfbd4d81cca621414bc65ebd14c..2fcbe543e4c7df776e90a1c4401e705975237a36
+--- a/data/flywheel/breakdowns/v_e8cb600743af.md
++++ b/data/flywheel/breakdowns/v_e8cb600743af.md
+@@ -1,35 +1,40 @@
+ ## 拆解报告
+ 
+-- viral_id：v_e8cb600743af
+-- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
+-- 平台：公众号
+-- 依据级别：`title_only`（原文未提供、链接未访问，以下所有维度均为基于标题的推断，非事实复述，不编造作者、数据、画面或逐字内容）
++**依据级别：title_only（未提供原文，链接正文未获取；以下所有维度均为基于标题的推断，不涉及具体画面、数据、逐字内容）**
+ 
+-### 1. 前 3 秒钩子（推断）
+-公众号的“前 3 秒”即标题与开头。该标题信息完整但不失悬念：末代皇帝（身份）、抚顺改造（处境）、出兵朝鲜（历史事件）、棉衣夹层藏玉玺（细节画面）、主动上交（结局），五个信息点连续递进，读者一眼能判断“这是一个有转折的真实故事”，并留下“为什么此时才上交”的疑问。
++### 1. 前 3 秒钩子
++标题本身就是钩子，且是连环钩：
+ 
+-### 2. 选题角度（推断）
+-属于历史人物秘闻/国宝故事赛道：溥仪自带国民级知名度，“故宫带出的玉玺”叠加国宝元素，“出兵朝鲜”给出具体历史锚点增强真实感。选题价值在于“尽人皆知的人物 + 少为人知的细节”，对历史爱好者、民国史/清史兴趣人群、喜欢宫廷秘闻的中老年公众号读者都有天然吸引力。
++- 开头“末代皇帝溥仪在抚顺改造期间”给出高认知身份 + 具体场景，读者自带画面；
++- 中段“亲手拆开棉衣夹层”制造动作悬念——棉衣里藏着什么；
++- “绝世玉玺”把悬念价值化，调动好奇与占有想象；
++- 结尾“放弃最后的皇室念想主动上交”形成反常识情感反转。
+ 
+-### 3. 内容结构（推断）
+-推测为经典历史叙事结构：时代与人物背景铺垫 → 事件触发（听闻出兵朝鲜）→ 核心动作细节（亲手拆开棉衣夹层、取出玉玺）→ 心理描写（放弃最后的皇室念想）→ 主动上交与意义升华。标题已把起承转合全部预告，正文大概率按此顺序逐层兑现，重点放大“拆衣取玺”这一画面感最强的段落。
++四段信息环环相扣，长而不散，靠“越读越想知道结局”驱动点开（基于标题推断）。
+ 
+-### 4. 情绪与人群（推断）
+-主打好奇 + 历史情结 + 轻微爽感（旧时代象征被主动舍弃的戏剧性）。目标人群：历史爱好者、宫廷秘闻读者、关注国宝/故宫话题人群、中老年公众号用户；这类人群对“真实事件 + 人物命运转折”的转发意愿高于泛资讯内容。
++### 2. 选题角度
++三个流量杠杆叠加：
+ 
+-### 5. 金句与留存节点（推断）
+-标题本身已含三个记忆点：“棉衣夹层”“绝世玉玺”“放弃最后的皇室念想”。推测正文会在拆衣动作处放大细节（如夹层位置、随身多年）制造第二记忆点，结尾以“告别旧时代”一类升华句收束；具体文案未获取，不做复述。
++- 历史秘闻：溥仪、故宫、玉玺都是国民级符号，自带搜索与阅读基础；
++- 时代叙事：抗美援朝背景触发家国情绪，适合公众号生态传播；
++- 人物反转：末代皇帝从“守住皇权”到“主动上交”，戏剧张力强。
+ 
+-### 6. 排版节奏（推断）
+-公众号图文推测采用：短段落、关键动作独立成段、历史照片/史料图片穿插、结尾引用出处增强可信感。标题长且信息密，正文宜先短句交代背景再展开细节，避免开头信息过载。实际排版未获取，均为方向性推断。
++选题本质是“高认知人物 + 私密细节 + 大时代事件”的秘闻体（基于标题推断）。
++
++### 3. 内容结构
++推断为五段递进：场景铺垫（抚顺改造）→ 事件触发（听闻出兵朝鲜）→ 动作细节（拆衣取玺）→ 心理转折（放弃念想）→ 结局升华（主动上交）。标题已按起承转合排布，正文大概率沿用同一节奏，每段落只推进一个信息点，保持悬念不断（基于标题推断）。
++
++### 4. 情绪与人群
++主打情绪：好奇（藏了什么）+ 悬念（会怎么选）+ 家国共鸣（主动上交）+ 轻微爽感（帝王放下身段）。目标人群：对历史秘闻感兴趣的公众号读者、中老年家庭群传播者、偏好正能量叙事的用户（基于标题推断）。
++
++### 5. 金句与留存节点
++标题中已有三个可作记忆点的短语：“棉衣夹层”（私藏细节）、“绝世玉玺”（价值锚点）、“放弃最后的皇室念想”（情绪金句）。正文留存节点可推断为：拆开夹层的瞬间、看到玉玺的描写、做出上交决定的转折句（基于标题推断）。
++
++### 6. 排版节奏（图文）
++推断采用短段落 + 场景化描写 + 悬念断点：每 100–200 字一个画面节点，关键动作（拆衣、取玺、上交）单独成段，配合“转折处另起一段”制造停顿，适合手机滑动阅读（基于标题推断）。
+ 
+-### 7. 转化设计（推断）
+-公众号的主要转化是转发与在看：历史秘闻类内容的转发欲来自“故事可讲给家人朋友听”；“溥仪该不该交玉玺”“这段历史是否属实”天然适合评论区讨论；结尾常见引导为关注账号追历史系列连载。具体引导文案未获取，仅为推断。
++### 7. 转化设计
++从标题看不出显性引导，可推断公众号常规路径：完整阅读→点赞/在看→转发到家族群与朋友圈→关注账号获取后续历史故事；标题结尾的“主动上交”制造转发冲动（基于标题推断）。
+ 
+ ### 8. 公式标签
+-- 身份代入（末代皇帝 + 国宝持有者，自带传奇身份）
+-- 冲突对比（私藏国宝 vs 主动上交；旧皇帝 vs 新时代）
+-- 悬念好奇（为何听闻出兵朝鲜才交出？玉玺藏在哪？）
+-
+-### 依据级别与局限
+-`title_only`：所有维度均为基于标题的推断。未获取原文、未访问链接，禁止据此复述事件细节、数据、画面或具体文案；本拆解仅提炼选题角度与可复用公式。
++反常识（皇帝主动放弃皇权象征）、悬念好奇（夹层藏玺、去向如何）、身份代入（溥仪+故宫的国民认知基础）。标题未含数字、清单、对比、社会证明等元素，故不选用。
+
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.json b/data/flywheel/breakdowns/v_e8cb600743af.json
+index 715fd5eda46ba034a939ffd24e9242de132153aa..566910b091ff1942aac804f1ab552f6eacc5212d
+--- a/data/flywheel/breakdowns/v_e8cb600743af.json
++++ b/data/flywheel/breakdowns/v_e8cb600743af.json
+@@ -2,9 +2,9 @@
+   "title": "末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！",
+   "platform": "公众号",
+   "evidence_level": "title_only",
+-  "hook": "推断：标题即钩子——'末代皇帝'身份代入，'棉衣夹层藏玉玺'给出画面细节，'听闻出兵朝鲜才上交'点出历史情境，层层递进制造悬念：玉玺为何私藏？为何偏偏此时交出？",
+-  "structure": "推断：推测为'人物与时代背景→事件触发（出兵朝鲜）→拆衣取玺的细节描写→心理转折（放弃皇室念想）→主动上交与意义升华'的历史叙事结构；未获取原文，实际分段与行文顺序无法核实。",
+-  "why_viral": "基于标题推断：真实历史人物（溥仪）+ 国宝（故宫玉玺）+ 具体历史节点（出兵朝鲜）组合成强故事线，兼具历史猎奇与情感张力；'私藏国宝 vs 主动上交'构成冲突反转，命中历史、宫廷秘闻类公众号读者的好奇与转发欲。未获取原文，链接未访问，未核实事件细节、作者、数据与封面，不构成事实复述。",
+-  "formula": "身份代入, 冲突对比, 悬念好奇",
+-  "summary": "用真实人物、国宝与历史节点组成完整故事线，标题自带冲突与悬念；可复用为历史秘闻类选题：身份开场、细节佐证、转折收束。"
++  "hook": "标题即钩子：用\"末代皇帝+抚顺改造+出兵朝鲜\"叠出身份与历史场景，紧接\"亲手拆开棉衣夹层\"的动作悬念，再用\"绝世玉玺\"堆出价值感，最后以\"放弃最后的皇室念想主动上交\"收出情感反转；四段信息连环推进，几乎无废字（基于标题推断）。",
++  "structure": "推断为时间线叙事：场景铺垫（抚顺改造期）→ 事件触发（听闻出兵朝鲜）→ 动作细节（拆棉衣夹层、取出玉玺）→ 心理转折（放弃皇室念想）→ 结局升华（主动上交）；标题本身已按起承转合排布，正文大概率延续此递进，每段落一个信息点（基于标题推断）。",
++  "why_viral": "基于标题推断：选题踩中三个流量杠杆——历史秘闻（溥仪/故宫/玉玺自带认知度与想象空间）、时代叙事（抗美援朝背景触发家国情绪）、人物反转（末代皇帝主动放弃最后皇权象征，构成\"改造成功+爱国奉献\"的爽点）；长句堆叠钩子适合公众号订阅流点击与家族群转发。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用末代皇帝+故宫玉玺+抗美援朝三重符号制造悬念与情绪反转，靠\"主动上交\"的戏剧化结局驱动点击和转发；可复用公式为：高认知历史人物×私密细节×时代大事件×情感反转。"
+ }
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.md b/data/flywheel/breakdowns/v_e8cb600743af.md
+index 1f57d6f244169bfbd4d81cca621414bc65ebd14c..2fcbe543e4c7df776e90a1c4401e705975237a36
+--- a/data/flywheel/breakdowns/v_e8cb600743af.md
++++ b/data/flywheel/breakdowns/v_e8cb600743af.md
+@@ -1,35 +1,40 @@
+ ## 拆解报告
+ 
+-- viral_id：v_e8cb600743af
+-- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
+-- 平台：公众号
+-- 依据级别：`title_only`（原文未提供、链接未访问，以下所有维度均为基于标题的推断，非事实复述，不编造作者、数据、画面或逐字内容）
++**依据级别：title_only（未提供原文，链接正文未获取；以下所有维度均为基于标题的推断，不涉及具体画面、数据、逐字内容）**
+ 
+-### 1. 前 3 秒钩子（推断）
+-公众号的“前 3 秒”即标题与开头。该标题信息完整但不失悬念：末代皇帝（身份）、抚顺改造（处境）、出兵朝鲜（历史事件）、棉衣夹层藏玉玺（细节画面）、主动上交（结局），五个信息点连续递进，读者一眼能判断“这是一个有转折的真实故事”，并留下“为什么此时才上交”的疑问。
++### 1. 前 3 秒钩子
++标题本身就是钩子，且是连环钩：
+ 
+-### 2. 选题角度（推断）
+-属于历史人物秘闻/国宝故事赛道：溥仪自带国民级知名度，“故宫带出的玉玺”叠加国宝元素，“出兵朝鲜”给出具体历史锚点增强真实感。选题价值在于“尽人皆知的人物 + 少为人知的细节”，对历史爱好者、民国史/清史兴趣人群、喜欢宫廷秘闻的中老年公众号读者都有天然吸引力。
++- 开头“末代皇帝溥仪在抚顺改造期间”给出高认知身份 + 具体场景，读者自带画面；
++- 中段“亲手拆开棉衣夹层”制造动作悬念——棉衣里藏着什么；
++- “绝世玉玺”把悬念价值化，调动好奇与占有想象；
++- 结尾“放弃最后的皇室念想主动上交”形成反常识情感反转。
+ 
+-### 3. 内容结构（推断）
+-推测为经典历史叙事结构：时代与人物背景铺垫 → 事件触发（听闻出兵朝鲜）→ 核心动作细节（亲手拆开棉衣夹层、取出玉玺）→ 心理描写（放弃最后的皇室念想）→ 主动上交与意义升华。标题已把起承转合全部预告，正文大概率按此顺序逐层兑现，重点放大“拆衣取玺”这一画面感最强的段落。
++四段信息环环相扣，长而不散，靠“越读越想知道结局”驱动点开（基于标题推断）。
+ 
+-### 4. 情绪与人群（推断）
+-主打好奇 + 历史情结 + 轻微爽感（旧时代象征被主动舍弃的戏剧性）。目标人群：历史爱好者、宫廷秘闻读者、关注国宝/故宫话题人群、中老年公众号用户；这类人群对“真实事件 + 人物命运转折”的转发意愿高于泛资讯内容。
++### 2. 选题角度
++三个流量杠杆叠加：
+ 
+-### 5. 金句与留存节点（推断）
+-标题本身已含三个记忆点：“棉衣夹层”“绝世玉玺”“放弃最后的皇室念想”。推测正文会在拆衣动作处放大细节（如夹层位置、随身多年）制造第二记忆点，结尾以“告别旧时代”一类升华句收束；具体文案未获取，不做复述。
++- 历史秘闻：溥仪、故宫、玉玺都是国民级符号，自带搜索与阅读基础；
++- 时代叙事：抗美援朝背景触发家国情绪，适合公众号生态传播；
++- 人物反转：末代皇帝从“守住皇权”到“主动上交”，戏剧张力强。
+ 
+-### 6. 排版节奏（推断）
+-公众号图文推测采用：短段落、关键动作独立成段、历史照片/史料图片穿插、结尾引用出处增强可信感。标题长且信息密，正文宜先短句交代背景再展开细节，避免开头信息过载。实际排版未获取，均为方向性推断。
++选题本质是“高认知人物 + 私密细节 + 大时代事件”的秘闻体（基于标题推断）。
++
++### 3. 内容结构
++推断为五段递进：场景铺垫（抚顺改造）→ 事件触发（听闻出兵朝鲜）→ 动作细节（拆衣取玺）→ 心理转折（放弃念想）→ 结局升华（主动上交）。标题已按起承转合排布，正文大概率沿用同一节奏，每段落只推进一个信息点，保持悬念不断（基于标题推断）。
++
++### 4. 情绪与人群
++主打情绪：好奇（藏了什么）+ 悬念（会怎么选）+ 家国共鸣（主动上交）+ 轻微爽感（帝王放下身段）。目标人群：对历史秘闻感兴趣的公众号读者、中老年家庭群传播者、偏好正能量叙事的用户（基于标题推断）。
++
++### 5. 金句与留存节点
++标题中已有三个可作记忆点的短语：“棉衣夹层”（私藏细节）、“绝世玉玺”（价值锚点）、“放弃最后的皇室念想”（情绪金句）。正文留存节点可推断为：拆开夹层的瞬间、看到玉玺的描写、做出上交决定的转折句（基于标题推断）。
++
++### 6. 排版节奏（图文）
++推断采用短段落 + 场景化描写 + 悬念断点：每 100–200 字一个画面节点，关键动作（拆衣、取玺、上交）单独成段，配合“转折处另起一段”制造停顿，适合手机滑动阅读（基于标题推断）。
+ 
+-### 7. 转化设计（推断）
+-公众号的主要转化是转发与在看：历史秘闻类内容的转发欲来自“故事可讲给家人朋友听”；“溥仪该不该交玉玺”“这段历史是否属实”天然适合评论区讨论；结尾常见引导为关注账号追历史系列连载。具体引导文案未获取，仅为推断。
++### 7. 转化设计
++从标题看不出显性引导，可推断公众号常规路径：完整阅读→点赞/在看→转发到家族群与朋友圈→关注账号获取后续历史故事；标题结尾的“主动上交”制造转发冲动（基于标题推断）。
+ 
+ ### 8. 公式标签
+-- 身份代入（末代皇帝 + 国宝持有者，自带传奇身份）
+-- 冲突对比（私藏国宝 vs 主动上交；旧皇帝 vs 新时代）
+-- 悬念好奇（为何听闻出兵朝鲜才交出？玉玺藏在哪？）
+-
+-### 依据级别与局限
+-`title_only`：所有维度均为基于标题的推断。未获取原文、未访问链接，禁止据此复述事件细节、数据、画面或具体文案；本拆解仅提炼选题角度与可复用公式。
++反常识（皇帝主动放弃皇权象征）、悬念好奇（夹层藏玺、去向如何）、身份代入（溥仪+故宫的国民认知基础）。标题未含数字、清单、对比、社会证明等元素，故不选用。
+
+codex
+文件已写入，最后校验一下 JSON 格式是否有效。
+exec
+/bin/zsh -lc 'jq . data/flywheel/breakdowns/v_e8cb600743af.json' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+{
+  "title": "末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！",
+  "platform": "公众号",
+  "evidence_level": "title_only",
+  "hook": "标题即钩子：用\"末代皇帝+抚顺改造+出兵朝鲜\"叠出身份与历史场景，紧接\"亲手拆开棉衣夹层\"的动作悬念，再用\"绝世玉玺\"堆出价值感，最后以\"放弃最后的皇室念想主动上交\"收出情感反转；四段信息连环推进，几乎无废字（基于标题推断）。",
+  "structure": "推断为时间线叙事：场景铺垫（抚顺改造期）→ 事件触发（听闻出兵朝鲜）→ 动作细节（拆棉衣夹层、取出玉玺）→ 心理转折（放弃皇室念想）→ 结局升华（主动上交）；标题本身已按起承转合排布，正文大概率延续此递进，每段落一个信息点（基于标题推断）。",
+  "why_viral": "基于标题推断：选题踩中三个流量杠杆——历史秘闻（溥仪/故宫/玉玺自带认知度与想象空间）、时代叙事（抗美援朝背景触发家国情绪）、人物反转（末代皇帝主动放弃最后皇权象征，构成\"改造成功+爱国奉献\"的爽点）；长句堆叠钩子适合公众号订阅流点击与家族群转发。",
+  "formula": "反常识, 悬念好奇, 身份代入",
+  "summary": "用末代皇帝+故宫玉玺+抗美援朝三重符号制造悬念与情绪反转，靠\"主动上交\"的戏剧化结局驱动点击和转发；可复用公式为：高认知历史人物×私密细节×时代大事件×情感反转。"
+}
+
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.json b/data/flywheel/breakdowns/v_e8cb600743af.json
+index 715fd5eda46ba034a939ffd24e9242de132153aa..566910b091ff1942aac804f1ab552f6eacc5212d
+--- a/data/flywheel/breakdowns/v_e8cb600743af.json
++++ b/data/flywheel/breakdowns/v_e8cb600743af.json
+@@ -2,9 +2,9 @@
+   "title": "末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！",
+   "platform": "公众号",
+   "evidence_level": "title_only",
+-  "hook": "推断：标题即钩子——'末代皇帝'身份代入，'棉衣夹层藏玉玺'给出画面细节，'听闻出兵朝鲜才上交'点出历史情境，层层递进制造悬念：玉玺为何私藏？为何偏偏此时交出？",
+-  "structure": "推断：推测为'人物与时代背景→事件触发（出兵朝鲜）→拆衣取玺的细节描写→心理转折（放弃皇室念想）→主动上交与意义升华'的历史叙事结构；未获取原文，实际分段与行文顺序无法核实。",
+-  "why_viral": "基于标题推断：真实历史人物（溥仪）+ 国宝（故宫玉玺）+ 具体历史节点（出兵朝鲜）组合成强故事线，兼具历史猎奇与情感张力；'私藏国宝 vs 主动上交'构成冲突反转，命中历史、宫廷秘闻类公众号读者的好奇与转发欲。未获取原文，链接未访问，未核实事件细节、作者、数据与封面，不构成事实复述。",
+-  "formula": "身份代入, 冲突对比, 悬念好奇",
+-  "summary": "用真实人物、国宝与历史节点组成完整故事线，标题自带冲突与悬念；可复用为历史秘闻类选题：身份开场、细节佐证、转折收束。"
++  "hook": "标题即钩子：用\"末代皇帝+抚顺改造+出兵朝鲜\"叠出身份与历史场景，紧接\"亲手拆开棉衣夹层\"的动作悬念，再用\"绝世玉玺\"堆出价值感，最后以\"放弃最后的皇室念想主动上交\"收出情感反转；四段信息连环推进，几乎无废字（基于标题推断）。",
++  "structure": "推断为时间线叙事：场景铺垫（抚顺改造期）→ 事件触发（听闻出兵朝鲜）→ 动作细节（拆棉衣夹层、取出玉玺）→ 心理转折（放弃皇室念想）→ 结局升华（主动上交）；标题本身已按起承转合排布，正文大概率延续此递进，每段落一个信息点（基于标题推断）。",
++  "why_viral": "基于标题推断：选题踩中三个流量杠杆——历史秘闻（溥仪/故宫/玉玺自带认知度与想象空间）、时代叙事（抗美援朝背景触发家国情绪）、人物反转（末代皇帝主动放弃最后皇权象征，构成\"改造成功+爱国奉献\"的爽点）；长句堆叠钩子适合公众号订阅流点击与家族群转发。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用末代皇帝+故宫玉玺+抗美援朝三重符号制造悬念与情绪反转，靠\"主动上交\"的戏剧化结局驱动点击和转发；可复用公式为：高认知历史人物×私密细节×时代大事件×情感反转。"
+ }
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.md b/data/flywheel/breakdowns/v_e8cb600743af.md
+index 1f57d6f244169bfbd4d81cca621414bc65ebd14c..2fcbe543e4c7df776e90a1c4401e705975237a36
+--- a/data/flywheel/breakdowns/v_e8cb600743af.md
++++ b/data/flywheel/breakdowns/v_e8cb600743af.md
+@@ -1,35 +1,40 @@
+ ## 拆解报告
+ 
+-- viral_id：v_e8cb600743af
+-- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
+-- 平台：公众号
+-- 依据级别：`title_only`（原文未提供、链接未访问，以下所有维度均为基于标题的推断，非事实复述，不编造作者、数据、画面或逐字内容）
++**依据级别：title_only（未提供原文，链接正文未获取；以下所有维度均为基于标题的推断，不涉及具体画面、数据、逐字内容）**
+ 
+-### 1. 前 3 秒钩子（推断）
+-公众号的“前 3 秒”即标题与开头。该标题信息完整但不失悬念：末代皇帝（身份）、抚顺改造（处境）、出兵朝鲜（历史事件）、棉衣夹层藏玉玺（细节画面）、主动上交（结局），五个信息点连续递进，读者一眼能判断“这是一个有转折的真实故事”，并留下“为什么此时才上交”的疑问。
++### 1. 前 3 秒钩子
++标题本身就是钩子，且是连环钩：
+ 
+-### 2. 选题角度（推断）
+-属于历史人物秘闻/国宝故事赛道：溥仪自带国民级知名度，“故宫带出的玉玺”叠加国宝元素，“出兵朝鲜”给出具体历史锚点增强真实感。选题价值在于“尽人皆知的人物 + 少为人知的细节”，对历史爱好者、民国史/清史兴趣人群、喜欢宫廷秘闻的中老年公众号读者都有天然吸引力。
++- 开头“末代皇帝溥仪在抚顺改造期间”给出高认知身份 + 具体场景，读者自带画面；
++- 中段“亲手拆开棉衣夹层”制造动作悬念——棉衣里藏着什么；
++- “绝世玉玺”把悬念价值化，调动好奇与占有想象；
++- 结尾“放弃最后的皇室念想主动上交”形成反常识情感反转。
+ 
+-### 3. 内容结构（推断）
+-推测为经典历史叙事结构：时代与人物背景铺垫 → 事件触发（听闻出兵朝鲜）→ 核心动作细节（亲手拆开棉衣夹层、取出玉玺）→ 心理描写（放弃最后的皇室念想）→ 主动上交与意义升华。标题已把起承转合全部预告，正文大概率按此顺序逐层兑现，重点放大“拆衣取玺”这一画面感最强的段落。
++四段信息环环相扣，长而不散，靠“越读越想知道结局”驱动点开（基于标题推断）。
+ 
+-### 4. 情绪与人群（推断）
+-主打好奇 + 历史情结 + 轻微爽感（旧时代象征被主动舍弃的戏剧性）。目标人群：历史爱好者、宫廷秘闻读者、关注国宝/故宫话题人群、中老年公众号用户；这类人群对“真实事件 + 人物命运转折”的转发意愿高于泛资讯内容。
++### 2. 选题角度
++三个流量杠杆叠加：
+ 
+-### 5. 金句与留存节点（推断）
+-标题本身已含三个记忆点：“棉衣夹层”“绝世玉玺”“放弃最后的皇室念想”。推测正文会在拆衣动作处放大细节（如夹层位置、随身多年）制造第二记忆点，结尾以“告别旧时代”一类升华句收束；具体文案未获取，不做复述。
++- 历史秘闻：溥仪、故宫、玉玺都是国民级符号，自带搜索与阅读基础；
++- 时代叙事：抗美援朝背景触发家国情绪，适合公众号生态传播；
++- 人物反转：末代皇帝从“守住皇权”到“主动上交”，戏剧张力强。
+ 
+-### 6. 排版节奏（推断）
+-公众号图文推测采用：短段落、关键动作独立成段、历史照片/史料图片穿插、结尾引用出处增强可信感。标题长且信息密，正文宜先短句交代背景再展开细节，避免开头信息过载。实际排版未获取，均为方向性推断。
++选题本质是“高认知人物 + 私密细节 + 大时代事件”的秘闻体（基于标题推断）。
++
++### 3. 内容结构
++推断为五段递进：场景铺垫（抚顺改造）→ 事件触发（听闻出兵朝鲜）→ 动作细节（拆衣取玺）→ 心理转折（放弃念想）→ 结局升华（主动上交）。标题已按起承转合排布，正文大概率沿用同一节奏，每段落只推进一个信息点，保持悬念不断（基于标题推断）。
++
++### 4. 情绪与人群
++主打情绪：好奇（藏了什么）+ 悬念（会怎么选）+ 家国共鸣（主动上交）+ 轻微爽感（帝王放下身段）。目标人群：对历史秘闻感兴趣的公众号读者、中老年家庭群传播者、偏好正能量叙事的用户（基于标题推断）。
++
++### 5. 金句与留存节点
++标题中已有三个可作记忆点的短语：“棉衣夹层”（私藏细节）、“绝世玉玺”（价值锚点）、“放弃最后的皇室念想”（情绪金句）。正文留存节点可推断为：拆开夹层的瞬间、看到玉玺的描写、做出上交决定的转折句（基于标题推断）。
++
++### 6. 排版节奏（图文）
++推断采用短段落 + 场景化描写 + 悬念断点：每 100–200 字一个画面节点，关键动作（拆衣、取玺、上交）单独成段，配合“转折处另起一段”制造停顿，适合手机滑动阅读（基于标题推断）。
+ 
+-### 7. 转化设计（推断）
+-公众号的主要转化是转发与在看：历史秘闻类内容的转发欲来自“故事可讲给家人朋友听”；“溥仪该不该交玉玺”“这段历史是否属实”天然适合评论区讨论；结尾常见引导为关注账号追历史系列连载。具体引导文案未获取，仅为推断。
++### 7. 转化设计
++从标题看不出显性引导，可推断公众号常规路径：完整阅读→点赞/在看→转发到家族群与朋友圈→关注账号获取后续历史故事；标题结尾的“主动上交”制造转发冲动（基于标题推断）。
+ 
+ ### 8. 公式标签
+-- 身份代入（末代皇帝 + 国宝持有者，自带传奇身份）
+-- 冲突对比（私藏国宝 vs 主动上交；旧皇帝 vs 新时代）
+-- 悬念好奇（为何听闻出兵朝鲜才交出？玉玺藏在哪？）
+-
+-### 依据级别与局限
+-`title_only`：所有维度均为基于标题的推断。未获取原文、未访问链接，禁止据此复述事件细节、数据、画面或具体文案；本拆解仅提炼选题角度与可复用公式。
++反常识（皇帝主动放弃皇权象征）、悬念好奇（夹层藏玺、去向如何）、身份代入（溥仪+故宫的国民认知基础）。标题未含数字、清单、对比、社会证明等元素，故不选用。
+
+codex
+拆解完成，两份文件已写入并通过 JSON 校验：
+
+- [v_e8cb600743af.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.json)
+- [v_e8cb600743af.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.md)
+
+依据级别为 `title_only`（原文未提供、链接未获取），所有维度均标注为基于标题推断，未编造任何画面、数据或正文细节。公式标签：反常识、悬念好奇、身份代入。
+
+可复用创作指令（≤200 字）：
+
+取一个国民级高认知的历史/公众人物，叠加一个具体时代大事件，用“私密细节+实物道具”制造悬念（如夹层、旧物、信件），结尾落在情感反转或价值观升华（主动放弃/上交/和解）。标题用长句连环钩：身份→场景→动作→反转，每个信息点具体可感知，不写空泛形容词。正文按“铺垫-触发-动作-转折-结局”推进，每 100–200 字一个画面节点，最后留一句可转发金句。
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.json b/data/flywheel/breakdowns/v_e8cb600743af.json
+index 715fd5eda46ba034a939ffd24e9242de132153aa..566910b091ff1942aac804f1ab552f6eacc5212d
+--- a/data/flywheel/breakdowns/v_e8cb600743af.json
++++ b/data/flywheel/breakdowns/v_e8cb600743af.json
+@@ -2,9 +2,9 @@
+   "title": "末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！",
+   "platform": "公众号",
+   "evidence_level": "title_only",
+-  "hook": "推断：标题即钩子——'末代皇帝'身份代入，'棉衣夹层藏玉玺'给出画面细节，'听闻出兵朝鲜才上交'点出历史情境，层层递进制造悬念：玉玺为何私藏？为何偏偏此时交出？",
+-  "structure": "推断：推测为'人物与时代背景→事件触发（出兵朝鲜）→拆衣取玺的细节描写→心理转折（放弃皇室念想）→主动上交与意义升华'的历史叙事结构；未获取原文，实际分段与行文顺序无法核实。",
+-  "why_viral": "基于标题推断：真实历史人物（溥仪）+ 国宝（故宫玉玺）+ 具体历史节点（出兵朝鲜）组合成强故事线，兼具历史猎奇与情感张力；'私藏国宝 vs 主动上交'构成冲突反转，命中历史、宫廷秘闻类公众号读者的好奇与转发欲。未获取原文，链接未访问，未核实事件细节、作者、数据与封面，不构成事实复述。",
+-  "formula": "身份代入, 冲突对比, 悬念好奇",
+-  "summary": "用真实人物、国宝与历史节点组成完整故事线，标题自带冲突与悬念；可复用为历史秘闻类选题：身份开场、细节佐证、转折收束。"
++  "hook": "标题即钩子：用\"末代皇帝+抚顺改造+出兵朝鲜\"叠出身份与历史场景，紧接\"亲手拆开棉衣夹层\"的动作悬念，再用\"绝世玉玺\"堆出价值感，最后以\"放弃最后的皇室念想主动上交\"收出情感反转；四段信息连环推进，几乎无废字（基于标题推断）。",
++  "structure": "推断为时间线叙事：场景铺垫（抚顺改造期）→ 事件触发（听闻出兵朝鲜）→ 动作细节（拆棉衣夹层、取出玉玺）→ 心理转折（放弃皇室念想）→ 结局升华（主动上交）；标题本身已按起承转合排布，正文大概率延续此递进，每段落一个信息点（基于标题推断）。",
++  "why_viral": "基于标题推断：选题踩中三个流量杠杆——历史秘闻（溥仪/故宫/玉玺自带认知度与想象空间）、时代叙事（抗美援朝背景触发家国情绪）、人物反转（末代皇帝主动放弃最后皇权象征，构成\"改造成功+爱国奉献\"的爽点）；长句堆叠钩子适合公众号订阅流点击与家族群转发。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用末代皇帝+故宫玉玺+抗美援朝三重符号制造悬念与情绪反转，靠\"主动上交\"的戏剧化结局驱动点击和转发；可复用公式为：高认知历史人物×私密细节×时代大事件×情感反转。"
+ }
+diff --git a/data/flywheel/breakdowns/v_e8cb600743af.md b/data/flywheel/breakdowns/v_e8cb600743af.md
+index 1f57d6f244169bfbd4d81cca621414bc65ebd14c..2fcbe543e4c7df776e90a1c4401e705975237a36
+--- a/data/flywheel/breakdowns/v_e8cb600743af.md
++++ b/data/flywheel/breakdowns/v_e8cb600743af.md
+@@ -1,35 +1,40 @@
+ ## 拆解报告
+ 
+-- viral_id：v_e8cb600743af
+-- 标题：末代皇帝溥仪在抚顺改造期间听闻出兵朝鲜，亲手拆开棉衣夹层，拿出从故宫带出的绝世玉玺，放弃最后的皇室念想主动上交！
+-- 平台：公众号
+-- 依据级别：`title_only`（原文未提供、链接未访问，以下所有维度均为基于标题的推断，非事实复述，不编造作者、数据、画面或逐字内容）
++**依据级别：title_only（未提供原文，链接正文未获取；以下所有维度均为基于标题的推断，不涉及具体画面、数据、逐字内容）**
+ 
+-### 1. 前 3 秒钩子（推断）
+-公众号的“前 3 秒”即标题与开头。该标题信息完整但不失悬念：末代皇帝（身份）、抚顺改造（处境）、出兵朝鲜（历史事件）、棉衣夹层藏玉玺（细节画面）、主动上交（结局），五个信息点连续递进，读者一眼能判断“这是一个有转折的真实故事”，并留下“为什么此时才上交”的疑问。
++### 1. 前 3 秒钩子
++标题本身就是钩子，且是连环钩：
+ 
+-### 2. 选题角度（推断）
+-属于历史人物秘闻/国宝故事赛道：溥仪自带国民级知名度，“故宫带出的玉玺”叠加国宝元素，“出兵朝鲜”给出具体历史锚点增强真实感。选题价值在于“尽人皆知的人物 + 少为人知的细节”，对历史爱好者、民国史/清史兴趣人群、喜欢宫廷秘闻的中老年公众号读者都有天然吸引力。
++- 开头“末代皇帝溥仪在抚顺改造期间”给出高认知身份 + 具体场景，读者自带画面；
++- 中段“亲手拆开棉衣夹层”制造动作悬念——棉衣里藏着什么；
++- “绝世玉玺”把悬念价值化，调动好奇与占有想象；
++- 结尾“放弃最后的皇室念想主动上交”形成反常识情感反转。
+ 
+-### 3. 内容结构（推断）
+-推测为经典历史叙事结构：时代与人物背景铺垫 → 事件触发（听闻出兵朝鲜）→ 核心动作细节（亲手拆开棉衣夹层、取出玉玺）→ 心理描写（放弃最后的皇室念想）→ 主动上交与意义升华。标题已把起承转合全部预告，正文大概率按此顺序逐层兑现，重点放大“拆衣取玺”这一画面感最强的段落。
++四段信息环环相扣，长而不散，靠“越读越想知道结局”驱动点开（基于标题推断）。
+ 
+-### 4. 情绪与人群（推断）
+-主打好奇 + 历史情结 + 轻微爽感（旧时代象征被主动舍弃的戏剧性）。目标人群：历史爱好者、宫廷秘闻读者、关注国宝/故宫话题人群、中老年公众号用户；这类人群对“真实事件 + 人物命运转折”的转发意愿高于泛资讯内容。
++### 2. 选题角度
++三个流量杠杆叠加：
+ 
+-### 5. 金句与留存节点（推断）
+-标题本身已含三个记忆点：“棉衣夹层”“绝世玉玺”“放弃最后的皇室念想”。推测正文会在拆衣动作处放大细节（如夹层位置、随身多年）制造第二记忆点，结尾以“告别旧时代”一类升华句收束；具体文案未获取，不做复述。
++- 历史秘闻：溥仪、故宫、玉玺都是国民级符号，自带搜索与阅读基础；
++- 时代叙事：抗美援朝背景触发家国情绪，适合公众号生态传播；
++- 人物反转：末代皇帝从“守住皇权”到“主动上交”，戏剧张力强。
+ 
+-### 6. 排版节奏（推断）
+-公众号图文推测采用：短段落、关键动作独立成段、历史照片/史料图片穿插、结尾引用出处增强可信感。标题长且信息密，正文宜先短句交代背景再展开细节，避免开头信息过载。实际排版未获取，均为方向性推断。
++选题本质是“高认知人物 + 私密细节 + 大时代事件”的秘闻体（基于标题推断）。
++
++### 3. 内容结构
++推断为五段递进：场景铺垫（抚顺改造）→ 事件触发（听闻出兵朝鲜）→ 动作细节（拆衣取玺）→ 心理转折（放弃念想）→ 结局升华（主动上交）。标题已按起承转合排布，正文大概率沿用同一节奏，每段落只推进一个信息点，保持悬念不断（基于标题推断）。
++
++### 4. 情绪与人群
++主打情绪：好奇（藏了什么）+ 悬念（会怎么选）+ 家国共鸣（主动上交）+ 轻微爽感（帝王放下身段）。目标人群：对历史秘闻感兴趣的公众号读者、中老年家庭群传播者、偏好正能量叙事的用户（基于标题推断）。
++
++### 5. 金句与留存节点
++标题中已有三个可作记忆点的短语：“棉衣夹层”（私藏细节）、“绝世玉玺”（价值锚点）、“放弃最后的皇室念想”（情绪金句）。正文留存节点可推断为：拆开夹层的瞬间、看到玉玺的描写、做出上交决定的转折句（基于标题推断）。
++
++### 6. 排版节奏（图文）
++推断采用短段落 + 场景化描写 + 悬念断点：每 100–200 字一个画面节点，关键动作（拆衣、取玺、上交）单独成段，配合“转折处另起一段”制造停顿，适合手机滑动阅读（基于标题推断）。
+ 
+-### 7. 转化设计（推断）
+-公众号的主要转化是转发与在看：历史秘闻类内容的转发欲来自“故事可讲给家人朋友听”；“溥仪该不该交玉玺”“这段历史是否属实”天然适合评论区讨论；结尾常见引导为关注账号追历史系列连载。具体引导文案未获取，仅为推断。
++### 7. 转化设计
++从标题看不出显性引导，可推断公众号常规路径：完整阅读→点赞/在看→转发到家族群与朋友圈→关注账号获取后续历史故事；标题结尾的“主动上交”制造转发冲动（基于标题推断）。
+ 
+ ### 8. 公式标签
+-- 身份代入（末代皇帝 + 国宝持有者，自带传奇身份）
+-- 冲突对比（私藏国宝 vs 主动上交；旧皇帝 vs 新时代）
+-- 悬念好奇（为何听闻出兵朝鲜才交出？玉玺藏在哪？）
+-
+-### 依据级别与局限
+-`title_only`：所有维度均为基于标题的推断。未获取原文、未访问链接，禁止据此复述事件细节、数据、画面或具体文案；本拆解仅提炼选题角度与可复用公式。
++反常识（皇帝主动放弃皇权象征）、悬念好奇（夹层藏玺、去向如何）、身份代入（溥仪+故宫的国民认知基础）。标题未含数字、清单、对比、社会证明等元素，故不选用。
+
+tokens used
+6,700
+拆解完成，两份文件已写入并通过 JSON 校验：
+
+- [v_e8cb600743af.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.json)
+- [v_e8cb600743af.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_e8cb600743af.md)
+
+依据级别为 `title_only`（原文未提供、链接未获取），所有维度均标注为基于标题推断，未编造任何画面、数据或正文细节。公式标签：反常识、悬念好奇、身份代入。
+
+可复用创作指令（≤200 字）：
+
+取一个国民级高认知的历史/公众人物，叠加一个具体时代大事件，用“私密细节+实物道具”制造悬念（如夹层、旧物、信件），结尾落在情感反转或价值观升华（主动放弃/上交/和解）。标题用长句连环钩：身份→场景→动作→反转，每个信息点具体可感知，不写空泛形容词。正文按“铺垫-触发-动作-转折-结局”推进，每 100–200 字一个画面节点，最后留一句可转发金句。
+
+===== 拆解开始 v_e8cb600743af =====

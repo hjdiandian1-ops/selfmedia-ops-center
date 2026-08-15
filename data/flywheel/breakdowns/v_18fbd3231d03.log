@@ -1,0 +1,270 @@
+2026-08-14T09:00:12.658320Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-14T09:00:12.664157Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-14T09:00:12.687568Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-14T09:00:12.687594Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019fff80-17f0-7cf0-b416-cb6807eef932
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_18fbd3231d03
+- 平台：公众号
+- 标题：菲律宾57号舰补给受挫，最长断粮112天，冲突之后菲方拒绝被监管
+- 链接：https://mp.weixin.qq.com/s?__biz=Mzg2NTcxOTkwNA==&mid=2247522110&idx=2&sn=f4cf12e6f257ec58b8dce9c8a69b9568#rd
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-14T09:00:13.215705Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-14T09:00:14.416532Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-14T09:00:15.074739Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-14T09:00:15.076534Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-14T09:00:44.531897Z  WARN codex_core_plugins::manager: failed to auto-upgrade configured marketplace marketplace="chatcut-inc" error=git clone marketplace source timed out after 30s: Cloning into '/Users/xiaowuliao/.codex/.tmp/marketplaces/.staging/marketplace-upgrade-rxMcpb'...
+fatal: early EOF
+codex
+我先尝试读取这条公众号链接；若无法访问，就按“仅标题”级别拆解，并把 JSON 与 Markdown 写到指定目录。
+exec
+/bin/zsh -lc 'mkdir -p data/flywheel/breakdowns' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+web search: 
+web search: https://mp.weixin.qq.com/s?__biz=Mzg2NTcxOTkwNA==&mid=2247522110&idx=2&sn=f4cf12e6f257ec58b8dce9c8a69b9568#rd#ws_call_id=call_00_72XMPGK9GQx4atmJll7R3465
+codex
+链接只返回了微信页面的占位框架，拿不到正文，因此按 `title_only` 拆解，所有维度均标注为推断。现在写入两个文件。
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_18fbd3231d03.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_18fbd3231d03.md
+diff --git a/data/flywheel/breakdowns/v_18fbd3231d03.json b/data/flywheel/breakdowns/v_18fbd3231d03.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..2e499b899956711c444b04468ed2c58e911a91bb
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_18fbd3231d03.json
+@@ -0,0 +1,10 @@
++{
++  "title": "菲律宾57号舰补给受挫，最长断粮112天，冲突之后菲方拒绝被监管",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即第一道钩子：「57号舰」用具体番号建立真实感，「补给受挫」是冲突动作，「最长断粮112天」是极端数字，构成“具体+冲突+数字”组合（推断：正文开头大概率以事件结论或时间锚点开场，未获取原文，不确认具体写法）。",
++  "structure": "推断的公众号时政图文结构：开头一句给结论（事件定性）→ 交代舰艇与冲突背景 → 按时间线展开补给/断粮过程 → 菲方拒绝被监管的反转 → 局势收束。标题三个信息点（受挫→断粮→拒绝监管）正好是“悬念-过程-反转”的分段骨架。",
++  "why_viral": "基于标题推断：①数字冲击（57号舰、112天）让信息显得具体可核验；②中菲南海对峙自带冲突性与时效性，天然戳中国家自豪情绪；③“拒绝被监管”制造悬念与对立，提升点击与转发欲。未获取原文，无阅读量/点赞数据，不编造具体传播数据。",
++  "formula": "数字冲击, 冲突对比, 蹭热点时效",
++  "summary": "用具体番号+极端天数+冲突反转组成强钩子标题，蹭中菲南海对峙热点，情绪与时效双驱动；可复用点为“确定性数字+冲突动词+悬念转折”的标题公式与时间线正文结构。"
++}
+diff --git a/data/flywheel/breakdowns/v_18fbd3231d03.md b/data/flywheel/breakdowns/v_18fbd3231d03.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..d024f6444be2491bd2efc8a7df9c65facf31150e
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_18fbd3231d03.md
+@@ -0,0 +1,27 @@
++## 拆解报告
++
++**依据级别：title_only**（链接未获取到正文，基于标题与输入拆解；以下八个维度均为推断，非事实复述，不涉及具体数据、画面或文案细节）
++
++### 1. 前 3 秒钩子
++标题本身就是第一道闸：「57号舰」用具体番号建立真实感，「补给受挫」是冲突动作，「最长断粮112天」是极端数字，构成“具体+冲突+数字”组合。推断正文开头会以事件结论或时间锚点开场，但未获取原文，具体写法不确认。
++
++### 2. 选题角度
++中菲南海海上对峙是高频热点，自带国家立场情绪；“补给受挫/断粮/拒绝被监管”三个词把宏观局势落到可感知的冲突细节，既蹭时效又给读者“最新进展”价值。目标人群是关注军事、国际时政的公众号读者。
++
++### 3. 内容结构
++推断为：事件结论开头 → 舰艇与冲突背景 → 补给/断粮时间线 → 菲方拒绝监管的反转 → 局势收束。标题三信息点（受挫→断粮→拒绝监管）正好是“悬念-过程-反转”的分段骨架。
++
++### 4. 情绪与人群
++主打情绪：紧张感、国家自豪/爽感、对菲方做法的不满与好奇。人群：军迷与关注南海局势的中文读者，这类内容在公众号转发场景中自带立场认同。
++
++### 5. 金句与留存节点
++标题中“最长断粮112天”是最强数字记忆点；“冲突之后菲方拒绝被监管”是对立转折点。推断正文会用时间线+数字节点（天数、舰艇番号）撑起每段记忆点，但无原文，不虚构具体金句。
++
++### 6. 排版节奏（图文）
++推断公众号排版：短段落、关键数字加粗、按时间线分节、配图佐证事件现场。未获取原文，不确认实际排版。
++
++### 7. 转化设计
++时政类公众号通行转化点：关注公众号、文末“在看/点赞/转发”、评论区抛“你怎么看”引导讨论。以上为按该类选题通行做法的推断，不代表原文实际写法。
++
++### 8. 公式标签
++数字冲击（57号舰/112天）、冲突对比（补给受挫 vs 拒绝被监管）、蹭热点时效（中菲南海对峙）。
+
+diff --git a/data/flywheel/breakdowns/v_18fbd3231d03.json b/data/flywheel/breakdowns/v_18fbd3231d03.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..2e499b899956711c444b04468ed2c58e911a91bb
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_18fbd3231d03.json
+@@ -0,0 +1,10 @@
++{
++  "title": "菲律宾57号舰补给受挫，最长断粮112天，冲突之后菲方拒绝被监管",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即第一道钩子：「57号舰」用具体番号建立真实感，「补给受挫」是冲突动作，「最长断粮112天」是极端数字，构成“具体+冲突+数字”组合（推断：正文开头大概率以事件结论或时间锚点开场，未获取原文，不确认具体写法）。",
++  "structure": "推断的公众号时政图文结构：开头一句给结论（事件定性）→ 交代舰艇与冲突背景 → 按时间线展开补给/断粮过程 → 菲方拒绝被监管的反转 → 局势收束。标题三个信息点（受挫→断粮→拒绝监管）正好是“悬念-过程-反转”的分段骨架。",
++  "why_viral": "基于标题推断：①数字冲击（57号舰、112天）让信息显得具体可核验；②中菲南海对峙自带冲突性与时效性，天然戳中国家自豪情绪；③“拒绝被监管”制造悬念与对立，提升点击与转发欲。未获取原文，无阅读量/点赞数据，不编造具体传播数据。",
++  "formula": "数字冲击, 冲突对比, 蹭热点时效",
++  "summary": "用具体番号+极端天数+冲突反转组成强钩子标题，蹭中菲南海对峙热点，情绪与时效双驱动；可复用点为“确定性数字+冲突动词+悬念转折”的标题公式与时间线正文结构。"
++}
+diff --git a/data/flywheel/breakdowns/v_18fbd3231d03.md b/data/flywheel/breakdowns/v_18fbd3231d03.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..d024f6444be2491bd2efc8a7df9c65facf31150e
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_18fbd3231d03.md
+@@ -0,0 +1,27 @@
++## 拆解报告
++
++**依据级别：title_only**（链接未获取到正文，基于标题与输入拆解；以下八个维度均为推断，非事实复述，不涉及具体数据、画面或文案细节）
++
++### 1. 前 3 秒钩子
++标题本身就是第一道闸：「57号舰」用具体番号建立真实感，「补给受挫」是冲突动作，「最长断粮112天」是极端数字，构成“具体+冲突+数字”组合。推断正文开头会以事件结论或时间锚点开场，但未获取原文，具体写法不确认。
++
++### 2. 选题角度
++中菲南海海上对峙是高频热点，自带国家立场情绪；“补给受挫/断粮/拒绝被监管”三个词把宏观局势落到可感知的冲突细节，既蹭时效又给读者“最新进展”价值。目标人群是关注军事、国际时政的公众号读者。
++
++### 3. 内容结构
++推断为：事件结论开头 → 舰艇与冲突背景 → 补给/断粮时间线 → 菲方拒绝监管的反转 → 局势收束。标题三信息点（受挫→断粮→拒绝监管）正好是“悬念-过程-反转”的分段骨架。
++
++### 4. 情绪与人群
++主打情绪：紧张感、国家自豪/爽感、对菲方做法的不满与好奇。人群：军迷与关注南海局势的中文读者，这类内容在公众号转发场景中自带立场认同。
++
++### 5. 金句与留存节点
++标题中“最长断粮112天”是最强数字记忆点；“冲突之后菲方拒绝被监管”是对立转折点。推断正文会用时间线+数字节点（天数、舰艇番号）撑起每段记忆点，但无原文，不虚构具体金句。
++
++### 6. 排版节奏（图文）
++推断公众号排版：短段落、关键数字加粗、按时间线分节、配图佐证事件现场。未获取原文，不确认实际排版。
++
++### 7. 转化设计
++时政类公众号通行转化点：关注公众号、文末“在看/点赞/转发”、评论区抛“你怎么看”引导讨论。以上为按该类选题通行做法的推断，不代表原文实际写法。
++
++### 8. 公式标签
++数字冲击（57号舰/112天）、冲突对比（补给受挫 vs 拒绝被监管）、蹭热点时效（中菲南海对峙）。
+
+codex
+已完成。链接只能取回微信页面的占位框架，拿不到正文，因此按 `title_only` 拆解，所有维度均标注为“推断”，未编造任何数据、画面或文案细节。
+
+- [v_18fbd3231d03.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_18fbd3231d03.json)
+- [v_18fbd3231d03.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_18fbd3231d03.md)
+
+可复用创作指令（≤200 字）：
+
+时政/军事选题可复用指令：标题先堆“确定性数字（番号、天数、金额）+ 冲突动词（受挫、拒绝、反制）+ 最新事件时效”，三要素组合成钩子；正文开头三句内给结论，中间按时间线铺 2-3 个数字节点制造紧张，结尾留“你怎么看”抛评论；每段不超过 3 行、关键数字加粗；文末引导在看与转发。只借冲突热度做选题，所有事实须核验、不编细节。
+diff --git a/data/flywheel/breakdowns/v_18fbd3231d03.json b/data/flywheel/breakdowns/v_18fbd3231d03.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..2e499b899956711c444b04468ed2c58e911a91bb
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_18fbd3231d03.json
+@@ -0,0 +1,10 @@
++{
++  "title": "菲律宾57号舰补给受挫，最长断粮112天，冲突之后菲方拒绝被监管",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即第一道钩子：「57号舰」用具体番号建立真实感，「补给受挫」是冲突动作，「最长断粮112天」是极端数字，构成“具体+冲突+数字”组合（推断：正文开头大概率以事件结论或时间锚点开场，未获取原文，不确认具体写法）。",
++  "structure": "推断的公众号时政图文结构：开头一句给结论（事件定性）→ 交代舰艇与冲突背景 → 按时间线展开补给/断粮过程 → 菲方拒绝被监管的反转 → 局势收束。标题三个信息点（受挫→断粮→拒绝监管）正好是“悬念-过程-反转”的分段骨架。",
++  "why_viral": "基于标题推断：①数字冲击（57号舰、112天）让信息显得具体可核验；②中菲南海对峙自带冲突性与时效性，天然戳中国家自豪情绪；③“拒绝被监管”制造悬念与对立，提升点击与转发欲。未获取原文，无阅读量/点赞数据，不编造具体传播数据。",
++  "formula": "数字冲击, 冲突对比, 蹭热点时效",
++  "summary": "用具体番号+极端天数+冲突反转组成强钩子标题，蹭中菲南海对峙热点，情绪与时效双驱动；可复用点为“确定性数字+冲突动词+悬念转折”的标题公式与时间线正文结构。"
++}
+diff --git a/data/flywheel/breakdowns/v_18fbd3231d03.md b/data/flywheel/breakdowns/v_18fbd3231d03.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..d024f6444be2491bd2efc8a7df9c65facf31150e
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_18fbd3231d03.md
+@@ -0,0 +1,27 @@
++## 拆解报告
++
++**依据级别：title_only**（链接未获取到正文，基于标题与输入拆解；以下八个维度均为推断，非事实复述，不涉及具体数据、画面或文案细节）
++
++### 1. 前 3 秒钩子
++标题本身就是第一道闸：「57号舰」用具体番号建立真实感，「补给受挫」是冲突动作，「最长断粮112天」是极端数字，构成“具体+冲突+数字”组合。推断正文开头会以事件结论或时间锚点开场，但未获取原文，具体写法不确认。
++
++### 2. 选题角度
++中菲南海海上对峙是高频热点，自带国家立场情绪；“补给受挫/断粮/拒绝被监管”三个词把宏观局势落到可感知的冲突细节，既蹭时效又给读者“最新进展”价值。目标人群是关注军事、国际时政的公众号读者。
++
++### 3. 内容结构
++推断为：事件结论开头 → 舰艇与冲突背景 → 补给/断粮时间线 → 菲方拒绝监管的反转 → 局势收束。标题三信息点（受挫→断粮→拒绝监管）正好是“悬念-过程-反转”的分段骨架。
++
++### 4. 情绪与人群
++主打情绪：紧张感、国家自豪/爽感、对菲方做法的不满与好奇。人群：军迷与关注南海局势的中文读者，这类内容在公众号转发场景中自带立场认同。
++
++### 5. 金句与留存节点
++标题中“最长断粮112天”是最强数字记忆点；“冲突之后菲方拒绝被监管”是对立转折点。推断正文会用时间线+数字节点（天数、舰艇番号）撑起每段记忆点，但无原文，不虚构具体金句。
++
++### 6. 排版节奏（图文）
++推断公众号排版：短段落、关键数字加粗、按时间线分节、配图佐证事件现场。未获取原文，不确认实际排版。
++
++### 7. 转化设计
++时政类公众号通行转化点：关注公众号、文末“在看/点赞/转发”、评论区抛“你怎么看”引导讨论。以上为按该类选题通行做法的推断，不代表原文实际写法。
++
++### 8. 公式标签
++数字冲击（57号舰/112天）、冲突对比（补给受挫 vs 拒绝被监管）、蹭热点时效（中菲南海对峙）。
+
+tokens used
+10,548
+已完成。链接只能取回微信页面的占位框架，拿不到正文，因此按 `title_only` 拆解，所有维度均标注为“推断”，未编造任何数据、画面或文案细节。
+
+- [v_18fbd3231d03.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_18fbd3231d03.json)
+- [v_18fbd3231d03.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_18fbd3231d03.md)
+
+可复用创作指令（≤200 字）：
+
+时政/军事选题可复用指令：标题先堆“确定性数字（番号、天数、金额）+ 冲突动词（受挫、拒绝、反制）+ 最新事件时效”，三要素组合成钩子；正文开头三句内给结论，中间按时间线铺 2-3 个数字节点制造紧张，结尾留“你怎么看”抛评论；每段不超过 3 行、关键数字加粗；文末引导在看与转发。只借冲突热度做选题，所有事实须核验、不编细节。
+
+===== 拆解开始 v_18fbd3231d03 =====

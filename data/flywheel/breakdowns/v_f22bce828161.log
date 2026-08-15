@@ -1,0 +1,359 @@
+2026-08-14T09:01:14.527221Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-14T09:01:14.538024Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-14T09:01:14.564008Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-14T09:01:14.564030Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019fff81-099a-79d3-be49-00c0d3021988
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_f22bce828161
+- 平台：公众号
+- 标题：小马科斯傻眼了，在南海挑衅这么久，等来美国一句话：增加国防预算
+- 链接：https://mp.weixin.qq.com/s?__biz=Mzg2NTcxOTkwNA==&mid=2247522110&idx=1&sn=742ade6c1c641440a017df3b597c0be4#rd
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-14T09:01:15.405178Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-14T09:01:15.557453Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-14T09:01:17.089915Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-14T09:01:17.093343Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+codex
+我先尝试读取链接内容；同时准备目标目录。若链接无法访问，就按 `title_only` 依据标题拆解。
+exec
+/bin/zsh -lc 'mkdir -p data/flywheel/breakdowns' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+web search: 
+web search: https://mp.weixin.qq.com/s?__biz=Mzg2NTcxOTkwNA==&mid=2247522110&idx=1&sn=742ade6c1c641440a017df3b597c0be4#rd#ws_call_id=call_00_pFvKP0reXnEvBbeFcFcu4910
+2026-08-14T09:01:45.660570Z  WARN codex_core_plugins::manager: failed to auto-upgrade configured marketplace marketplace="chatcut-inc" error=git clone marketplace source timed out after 30s: Cloning into '/Users/xiaowuliao/.codex/.tmp/marketplaces/.staging/marketplace-upgrade-5irIqF'...
+fatal: early EOF
+codex
+链接只能返回微信公众号的反爬空壳页，拿不到正文——按纪律标记为「未获取原文，基于标题与输入拆解」，全部维度按推断处理。现在写入 JSON 和 Markdown。
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_f22bce828161.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_f22bce828161.md
+diff --git a/data/flywheel/breakdowns/v_f22bce828161.json b/data/flywheel/breakdowns/v_f22bce828161.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..49fc0bc5d538e0331edde24c8249c5bc7af4da77
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_f22bce828161.json
+@@ -0,0 +1,10 @@
++{
++  "title": "小马科斯傻眼了，在南海挑衅这么久，等来美国一句话：增加国防预算",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即钩子：以实名人物“小马科斯”制造身份代入与冲突预期，用口语情绪词“傻眼了”定下吃瓜/爽感基调；“在南海挑衅这么久”交代时间跨度和行动积累，“等来美国一句话”制造悬念，冒号后的“增加国防预算”以低预期反差收尾，驱动点击。",
++  "structure": "推断：按公众号时政热文常见四段式——1) 回放小马科斯/菲律宾近期南海动作，建立“挑衅者”设定；2) 铺垫菲律宾对美国的期待与依赖，放大心理落差；3) 转折：等来的只是“增加国防预算”一句表态；4) 解读美菲关系实质，以评论引导收尾。",
++  "why_viral": "基于标题推断：①蹭南海/美菲关系的时效热点，是中文公众号高流量议题；②标题自带完整戏剧弧（人物+冲突+悬念+反差收尾），在订阅流里先完成点击转化；③“傻眼了”提供戏谑爽感，给读者转发出口；④“增加国防预算”与“撑腰”预期形成落差，制造评论区讨论点。未获取原文（链接无法访问），未编造具体数据、封面或正文细节。",
++  "formula": "冲突对比, 悬念好奇, 蹭热点时效",
++  "summary": "把南海热点压缩成“人物傻眼+悬念+反差收尾”的戏剧化标题，先靠标题完成点击与转发；可复用“大人物+情绪词+等来一句话+低预期结果”的时政爆款公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_f22bce828161.md b/data/flywheel/breakdowns/v_f22bce828161.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ead586c80d42ce41b56bce94cdd09d3f3f18ae0
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_f22bce828161.md
+@@ -0,0 +1,56 @@
++## 拆解报告
++
++拆解对象：小马科斯傻眼了，在南海挑衅这么久，等来美国一句话：增加国防预算（公众号）
++
++### 1. 前 3 秒钩子（推断）
++
++- “小马科斯傻眼了”：实名人物 + 口语化情绪词，第一眼定调“看热闹/爽感”，制造身份代入与冲突预期。
++- “在南海挑衅这么久”：交代人物持续动作，暗示“终于要翻车”。
++- “等来美国一句话”：悬念前置，让读者想点开看“到底说了什么”。
++- 冒号后的“增加国防预算”：反差收尾，把点击冲动落到一个具体信息点。
++
++### 2. 选题角度（推断）
++
++- 蹭热点时效：南海争端与美菲关系是中文时政号长期高流量话题，标题自带“当下感”。
++- 人群：关心国际时政、对美菲互动有看法的读者；情绪出口是戏谑爽感而非严肃分析。
++- 角度：把大国博弈落到具体人物“小马科斯”的尴尬上，比抽象政策更易传播。
++
++### 3. 内容结构（推断）
++
++- 起：回放挑衅动作，建立人物与时间线。
++- 承：铺垫菲律宾对美期待，放大“等来”的心理落差。
++- 转：美国“增加国防预算”一句表态，制造反转落点。
++- 合：解读美菲关系实质，结尾抛讨论引导。
++- 信息密度：标题承担最大信息量，正文宜短段落、小标题，先结论后分析。
++
++### 4. 情绪与人群（推断）
++
++- 情绪：吃瓜爽感为主，辅以对“美国口头承诺/棋子关系”的讽刺情绪。
++- 人群：关注南海、美菲、中美博弈的公众号读者，倾向转发给同类兴趣圈层。
++
++### 5. 金句与留存节点（推断）
++
++- 标题本身就是最大记忆点：“傻眼了”“等来美国一句话”。
++- 推断正文会在转折处重复该反差（如把“增加国防预算”作为小标题或结尾点题），形成读完的闭环记忆。
++
++### 6. 排版节奏（推断）
++
++- 公众号图文：短段落、小标题、加粗金句；配南海局势/美菲会谈相关图片增强场景感（具体图片内容无法确认）。
++- 节奏推断：开篇快、转折快、解读慢，让读者在情绪高点看到落点。
++
++### 7. 转化设计（推断）
++
++- 标题承担点击转化与转发欲望：把“美国只是口头支持”的结论包装成可转述的梗。
++- 正文结尾按公众号惯例推断有“点赞/在看/转发”引导与“你怎么看”式评论话题，具体文案无法确认。
++
++### 8. 公式标签
++
++- 冲突对比：挑衅这么久 vs 一句轻飘飘的表态。
++- 悬念好奇：等来美国一句话……到底是什么？
++- 蹭热点时效：南海/美菲关系热点。
++- 注：反差落点亦可归入“反常识”，本拆解取前三个为主标签。
++
++### 依据级别
++
++- evidence_level：title_only（仅标题与用户输入）。
++- 链接无法访问，未获取原文；本报告基于标题推断，未编造作者、数据、画面或文案细节。
+
+diff --git a/data/flywheel/breakdowns/v_f22bce828161.json b/data/flywheel/breakdowns/v_f22bce828161.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..49fc0bc5d538e0331edde24c8249c5bc7af4da77
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_f22bce828161.json
+@@ -0,0 +1,10 @@
++{
++  "title": "小马科斯傻眼了，在南海挑衅这么久，等来美国一句话：增加国防预算",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即钩子：以实名人物“小马科斯”制造身份代入与冲突预期，用口语情绪词“傻眼了”定下吃瓜/爽感基调；“在南海挑衅这么久”交代时间跨度和行动积累，“等来美国一句话”制造悬念，冒号后的“增加国防预算”以低预期反差收尾，驱动点击。",
++  "structure": "推断：按公众号时政热文常见四段式——1) 回放小马科斯/菲律宾近期南海动作，建立“挑衅者”设定；2) 铺垫菲律宾对美国的期待与依赖，放大心理落差；3) 转折：等来的只是“增加国防预算”一句表态；4) 解读美菲关系实质，以评论引导收尾。",
++  "why_viral": "基于标题推断：①蹭南海/美菲关系的时效热点，是中文公众号高流量议题；②标题自带完整戏剧弧（人物+冲突+悬念+反差收尾），在订阅流里先完成点击转化；③“傻眼了”提供戏谑爽感，给读者转发出口；④“增加国防预算”与“撑腰”预期形成落差，制造评论区讨论点。未获取原文（链接无法访问），未编造具体数据、封面或正文细节。",
++  "formula": "冲突对比, 悬念好奇, 蹭热点时效",
++  "summary": "把南海热点压缩成“人物傻眼+悬念+反差收尾”的戏剧化标题，先靠标题完成点击与转发；可复用“大人物+情绪词+等来一句话+低预期结果”的时政爆款公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_f22bce828161.md b/data/flywheel/breakdowns/v_f22bce828161.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ead586c80d42ce41b56bce94cdd09d3f3f18ae0
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_f22bce828161.md
+@@ -0,0 +1,56 @@
++## 拆解报告
++
++拆解对象：小马科斯傻眼了，在南海挑衅这么久，等来美国一句话：增加国防预算（公众号）
++
++### 1. 前 3 秒钩子（推断）
++
++- “小马科斯傻眼了”：实名人物 + 口语化情绪词，第一眼定调“看热闹/爽感”，制造身份代入与冲突预期。
++- “在南海挑衅这么久”：交代人物持续动作，暗示“终于要翻车”。
++- “等来美国一句话”：悬念前置，让读者想点开看“到底说了什么”。
++- 冒号后的“增加国防预算”：反差收尾，把点击冲动落到一个具体信息点。
++
++### 2. 选题角度（推断）
++
++- 蹭热点时效：南海争端与美菲关系是中文时政号长期高流量话题，标题自带“当下感”。
++- 人群：关心国际时政、对美菲互动有看法的读者；情绪出口是戏谑爽感而非严肃分析。
++- 角度：把大国博弈落到具体人物“小马科斯”的尴尬上，比抽象政策更易传播。
++
++### 3. 内容结构（推断）
++
++- 起：回放挑衅动作，建立人物与时间线。
++- 承：铺垫菲律宾对美期待，放大“等来”的心理落差。
++- 转：美国“增加国防预算”一句表态，制造反转落点。
++- 合：解读美菲关系实质，结尾抛讨论引导。
++- 信息密度：标题承担最大信息量，正文宜短段落、小标题，先结论后分析。
++
++### 4. 情绪与人群（推断）
++
++- 情绪：吃瓜爽感为主，辅以对“美国口头承诺/棋子关系”的讽刺情绪。
++- 人群：关注南海、美菲、中美博弈的公众号读者，倾向转发给同类兴趣圈层。
++
++### 5. 金句与留存节点（推断）
++
++- 标题本身就是最大记忆点：“傻眼了”“等来美国一句话”。
++- 推断正文会在转折处重复该反差（如把“增加国防预算”作为小标题或结尾点题），形成读完的闭环记忆。
++
++### 6. 排版节奏（推断）
++
++- 公众号图文：短段落、小标题、加粗金句；配南海局势/美菲会谈相关图片增强场景感（具体图片内容无法确认）。
++- 节奏推断：开篇快、转折快、解读慢，让读者在情绪高点看到落点。
++
++### 7. 转化设计（推断）
++
++- 标题承担点击转化与转发欲望：把“美国只是口头支持”的结论包装成可转述的梗。
++- 正文结尾按公众号惯例推断有“点赞/在看/转发”引导与“你怎么看”式评论话题，具体文案无法确认。
++
++### 8. 公式标签
++
++- 冲突对比：挑衅这么久 vs 一句轻飘飘的表态。
++- 悬念好奇：等来美国一句话……到底是什么？
++- 蹭热点时效：南海/美菲关系热点。
++- 注：反差落点亦可归入“反常识”，本拆解取前三个为主标签。
++
++### 依据级别
++
++- evidence_level：title_only（仅标题与用户输入）。
++- 链接无法访问，未获取原文；本报告基于标题推断，未编造作者、数据、画面或文案细节。
+
+codex
+拆解完成，依据级别为 `title_only`（链接返回公众号反爬空壳页，未获取原文，所有维度均为推断，未编造数据或细节）。
+
+产出文件：
+- [v_f22bce828161.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_f22bce828161.json)
+- [v_f22bce828161.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_f22bce828161.md)
+
+可复用创作指令（≤200 字）：
+
+把热点压缩成三幕标题：实名主角加动作（小马科斯在南海挑衅）、悬念承接（等来美国一句话）、反差收尾（增加国防预算）；情绪词用口语化的“傻眼了”。正文按“事件回放→期待铺垫→反转落点→关系解读”展开，短段落加小标题，结尾重复标题反差并抛“你怎么看”引导评论。热点时政文先保标题点击率，再保结尾转发欲。
+diff --git a/data/flywheel/breakdowns/v_f22bce828161.json b/data/flywheel/breakdowns/v_f22bce828161.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..49fc0bc5d538e0331edde24c8249c5bc7af4da77
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_f22bce828161.json
+@@ -0,0 +1,10 @@
++{
++  "title": "小马科斯傻眼了，在南海挑衅这么久，等来美国一句话：增加国防预算",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即钩子：以实名人物“小马科斯”制造身份代入与冲突预期，用口语情绪词“傻眼了”定下吃瓜/爽感基调；“在南海挑衅这么久”交代时间跨度和行动积累，“等来美国一句话”制造悬念，冒号后的“增加国防预算”以低预期反差收尾，驱动点击。",
++  "structure": "推断：按公众号时政热文常见四段式——1) 回放小马科斯/菲律宾近期南海动作，建立“挑衅者”设定；2) 铺垫菲律宾对美国的期待与依赖，放大心理落差；3) 转折：等来的只是“增加国防预算”一句表态；4) 解读美菲关系实质，以评论引导收尾。",
++  "why_viral": "基于标题推断：①蹭南海/美菲关系的时效热点，是中文公众号高流量议题；②标题自带完整戏剧弧（人物+冲突+悬念+反差收尾），在订阅流里先完成点击转化；③“傻眼了”提供戏谑爽感，给读者转发出口；④“增加国防预算”与“撑腰”预期形成落差，制造评论区讨论点。未获取原文（链接无法访问），未编造具体数据、封面或正文细节。",
++  "formula": "冲突对比, 悬念好奇, 蹭热点时效",
++  "summary": "把南海热点压缩成“人物傻眼+悬念+反差收尾”的戏剧化标题，先靠标题完成点击与转发；可复用“大人物+情绪词+等来一句话+低预期结果”的时政爆款公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_f22bce828161.md b/data/flywheel/breakdowns/v_f22bce828161.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ead586c80d42ce41b56bce94cdd09d3f3f18ae0
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_f22bce828161.md
+@@ -0,0 +1,56 @@
++## 拆解报告
++
++拆解对象：小马科斯傻眼了，在南海挑衅这么久，等来美国一句话：增加国防预算（公众号）
++
++### 1. 前 3 秒钩子（推断）
++
++- “小马科斯傻眼了”：实名人物 + 口语化情绪词，第一眼定调“看热闹/爽感”，制造身份代入与冲突预期。
++- “在南海挑衅这么久”：交代人物持续动作，暗示“终于要翻车”。
++- “等来美国一句话”：悬念前置，让读者想点开看“到底说了什么”。
++- 冒号后的“增加国防预算”：反差收尾，把点击冲动落到一个具体信息点。
++
++### 2. 选题角度（推断）
++
++- 蹭热点时效：南海争端与美菲关系是中文时政号长期高流量话题，标题自带“当下感”。
++- 人群：关心国际时政、对美菲互动有看法的读者；情绪出口是戏谑爽感而非严肃分析。
++- 角度：把大国博弈落到具体人物“小马科斯”的尴尬上，比抽象政策更易传播。
++
++### 3. 内容结构（推断）
++
++- 起：回放挑衅动作，建立人物与时间线。
++- 承：铺垫菲律宾对美期待，放大“等来”的心理落差。
++- 转：美国“增加国防预算”一句表态，制造反转落点。
++- 合：解读美菲关系实质，结尾抛讨论引导。
++- 信息密度：标题承担最大信息量，正文宜短段落、小标题，先结论后分析。
++
++### 4. 情绪与人群（推断）
++
++- 情绪：吃瓜爽感为主，辅以对“美国口头承诺/棋子关系”的讽刺情绪。
++- 人群：关注南海、美菲、中美博弈的公众号读者，倾向转发给同类兴趣圈层。
++
++### 5. 金句与留存节点（推断）
++
++- 标题本身就是最大记忆点：“傻眼了”“等来美国一句话”。
++- 推断正文会在转折处重复该反差（如把“增加国防预算”作为小标题或结尾点题），形成读完的闭环记忆。
++
++### 6. 排版节奏（推断）
++
++- 公众号图文：短段落、小标题、加粗金句；配南海局势/美菲会谈相关图片增强场景感（具体图片内容无法确认）。
++- 节奏推断：开篇快、转折快、解读慢，让读者在情绪高点看到落点。
++
++### 7. 转化设计（推断）
++
++- 标题承担点击转化与转发欲望：把“美国只是口头支持”的结论包装成可转述的梗。
++- 正文结尾按公众号惯例推断有“点赞/在看/转发”引导与“你怎么看”式评论话题，具体文案无法确认。
++
++### 8. 公式标签
++
++- 冲突对比：挑衅这么久 vs 一句轻飘飘的表态。
++- 悬念好奇：等来美国一句话……到底是什么？
++- 蹭热点时效：南海/美菲关系热点。
++- 注：反差落点亦可归入“反常识”，本拆解取前三个为主标签。
++
++### 依据级别
++
++- evidence_level：title_only（仅标题与用户输入）。
++- 链接无法访问，未获取原文；本报告基于标题推断，未编造作者、数据、画面或文案细节。
+
+tokens used
+9,749
+拆解完成，依据级别为 `title_only`（链接返回公众号反爬空壳页，未获取原文，所有维度均为推断，未编造数据或细节）。
+
+产出文件：
+- [v_f22bce828161.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_f22bce828161.json)
+- [v_f22bce828161.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_f22bce828161.md)
+
+可复用创作指令（≤200 字）：
+
+把热点压缩成三幕标题：实名主角加动作（小马科斯在南海挑衅）、悬念承接（等来美国一句话）、反差收尾（增加国防预算）；情绪词用口语化的“傻眼了”。正文按“事件回放→期待铺垫→反转落点→关系解读”展开，短段落加小标题，结尾重复标题反差并抛“你怎么看”引导评论。热点时政文先保标题点击率，再保结尾转发欲。
+
+===== 拆解开始 v_f22bce828161 =====

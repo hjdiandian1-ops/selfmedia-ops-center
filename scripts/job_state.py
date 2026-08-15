@@ -23,6 +23,9 @@ import os
 import sys
 from datetime import datetime, timedelta
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from security_utils import require_job_id, require_theme  # noqa: E402
+
 STATES = ["topic", "materials", "draft", "visual", "review", "archive", "publish", "recycle"]
 JOBS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "jobs"))
 
@@ -71,6 +74,8 @@ def fmt_remaining(deadline):
 
 
 def cmd_init(args):
+    require_job_id(args.job_id)
+    require_theme(args.theme)
     if load(args.job_id):
         print(f"⚠️ Job 已存在：{args.job_id}（用 show 查看，或换 job_id）")
         sys.exit(1)
@@ -91,6 +96,7 @@ def cmd_init(args):
 
 
 def cmd_set(args):
+    require_job_id(args.job_id)
     data = load(args.job_id)
     if not data:
         print(f"❌ Job 不存在：{args.job_id}（先 init）")

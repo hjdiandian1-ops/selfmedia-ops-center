@@ -79,7 +79,7 @@ graph TD
 
 ## 3. 核心 Skill 技能库与双轨视觉系统
 
-本项目集成了 6 个专业级 Skill 技能库与双轨视觉渲染系统：
+本项目集成了 7 个专业级 Skill 技能库与双轨视觉渲染系统：
 
 ### 3.1 技能库清单 (Skills)
 1. **小晚公众号排版 Lite Skill (最高优先级 No.1)**：[xiaowan-wechat-layout-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/xiaowan-wechat-layout-skill/SKILL.md)
@@ -99,6 +99,9 @@ graph TD
    - *功能*：爆款内容结构拆解、商业切入点诊断。
 6. **个人 IP 写作风格指南**：[personal-style-guide.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/personal-style-guide.md)
    - *来源*：通过 [analyze_xiaowuliao_style.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/analyze_xiaowuliao_style.py) 提取 19 篇历史微信文章总结的独家 Hook 库、口吻与黑白词汇表。
+7. **去 AI 味写作规范 Skill**：[anti-ai-flavor-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/anti-ai-flavor-skill/SKILL.md)
+   - *来源*：整合 [zero-click/avoid-ai-writing-zh](https://github.com/zero-click/avoid-ai-writing-zh)（MIT）、[liuliu-66-create/ll-humanizer-zh](https://github.com/liuliu-66-create/ll-humanizer-zh)、[B1lli/remove-ai-flavor-writing-skill](https://github.com/B1lli/remove-ai-flavor-writing-skill)，调研见 [research/去AI味开源调研.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/research/去AI味开源调研.md)
+   - *功能*：把结构级 AI 腔（二元对比壳/三拍/报幕式过渡/对称收束/本质断言/助手路线标记/正文引号/修辞破折号等）变成可执行检查；机器初筛 [ai_flavor_check.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/ai_flavor_check.py) 输出 `ai_flavor_report.json`，已接入 `run_daily_pipeline.py --qa` 质检链与流水线生产门禁。
 
 ### 3.2 视觉生图双轨系统
 - **轨 A (结构化知识卡片)**：美术总监调用 `guizang-social-card-skill` 动态生成 3:4 比例的 HTML/CSS 卡片，截图作为小红书正文卡片。
@@ -195,6 +198,7 @@ python3 scripts/record_manual_publish.py <job_id> --platform 小红书
 | **排版美化与孤行优化** | `优化这篇文章的视觉和排版，检查移动端孤行` |
 | **公众号草稿** | `确认发布` 或 `同步公众号草稿` |
 | **小红书人工发布** | `生成小红书素材包` → 手动上传发布 → `标记已手动发布` |
+| **小红书数据导入** | `导入小红书明细表`（看板按钮）或 `python3 scripts/import_xhs_notes.py --file 笔记列表明细表.xlsx`，自动回填观看/赞藏评/涨粉并匹配 Job |
 | **生成本周内容计划** | `制定本周自媒体内容计划` |
 
 ### 5.3 内容归档与文件夹整理规范 (Outputs Folder Standard)
@@ -243,12 +247,13 @@ bash webapp/start.sh 9000     # 指定端口
 
 | 视图 | 内容 | 一键操作 |
 |---|---|---|
-| 概览 | 任务总数/已发布/爆款/总阅读/平均互动率/待回收；状态分布、近 7 天趋势、最近发布表现 | — |
-| 选题 | 热点雷达 + 选题推荐 | 采纳选题 → 建任务；采集热点；48h 回收；生成周报 |
-| 主题库 | 6 个引流内容主题（定位/受众/钩子/示例选题） | 一键复制出题指令给 Codex |
-| 流水线 | 8 个 Agent 角色职责、活跃任务、最近产出；生产状态机步骤条 | 点击任务跳转成品库 |
-| 成品库 | 小红书卡片轮播 + slides HTML、公众号排版预览（桌面/移动）、短视频分镜脚本 | 按任务查看质检与发布状态 |
-| 数据 | 自有数据统计：发布动作/回填/阅读/互动率/爆款大盘；平台对比、主题表现、内容特征分析、最佳表现、待回填清单 | 刷新统计；保存回填 → 落盘 publish_log.json |
+| 概览 | 小红书式四页签看板（观看/互动/涨粉/发布，近7/30日切换）+ 薄弱点诊断（点击率/互动率/完播率/涨粉率/发布节奏/体裁结构） | 薄弱点一键“沉淀为经验”写入数据飞轮 |
+| 选题 | 热点雷达 + 选题推荐 + 信息源状态（新增今日热榜AI/推楼1号/hex2077 AI 日报）；左侧推荐+任务、右侧折叠雷达 | 采纳选题 → 自动建任务并后台跑完整生产（codex CLI，串行队列可取消） |
+| 爆款跟踪 | 外部爆款录入/拆解（平台/数据/钩子/结构/公式）+ 待拆解候选（自动采集）+ 自家爆款自动复盘 | 候选一键带入表单；AI 拆解（后台 codex CLI，按 viral-breakdown-skill 输出结构化 JSON）；标记已拆解/已应用 |
+| 数据飞轮 | 写稿发布 → 账户数据反馈 → 结合市场数据学习 → 总结经验 → 反哺流水线 Agent 五段闭环；经验库 + 自动生成反哺指令包 | 沉淀/编辑/标记应用经验；一键重新生成反哺包并**自动升级 agents/ 下 8 份 Agent SOP**（版本+changelog）；生成周报入口 |
+| 流水线 | 8 个 Agent 角色职责（含 SOP 文档链接）、活跃任务、最近产出；生产状态机 + 生产队列 + 实时日志 | 3 秒自动轮询；刷新/取消/重新生产；点击任务跳转成品库 |
+| 成品库 | 小红书卡片轮播（有卡片截图时不再重复展示 slides HTML，仅无截图时兜底）、公众号排版预览（桌面/移动）、短视频分镜脚本 | 按任务查看质检与发布状态 |
+| 数据 | 自有数据统计：发布动作/回填/阅读/互动率/爆款大盘；平台对比、主题表现、内容特征分析、最佳表现、待回填清单 | 刷新统计；保存回填；导入小红书明细表；导入四页签看板导出 xlsx（发布/观看/互动/涨粉） |
 
 ### 7.3 与 NAS 的关系
 
@@ -256,6 +261,7 @@ bash webapp/start.sh 9000     # 指定端口
 - 小红书为人工发布：直接使用产出文件夹 `outputs/<job_id>/小红书/`（与成品同源，不另建素材包），人工上传后用 `scripts/record_manual_publish.py` 标记（工作台也可操作）。
 - 采集热点调用 `scripts/fetch_hot_topics.py`（RSSHub）；NAS 离线时自动降级用最近雷达 + WebSearch。
 - 数据（jobs/outputs/materials）均在本仓库，工作台只读展示 + 白名单脚本调用，不落第三方。
+- 一键全自动生产：`采纳选题` 后调用本机 codex CLI（PATH 或 `/Applications/ChatGPT.app/Contents/Resources/codex`）后台执行完整流水线（素材→初稿→视觉→质检→归档）；队列串行（`data/production/queue.json`），日志在 `jobs/<job_id>/production.log`，可取消/重跑；每次生产会先读 `agents/*.md` 与 `data/flywheel/pipeline_feedback.md`。
 
 ### 7.4 API 速查（前端同源调用）
 
@@ -268,6 +274,7 @@ GET  /api/topics              # 热点雷达 + 选题推荐
 GET  /api/jobs                # 任务列表
 GET  /api/jobs/{job_id}       # 任务详情（state/质检/发布日志）
 GET  /api/outputs/{job_id}    # 产出文件树
+GET  /api/skills/anti-ai-flavor  # 去 AI 味规范全文（成品库质检区弹窗）
 POST /api/topics/adopt        # 采纳选题建任务
 POST /api/qa                  # 跑质检链（需 output_dir）
 POST /api/pipeline/run        # 触发流水线（action: topics|recycle|weekly|qa）

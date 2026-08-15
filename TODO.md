@@ -1,26 +1,47 @@
-# 自媒体发布 Agent 项目待办与路线图 (Roadmap & TODO)
+# 自媒体运营工作台 产品路线图（Roadmap & TODO）
 
----
+> 更新于 2026-08-15。本文件取代旧版「NAS/n8n 搭建期」待办，当前版本 v1.0（免费开源核心 + Pro 订阅）。
 
-## ✅ 已完成模块 (Completed)
+## 产品形态
 
-1. [x] **基础设施搭建**：NAS 端部署 n8n + PostgreSQL + Playwright 小红书发布 Worker。
-2. [x] **界面汉化与安全修复**：部署开源中文版 `blowsnow/n8n-chinese:latest`，解决 HTTP 局域网访问限制。
-3. [x] **工作流模板自动化导入**：在 n8n 中一键导入小红书 + 公众号双平台发布工作流。
-4. [x] **登录态持久化**：完成小红书创作者 Cookie 的格式解析与 NAS 同步挂载。
-5. [x] **个人 IP 写作风格知识库**：建立 [personal-style-guide.md](file:///Users/xiaowuliao/Projects/%E8%87%AA%E5%AA%92%E4%BD%93%E5%8F%91%E5%B8%83agent/skills/personal-style-guide.md)，确立操盘手核心定位与黑白词汇名单。
-7. [x] **“小吴聊”专属写作语料库提炼**：通过 [analyze_xiaowuliao_style.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/analyze_xiaowuliao_style.py) 深度提炼 19 篇微信公众号历史发文，升级 [personal-style-guide.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/personal-style-guide.md)，确立了开篇 Hook、直爽实战口吻、经典标题公式与“三不原则”。
-8. [x] **生图能力双轨渲染系统**：编写 [generate_ai_image.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/generate_ai_image.py) AI 生图 API 连接器，与 3:4 HTML 视觉卡片 (`guizang-social-card-skill`) 形成【真实摄影/艺术插画封面 + 结构化知识卡片】双轨方案，并同步更新至 [agent.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/agent.md)。
-9. [x] **选题与热点雷达架构设计**：完成 RSSHub NAS 部署配置 [docker-compose-rsshub.yml](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/docker-compose-rsshub.yml)、飞书多维表格选题库结构规范 [FEISHU_TABLE_SCHEMA.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/FEISHU_TABLE_SCHEMA.md) 以及 n8n 热点雷达工作流 [hot_topic_radar.json](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/workflows/hot_topic_radar.json)。
-10. [x] **小吴聊爆款图文与短视频 Skill 集成**：将 [viral-content-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/viral-content-skill/SKILL.md) 引入 Agent 体系，新增 【硬核拆解】/【商业对话】/【商业观察】 三大爆款视角与 120s 短视频黄金分镜脚本流程 [video-script.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/video-script.md)。
-11. [x] **「自媒体运营工厂」Teamwork 拟真报社岗位架构升级**：将原线性流程全面重构为基于 Teamwork 多 Agent 协同的「自媒体运营工厂」[自媒体运营工厂.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/自媒体运营工厂.md)，确立了总编、资深采编、小红书主编、公众号主编、短视频导演、美术总监、资深校对排版、归档发布员 8 大岗位分工，并引入定稿后强制自动清扫 process_* 中间过程临时文件的清理机制。
-12. [x] **小红书自动化发布下线（风控合规）**：账号提示禁止自动化工具写入，本地自动化/半自动化脚本归档至 `scripts/_archive/`，NAS `xhs_publisher` 与三个小红书 n8n 工作流删除；发布改为「小红书产出文件夹直接人工上传 + 手动标记」（`record_manual_publish.py`），公众号草稿统一走官方 `draft/add` API。
-13. [x] **小红书发布素材包下线（2026-08-08 数据飞轮）**：`小红书发布素材包/` 与 `小红书/` 产出完全重复，浪费存储；`prepare_xhs_material.py` 归档至 `scripts/_archive/`，删除 `/api/xhs/material` 端点与工作台按钮，发布统一指向 `outputs/<job_id>/小红书/`。
+- 本地工作台：`webapp/`（默认 http://127.0.0.1:8787），浏览器操作，无需写代码；
+- 公开仓库：`selfmedia-ops-center`（MIT 免费核心，GitHub 可直接 clone 使用）；
+- Pro 订阅：面包多购买 + Ed25519 离线签名 token + 设备指纹绑定（v1）；
+- v2 在线授权服务器：**暂缓**，触发线为付费用户 ≥50 或月度人工续费/换绑操作 >1 小时。
 
----
+## 模块清单（当前已上线）
 
-- [ ] **【重点待办 1】第一篇真实选题端到端创作实战**
-  - **拟定选题**：《全网首发：我的 NAS + AI 自媒体全自动发布系统搭建全过程》
-  - **目标**：在 Agent 对话中触发创作 ➔ 生成 3:4 视觉卡片/AI 封面与公众号 HTML ➔ 人工确认 ➔ 输入“确认发布”一键分发到小红书。
-- [ ] **【待办 2】全网热点聚合替代方案探索** (暂跳过)
-  - **说明**：暂时跳过泛快讯抓取，后续根据需求评估寻找更契合的头部源或自动化热点方案。
+| 模块 | 说明 |
+|---|---|
+| 概览 | 小红书四页签数据导入与薄弱点诊断，一键沉淀为飞轮经验 |
+| 选题 | 多信息源热点雷达 + 日/周双池评分 + 一键采纳建任务 |
+| 流水线 | 多 Agent 串行生产（素材→初稿→视觉→质检→归档），状态机实时进度 |
+| 成品库 | 三平台产物归档、公众号草稿推送、48h 数据回填 |
+| 爆款跟踪 | 小红书/抖音/公众号每日 Top10 + AI 自动拆解 + 周经验包 |
+| 数据飞轮 | 经验库 → Agent SOP 自动升级（版本化、可回看） |
+| 设置 | LLM API / 公众号凭据 / 授权 token 激活，保存即时生效 |
+| 发布手册 | 小红书/公众号/短视频全链路操作指引 |
+
+## 进行中（2026-08-15 Sprint 1）
+
+- [ ] 数据「呈现 + 保留 + 清理」生命周期方案落地（各模块存储占用可视化、自动清理策略）
+- [ ] 首启引导：新用户 0→1 向导（配 LLM → 看选题 → 试生产 → 看成品）
+- [ ] 按钮反馈规范：loading / 成功 toast / 失败原因 / 禁用态统一
+- [ ] 全站 UI 走查：信息架构、模块命名、空态、窄屏表格
+- [ ] 数据飞轮「已应用=0」排查：区分真实 0 与统计口径 bug
+- [ ] 修复 Pydantic 弃用告警 + 旧域名残留（已完成代码修复，待回归）
+
+## 待用户材料 / 待真实环境验证
+
+- [ ] 面包多真实商品链接与微信二维码（README 9.5 占位待替换）
+- [ ] 公众号是否已认证（决定自动推草稿是否可用）
+- [ ] 真实 DeepSeek / OpenAI Key 在设置页点一次「测试 AI 连接」
+- [ ] 热点采集公网可用性（RSSHub / 谷歌 / X 源）
+
+## 后续规划（非本轮）
+
+- [ ] v2 在线授权服务器（面包多 webhook 自动激活 + 远程吊销，触发线见上）
+- [ ] 评分模型接入外部搜索指数 / 爆款库，提升周选题区分度
+- [ ] 移动端 / 窄屏完整适配
+- [ ] 订阅到期提醒与续费流程（v2 前置）
+- [ ] 企业版：多账号、团队协作、数据隔离

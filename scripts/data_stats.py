@@ -35,6 +35,17 @@ DATA_DIR = os.path.join(ROOT, "data", "stats")
 PLATFORMS = ("小红书", "公众号", "短视频")
 REPORT_FILENAME = "数据统计报告.md"
 
+XHS_TIME_RE = re.compile(r"^(\d{4})年(\d{2})月(\d{2})日(\d{2})时(\d{2})分(\d{2})秒$")
+
+
+def iso_xhs_time(s):
+    """把小红书导出的中文时间（2026年08月07日01时34分24秒）转 ISO，便于趋势/排序。"""
+    m = XHS_TIME_RE.match(str(s or ""))
+    if m:
+        y, mo, d, h, mi, sec = m.groups()
+        return f"{y}-{mo}-{d} {h}:{mi}:{sec}"
+    return str(s or "")
+
 
 def read_json(path):
     try:
@@ -104,7 +115,7 @@ def content_features(outputs_dir, job_id):
     return feats
 
 
-def build_events(jobs_dir, outputs_dir):
+def build_events(jobs_dir, outputs_dir, data_dir=DATA_DIR):
     """把仓库内的发布动作/回填记录统一成事件流（自有统计的事实来源）。"""
     events = []
     for job in iter_jobs(jobs_dir):
@@ -132,6 +143,9 @@ def build_events(jobs_dir, outputs_dir):
             })
 
         for rec in job["log"].get("records", []):
+            if rec.get("source") == "xhs_export":
+                # 小红书导出数据统一以 data/stats/xhs_notes.json 为事实源，避免双计
+                continue
             at = rec.get("collected_at", "")
             events.append({
                 "id": f"{jid}|metric|{at}|{rec.get('platform', '')}",
@@ -141,7 +155,38 @@ def build_events(jobs_dir, outputs_dir):
                 "collects": rec.get("collects", 0), "comments": rec.get("comments", 0),
                 "engagement": rec.get("engagement", 0.0), "hit": bool(rec.get("hit")),
                 "url": rec.get("url", ""), "features": feats,
+                "followers_gained": rec.get("followers_gained", 0),
+                "shares": rec.get("shares", 0),
+                "avg_watch_seconds": rec.get("avg_watch_seconds", 0),
+                "exposure": rec.get("exposure", 0),
+                "ctr": rec.get("ctr", 0),
+                "format": rec.get("format", ""),
+                "first_published_at": rec.get("first_published_at", ""),
             })
+
+    # 小红书导出明细：未匹配到 Job 的笔记也计入大盘（导入器落盘 xhs_notes.json）
+    xhs_notes = read_json(os.path.join(data_dir, "xhs_notes.json")) or {}
+    for nid, note in (xhs_notes.get("notes") or {}).items():
+        events.append({
+            "id": f"xhs_note|{nid}",
+            "type": "metric",
+            "job_id": note.get("matched_job") or "小红书导入",
+            "title": note.get("title") or "未命名笔记",
+            "theme": "",
+            "platform": "小红书",
+            "at": iso_xhs_time(note.get("first_published_at")) or note.get("updated_at", ""),
+            "reads": note.get("reads", 0), "likes": note.get("likes", 0),
+            "collects": note.get("collects", 0), "comments": note.get("comments", 0),
+            "engagement": note.get("engagement", 0.0), "hit": bool(note.get("hit")),
+            "url": "", "features": {},
+            "followers_gained": note.get("followers_gained", 0),
+            "shares": note.get("shares", 0),
+            "avg_watch_seconds": note.get("avg_watch_seconds", 0),
+            "exposure": note.get("exposure", 0),
+            "ctr": note.get("ctr", 0),
+            "format": note.get("format", ""),
+            "first_published_at": note.get("first_published_at", ""),
+        })
     return events
 
 
@@ -149,7 +194,7 @@ def _engagement(reads, likes, collects, comments):
     return round((likes + collects + comments) / reads, 4) if reads > 0 else 0.0
 
 
-def aggregate(events, jobs_dir, outputs_dir):
+def aggregate(events, jobs_dir, outputs_dir, data_dir=DATA_DIR):
     """事件流 → 聚合统计（KPI / 平台 / 主题 / 趋势 / 内容特征 / 数据口径）。"""
     jobs = list(iter_jobs(jobs_dir))
     by_state = Counter(j["state"] for j in jobs)
@@ -163,6 +208,24 @@ def aggregate(events, jobs_dir, outputs_dir):
     total_collects = sum(e["collects"] for e in metrics)
     total_comments = sum(e["comments"] for e in metrics)
     hits = [e for e in metrics if e["hit"]]
+
+    # ---- 小红书涨粉漏斗（数据源：import_xhs_notes.py 导入的导出表） ----
+    xhs_metrics = [e for e in metrics if e["platform"] == "小红书"]
+    xhs_reads = sum(e["reads"] for e in xhs_metrics)
+    xhs_followers_gained = sum(e["followers_gained"] for e in xhs_metrics)
+    xhs_follower_rate = round(xhs_followers_gained / xhs_reads, 6) if xhs_reads else 0.0
+    account = read_json(os.path.join(data_dir, "xhs_account.json")) or {}
+    profile_visits = account.get("profile_visits", 0)
+    profile_follow_rate = round(xhs_followers_gained / profile_visits, 4) if profile_visits else None
+    xhs_account = {
+        "followers": account.get("followers"),
+        "following": account.get("following"),
+        "likes_collects": account.get("likes_collects"),
+        "profile_visits": profile_visits or None,
+        "period": account.get("period", ""),
+        "updated_at": account.get("updated_at", ""),
+        "profile_follow_rate": profile_follow_rate,
+    }
 
     published_jobs = sum(1 for j in jobs if j["log"].get("publish") or j["log"].get("records"))
 
@@ -180,7 +243,7 @@ def aggregate(events, jobs_dir, outputs_dir):
             if age_h >= 48:
                 pending_recycle += 1
         except Exception:
-            pass
+            pass  # nosec B110  # 单条发布日志时间解析失败跳过，属预期兜底
 
     # 平台对比
     by_platform = []
@@ -260,6 +323,7 @@ def aggregate(events, jobs_dir, outputs_dir):
         "reads": e["reads"], "likes": e["likes"], "collects": e["collects"],
         "comments": e["comments"], "engagement": e["engagement"],
         "hit": e["hit"], "url": e["url"],
+        "followers_gained": e["followers_gained"],
     } for e in recent]
 
     # 最佳表现
@@ -270,13 +334,31 @@ def aggregate(events, jobs_dir, outputs_dir):
             "platform": e["platform"], "collected_at": e["at"],
             "reads": e["reads"], "likes": e["likes"], "collects": e["collects"],
             "comments": e["comments"], "engagement": e["engagement"], "hit": e["hit"],
+            "followers_gained": e["followers_gained"],
         } for e in rows]
 
     best = {
         "by_reads": best_rows(metrics, lambda e: e["reads"]),
         "by_engagement": best_rows(metrics, lambda e: e["engagement"]),
+        "by_followers": best_rows(metrics, lambda e: e["followers_gained"]),
         "hits": best_rows(hits, lambda e: e["reads"], limit=10),
     }
+
+    # 涨粉率 TOP（观看 >0 才计算）
+    best["by_follower_rate"] = [
+        {
+            "job_id": e["job_id"], "title": e["title"], "theme": e["theme"],
+            "platform": e["platform"], "collected_at": e["at"],
+            "reads": e["reads"], "followers_gained": e["followers_gained"],
+            "follower_rate": round(e["followers_gained"] / e["reads"], 6) if e["reads"] else 0.0,
+            "hit": e["hit"],
+        }
+        for e in sorted(
+            [x for x in metrics if x.get("reads", 0) > 0],
+            key=lambda x: x["followers_gained"] / x["reads"],
+            reverse=True,
+        )[:5]
+    ]
 
     # 内容特征分析（样本少时仅供参考）
     def bucket_stats(evs, bucket_fn):
@@ -301,6 +383,9 @@ def aggregate(events, jobs_dir, outputs_dir):
         "title_number": bucket_stats(
             metrics,
             lambda e: "标题含数字" if re.search(r"\d", e["title"] or "") else "标题不含数字"),
+        "format": bucket_stats(
+            metrics,
+            lambda e: e.get("format") or "未知"),
         "gzh_viz": bucket_stats(
             metrics,
             lambda e: "≥2 个图表"
@@ -352,6 +437,11 @@ def aggregate(events, jobs_dir, outputs_dir):
         "total_collects": total_collects,
         "total_comments": total_comments,
         "avg_engagement": _engagement(total_reads, total_likes, total_collects, total_comments),
+        "xhs_reads": xhs_reads,
+        "xhs_followers_gained": xhs_followers_gained,
+        "xhs_follower_rate": xhs_follower_rate,
+        "xhs_account": xhs_account,
+        "best_follower_conversion": best["by_follower_rate"],
         "recent": recent,
         "trend": trend,
         "by_platform": by_platform,
@@ -363,10 +453,10 @@ def aggregate(events, jobs_dir, outputs_dir):
     }
 
 
-def build_summary(jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR):
+def build_summary(jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR):
     """实时聚合（工作台 /api/stats 直接调用）。"""
-    events = build_events(jobs_dir, outputs_dir)
-    return aggregate(events, jobs_dir, outputs_dir)
+    events = build_events(jobs_dir, outputs_dir, data_dir=data_dir)
+    return aggregate(events, jobs_dir, outputs_dir, data_dir=data_dir)
 
 
 def render_markdown(s):
@@ -379,13 +469,30 @@ def render_markdown(s):
         f"- 平均互动率：{s['avg_engagement']:.2%} ｜ 爆款：{s['hits']} ｜ 待回收：{s['pending_recycle']}",
         f"- 数据来源：发布动作（自动记录 {s['data_status']['auto_tracked']} 次）+ 人工回填（{s['data_status']['manual_backfill']} 条）",
         "",
-        "## 2. 平台对比",
+        "## 2. 小红书涨粉漏斗",
+        f"- 累计导入观看：{s['xhs_reads']} ｜ 累计涨粉：{s['xhs_followers_gained']} ｜ 涨粉率：{s['xhs_follower_rate']:.2%}",
     ]
+    acc = s["xhs_account"]
+    rate_txt = f"{acc['profile_follow_rate']:.2%}" if acc.get("profile_follow_rate") is not None else "暂无数据"
+    lines.append(
+        f"- 账号快照：粉丝 {acc.get('followers') or '—'} / 关注 {acc.get('following') or '—'} / "
+        f"赞藏 {acc.get('likes_collects') or '—'} / 主页访客 {acc.get('profile_visits') or '—'}（{acc.get('period') or '未填周期'}）"
+    )
+    lines.append(f"- 主页访客→关注（近似口径：累计导入涨粉/最近主页访客，首次全量导入会偏高）：{rate_txt}")
+    if s["best_follower_conversion"]:
+        top = s["best_follower_conversion"][0]
+        lines.append(
+            f"- 最佳涨粉转化：{top['title'] or top['job_id']}（阅读 {top['reads']} / 涨粉 {top['followers_gained']} / "
+            f"涨粉率 {top['follower_rate']:.2%}）"
+        )
+    else:
+        lines.append("- 暂无涨粉数据（请用 scripts/import_xhs_notes.py 导入小红书导出表）")
+    lines += ["", "## 3. 平台对比"]
     for p in s["by_platform"]:
         lines.append(
             f"- {p['platform']}：发布 {p['publish_events']} 次 ｜ 回填 {p['backfills']} 条 ｜ "
             f"阅读 {p['reads']} ｜ 互动率 {p['engagement']:.2%} ｜ 爆款 {p['hits']}")
-    lines += ["", "## 3. 主题表现"]
+    lines += ["", "## 4. 主题表现"]
     if s["by_theme"]:
         for t in s["by_theme"]:
             lines.append(
@@ -393,14 +500,14 @@ def render_markdown(s):
                 f"阅读 {t['reads']} ｜ 互动率 {t['engagement']:.2%} ｜ 爆款 {t['hits']}")
     else:
         lines.append("- 暂无主题数据")
-    lines += ["", "## 4. 内容特征分析（样本少时仅供参考）"]
-    for label, key in (("标题", "title_number"), ("公众号图表", "gzh_viz"), ("小红书卡片", "xhs_cards")):
+    lines += ["", "## 5. 内容特征分析（样本少时仅供参考）"]
+    for label, key in (("标题", "title_number"), ("体裁", "format"), ("公众号图表", "gzh_viz"), ("小红书卡片", "xhs_cards")):
         lines.append(f"### {label}")
         for r in s["content_insights"][key]:
             lines.append(
                 f"- {r['bucket']}：样本 {r['n']} ｜ 均阅读 {r['avg_reads']} ｜ "
                 f"均互动率 {r['avg_engagement']:.2%} ｜ 爆款 {r['hits']}")
-    lines += ["", "## 5. 最近回填", ""]
+    lines += ["", "## 6. 最近回填", ""]
     if s["recent"]:
         for r in s["recent"]:
             mark = "🔥" if r["hit"] else "  "

@@ -1,0 +1,757 @@
+2026-08-14T08:55:42.661693Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-14T08:55:42.676134Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-14T08:55:42.698130Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-14T08:55:42.698152Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019fff7b-f93b-74c1-84e7-0a0c8e53a086
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_5e005063f17e
+- 平台：抖音
+- 标题：周口贾鲁河溃口正开展封堵作业
+- 链接：https://www.douyin.com/root/search/%E5%91%A8%E5%8F%A3%E8%B4%BE%E9%B2%81%E6%B2%B3%E6%BA%83%E5%8F%A3%E6%AD%A3%E5%BC%80%E5%B1%95%E5%B0%81%E5%A0%B5%E4%BD%9C%E4%B8%9A
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-14T08:55:43.183818Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-14T08:55:43.892326Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-14T08:55:43.952989Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-14T08:55:43.955646Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+codex
+我先按你给的内联 Skill 执行：先确认输出目录、尝试看下链接能否取到正文，然后写 JSON 与 Markdown。
+exec
+/bin/zsh -lc "ls -la data/flywheel/breakdowns 2>/dev/null || printf 'NO_DIR\\n'; rg --files data 2>/dev/null | head -30" in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+total 1576
+drwxr-xr-x@ 49 xiaowuliao  staff    1568 Aug 14 16:55 .
+drwxr-xr-x@ 10 xiaowuliao  staff     320 Aug 14 16:55 ..
+-rw-r--r--@  1 xiaowuliao  staff    1691 Aug 14 01:09 v_0d8565de6a1f.json
+-rw-r--r--@  1 xiaowuliao  staff   45859 Aug 14 01:09 v_0d8565de6a1f.log
+-rw-r--r--@  1 xiaowuliao  staff    2918 Aug 14 01:09 v_0d8565de6a1f.md
+-rw-r--r--@  1 xiaowuliao  staff    1050 Aug 14 01:07 v_1ef336069327.json
+-rw-r--r--@  1 xiaowuliao  staff   40801 Aug 14 01:07 v_1ef336069327.log
+-rw-r--r--@  1 xiaowuliao  staff    2591 Aug 14 01:07 v_1ef336069327.md
+-rw-r--r--@  1 xiaowuliao  staff     360 Aug 13 01:08 v_20260813010837_de7be7.log
+-rw-r--r--@  1 xiaowuliao  staff    1330 Aug 14 01:25 v_20260814012430_5ff545.json
+-rw-r--r--@  1 xiaowuliao  staff   21177 Aug 14 01:25 v_20260814012430_5ff545.log
+-rw-r--r--@  1 xiaowuliao  staff    2229 Aug 14 01:25 v_20260814012430_5ff545.md
+-rw-r--r--@  1 xiaowuliao  staff    6133 Aug 14 16:56 v_5e005063f17e.log
+-rw-r--r--@  1 xiaowuliao  staff    1261 Aug 14 01:01 v_6292f86f3f75.json
+-rw-r--r--@  1 xiaowuliao  staff   35772 Aug 14 01:01 v_6292f86f3f75.log
+-rw-r--r--@  1 xiaowuliao  staff    2321 Aug 14 01:01 v_6292f86f3f75.md
+-rw-r--r--@  1 xiaowuliao  staff    1225 Aug 14 01:00 v_670d018e20ef.json
+-rw-r--r--@  1 xiaowuliao  staff   41671 Aug 14 01:00 v_670d018e20ef.log
+-rw-r--r--@  1 xiaowuliao  staff    2931 Aug 14 01:00 v_670d018e20ef.md
+-rw-r--r--@  1 xiaowuliao  staff    1338 Aug 14 01:25 v_7b80536531a5.json
+-rw-r--r--@  1 xiaowuliao  staff   22422 Aug 14 01:25 v_7b80536531a5.log
+-rw-r--r--@  1 xiaowuliao  staff    2606 Aug 14 01:25 v_7b80536531a5.md
+-rw-r--r--@  1 xiaowuliao  staff    1304 Aug 14 01:06 v_a165e614db98.json
+-rw-r--r--@  1 xiaowuliao  staff   25661 Aug 14 01:06 v_a165e614db98.log
+-rw-r--r--@  1 xiaowuliao  staff    2203 Aug 14 01:06 v_a165e614db98.md
+-rw-r--r--@  1 xiaowuliao  staff    1461 Aug 14 01:03 v_ccd0f0320b43.json
+-rw-r--r--@  1 xiaowuliao  staff   41877 Aug 14 01:03 v_ccd0f0320b43.log
+-rw-r--r--@  1 xiaowuliao  staff    2620 Aug 14 01:03 v_ccd0f0320b43.md
+-rw-r--r--@  1 xiaowuliao  staff    1721 Aug 14 01:08 v_da3cd5f6ae85.json
+-rw-r--r--@  1 xiaowuliao  staff   47233 Aug 14 01:08 v_da3cd5f6ae85.log
+-rw-r--r--@  1 xiaowuliao  staff    2757 Aug 14 01:08 v_da3cd5f6ae85.md
+-rw-r--r--@  1 xiaowuliao  staff    1697 Aug 14 01:04 v_dbcb92ffbec0.json
+-rw-r--r--@  1 xiaowuliao  staff   53693 Aug 14 01:04 v_dbcb92ffbec0.log
+-rw-r--r--@  1 xiaowuliao  staff    2732 Aug 14 01:04 v_dbcb92ffbec0.md
+-rw-r--r--@  1 xiaowuliao  staff    1188 Aug 14 00:59 v_e102465d66e9.json
+-rw-r--r--@  1 xiaowuliao  staff   35274 Aug 14 00:59 v_e102465d66e9.log
+-rw-r--r--@  1 xiaowuliao  staff    2151 Aug 14 00:59 v_e102465d66e9.md
+-rw-r--r--@  1 xiaowuliao  staff    1647 Aug 14 01:10 v_e8cb600743af.json
+-rw-r--r--@  1 xiaowuliao  staff  100876 Aug 14 01:10 v_e8cb600743af.log
+-rw-r--r--@  1 xiaowuliao  staff    3003 Aug 14 01:10 v_e8cb600743af.md
+-rw-r--r--@  1 xiaowuliao  staff    1804 Aug 14 01:12 v_eea23f1d6ad4.json
+-rw-r--r--@  1 xiaowuliao  staff   48770 Aug 14 01:12 v_eea23f1d6ad4.log
+-rw-r--r--@  1 xiaowuliao  staff    3024 Aug 14 01:12 v_eea23f1d6ad4.md
+-rw-r--r--@  1 xiaowuliao  staff    1352 Aug 14 01:05 v_f6062e356b69.json
+-rw-r--r--@  1 xiaowuliao  staff   42840 Aug 14 01:05 v_f6062e356b69.log
+-rw-r--r--@  1 xiaowuliao  staff    2378 Aug 14 01:05 v_f6062e356b69.md
+-rw-r--r--@  1 xiaowuliao  staff    1556 Aug 14 01:11 v_fa1a195bcda6.json
+-rw-r--r--@  1 xiaowuliao  staff   34730 Aug 14 01:11 v_fa1a195bcda6.log
+-rw-r--r--@  1 xiaowuliao  staff    2611 Aug 14 01:11 v_fa1a195bcda6.md
+data/stats/数据统计报告.md
+data/stats/xhs_notes.json
+data/stats/xhs_account.json
+data/stats/dashboard/publish.json
+data/stats/dashboard/import_report.json
+data/stats/summary.json
+data/production/queue.json
+data/flywheel/breakdown_batch.json
+data/flywheel/pipeline_feedback.md
+data/flywheel/viral_videos.json
+data/flywheel/viral_weekly_2026-W33.md
+data/flywheel/platform_virals.json
+data/flywheel/breakdowns/v_ccd0f0320b43.json
+data/flywheel/breakdowns/v_6292f86f3f75.md
+data/flywheel/breakdowns/v_1ef336069327.md
+data/flywheel/breakdowns/v_e8cb600743af.log
+data/flywheel/breakdowns/v_0d8565de6a1f.json
+data/flywheel/breakdowns/v_fa1a195bcda6.md
+data/flywheel/breakdowns/v_eea23f1d6ad4.json
+data/flywheel/breakdowns/v_dbcb92ffbec0.json
+data/flywheel/breakdowns/v_f6062e356b69.log
+data/flywheel/breakdowns/v_20260813010837_de7be7.log
+data/flywheel/breakdowns/v_670d018e20ef.json
+data/flywheel/breakdowns/v_670d018e20ef.log
+data/flywheel/breakdowns/v_6292f86f3f75.json
+data/flywheel/breakdowns/v_a165e614db98.log
+data/flywheel/breakdowns/v_ccd0f0320b43.md
+data/flywheel/breakdowns/v_670d018e20ef.md
+data/flywheel/breakdowns/v_1ef336069327.json
+data/flywheel/breakdowns/v_20260814012430_5ff545.md
+
+2026-08-14T08:56:13.956083Z  WARN codex_core_plugins::manager: failed to auto-upgrade configured marketplace marketplace="chatcut-inc" error=git clone marketplace source timed out after 30s: Cloning into '/Users/xiaowuliao/.codex/.tmp/marketplaces/.staging/marketplace-upgrade-PwDiTj'...
+fatal: early EOF
+codex
+输出目录已存在，且已有一个 `v_5e005063f17e.log`（可能含抓取信息），我先读取它和相关样本，避免与数据飞轮既有字段/风格冲突。
+exec
+/bin/zsh -lc 'cat data/flywheel/breakdowns/v_5e005063f17e.log' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+2026-08-14T08:55:42.661693Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-14T08:55:42.676134Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-14T08:55:42.698130Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-14T08:55:42.698152Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019fff7b-f93b-74c1-84e7-0a0c8e53a086
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_5e005063f17e
+- 平台：抖音
+- 标题：周口贾鲁河溃口正开展封堵作业
+- 链接：https://www.douyin.com/root/search/%E5%91%A8%E5%8F%A3%E8%B4%BE%E9%B2%81%E6%B2%B3%E6%BA%83%E5%8F%A3%E6%AD%A3%E5%BC%80%E5%B1%95%E5%B0%81%E5%A0%B5%E4%BD%9C%E4%B8%9A
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-14T08:55:43.183818Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-14T08:55:43.892326Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-14T08:55:43.952989Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-14T08:55:43.955646Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+codex
+我先按你给的内联 Skill 执行：先确认输出目录、尝试看下链接能否取到正文，然后写 JSON 与 Markdown。
+exec
+/bin/zsh -lc "ls -la data/flywheel/breakdowns 2>/dev/null || printf 'NO_DIR\\n'; rg --files data 2>/dev/null | head -30" in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+total 1576
+drwxr-xr-x@ 49 xiaowuliao  staff    1568 Aug 14 16:55 .
+drwxr-xr-x@ 10 xiaowuliao  staff     320 Aug 14 16:55 ..
+-rw-r--r--@  1 xiaowuliao  staff    1691 Aug 14 01:09 v_0d8565de6a1f.json
+-rw-r--r--@  1 xiaowuliao  staff   45859 Aug 14 01:09 v_0d8565de6a1f.log
+-rw-r--r--@  1 xiaowuliao  staff    2918 Aug 14 01:09 v_0d8565de6a1f.md
+-rw-r--r--@  1 xiaowuliao  staff    1050 Aug 14 01:07 v_1ef336069327.json
+-rw-r--r--@  1 xiaowuliao  staff   40801 Aug 14 01:07 v_1ef336069327.log
+-rw-r--r--@  1 xiaowuliao  staff    2591 Aug 14 01:07 v_1ef336069327.md
+-rw-r--r--@  1 xiaowuliao  staff     360 Aug 13 01:08 v_20260813010837_de7be7.log
+-rw-r--r--@  1 xiaowuliao  staff    1330 Aug 14 01:25 v_20260814012430_5ff545.json
+-rw-r--r--@  1 xiaowuliao  staff   21177 Aug 14 01:25 v_20260814012430_5ff545.log
+-rw-r--r--@  1 xiaowuliao  staff    2229 Aug 14 01:25 v_20260814012430_5ff545.md
+-rw-r--r--@  1 xiaowuliao  staff    6133 Aug 14 16:56 v_5e005063f17e.log
+-rw-r--r--@  1 xiaowuliao  staff    1261 Aug 14 01:01 v_6292f86f3f75.json
+-rw-r--r--@  1 xiaowuliao  staff   35772 Aug 14 01:01 v_6292f86f3f75.log
+-rw-r--r--@  1 xiaowuliao  staff    2321 Aug 14 01:01 v_6292f86f3f75.md
+-rw-r--r--@  1 xiaowuliao  staff    1225 Aug 14 01:00 v_670d018e20ef.json
+-rw-r--r--@  1 xiaowuliao  staff   41671 Aug 14 01:00 v_670d018e20ef.log
+-rw-r--r--@  1 xiaowuliao  staff    2931 Aug 14 01:00 v_670d018e20ef.md
+-rw-r--r--@  1 xiaowuliao  staff    1338 Aug 14 01:25 v_7b80536531a5.json
+-rw-r--r--@  1 xiaowuliao  staff   22422 Aug 14 01:25 v_7b80536531a5.log
+-rw-r--r--@  1 xiaowuliao  staff    2606 Aug 14 01:25 v_7b80536531a5.md
+-rw-r--r--@  1 xiaowuliao  staff    1304 Aug 14 01:06 v_a165e614db98.json
+-rw-r--r--@  1 xiaowuliao  staff   25661 Aug 14 01:06 v_a165e614db98.log
+-rw-r--r--@  1 xiaowuliao  staff    2203 Aug 14 01:06 v_a165e614db98.md
+-rw-r--r--@  1 xiaowuliao  staff    1461 Aug 14 01:03 v_ccd0f0320b43.json
+-rw-r--r--@  1 xiaowuliao  staff   41877 Aug 14 01:03 v_ccd0f0320b43.log
+-rw-r--r--@  1 xiaowuliao  staff    2620 Aug 14 01:03 v_ccd0f0320b43.md
+-rw-r--r--@  1 xiaowuliao  staff    1721 Aug 14 01:08 v_da3cd5f6ae85.json
+-rw-r--r--@  1 xiaowuliao  staff   47233 Aug 14 01:08 v_da3cd5f6ae85.log
+-rw-r--r--@  1 xiaowuliao  staff    2757 Aug 14 01:08 v_da3cd5f6ae85.md
+-rw-r--r--@  1 xiaowuliao  staff    1697 Aug 14 01:04 v_dbcb92ffbec0.json
+-rw-r--r--@  1 xiaowuliao  staff   53693 Aug 14 01:04 v_dbcb92ffbec0.log
+-rw-r--r--@  1 xiaowuliao  staff    2732 Aug 14 01:04 v_dbcb92ffbec0.md
+-rw-r--r--@  1 xiaowuliao  staff    1188 Aug 14 00:59 v_e102465d66e9.json
+-rw-r--r--@  1 xiaowuliao  staff   35274 Aug 14 00:59 v_e102465d66e9.log
+-rw-r--r--@  1 xiaowuliao  staff    2151 Aug 14 00:59 v_e102465d66e9.md
+-rw-r--r--@  1 xiaowuliao  staff    1647 Aug 14 01:10 v_e8cb600743af.json
+-rw-r--r--@  1 xiaowuliao  staff  100876 Aug 14 01:10 v_e8cb600743af.log
+-rw-r--r--@  1 xiaowuliao  staff    3003 Aug 14 01:10 v_e8cb600743af.md
+-rw-r--r--@  1 xiaowuliao  staff    1804 Aug 14 01:12 v_eea23f1d6ad4.json
+-rw-r--r--@  1 xiaowuliao  staff   48770 Aug 14 01:12 v_eea23f1d6ad4.log
+-rw-r--r--@  1 xiaowuliao  staff    3024 Aug 14 01:12 v_eea23f1d6ad4.md
+-rw-r--r--@  1 xiaowuliao  staff    1352 Aug 14 01:05 v_f6062e356b69.json
+-rw-r--r--@  1 xiaowuliao  staff   42840 Aug 14 01:05 v_f6062e356b69.log
+-rw-r--r--@  1 xiaowuliao  staff    2378 Aug 14 01:05 v_f6062e356b69.md
+-rw-r--r--@  1 xiaowuliao  staff    1556 Aug 14 01:11 v_fa1a195bcda6.json
+-rw-r--r--@  1 xiaowuliao  staff   34730 Aug 14 01:11 v_fa1a195bcda6.log
+-rw-r--r--@  1 xiaowuliao  staff    2611 Aug 14 01:11 v_fa1a195bcda6.md
+data/stats/数据统计报告.md
+data/stats/xhs_notes.json
+data/stats/xhs_account.json
+data/stats/dashboard/publish.json
+data/stats/dashboard/import_report.json
+data/stats/summary.json
+data/production/queue.json
+data/flywheel/breakdown_batch.json
+data/flywheel/pipeline_feedback.md
+data/flywheel/viral_videos.json
+data/flywheel/viral_weekly_2026-W33.md
+data/flywheel/platform_virals.json
+data/flywheel/breakdowns/v_ccd0f0320b43.json
+data/flywheel/breakdowns/v_6292f86f3f75.md
+data/flywheel/breakdowns/v_1ef336069327.md
+data/flywheel/breakdowns/v_e8cb600743af.log
+data/flywheel/breakdowns/v_0d8565de6a1f.json
+data/flywheel/breakdowns/v_fa1a195bcda6.md
+data/flywheel/breakdowns/v_eea23f1d6ad4.json
+data/flywheel/breakdowns/v_dbcb92ffbec0.json
+data/flywheel/breakdowns/v_f6062e356b69.log
+data/flywheel/breakdowns/v_20260813010837_de7be7.log
+data/flywheel/breakdowns/v_670d018e20ef.json
+data/flywheel/breakdowns/v_670d018e20ef.log
+data/flywheel/breakdowns/v_6292f86f3f75.json
+data/flywheel/breakdowns/v_a165e614db98.log
+data/flywheel/breakdowns/v_ccd0f0320b43.md
+data/flywheel/breakdowns/v_670d018e20ef.md
+data/flywheel/breakdowns/v_1ef336069327.json
+data/flywheel/breakdowns/v_20260814012430_5ff545.md
+
+2026-08-14T08:56:13.956083Z  WARN codex_core_plugins::manager: failed to auto-upgrade configured marketplace marketplace="chatcut-inc" error=git clone marketplace source timed out after 30s: Cloning into '/Users/xiaowuliao/.codex/.tmp/marketplaces/.staging/marketplace-upgrade-PwDiTj'...
+fatal: early EOF
+codex
+输出目录已存在，且已有一个 `v_5e005063f17e.log`（可能含抓取信息），我先读取它和相关样本，避免与数据飞轮既有字段/风格冲突。
+
+exec
+/bin/zsh -lc "cat data/flywheel/breakdowns/v_1ef336069327.json; printf '\\n---MD---\\n'; cat data/flywheel/breakdowns/v_1ef336069327.md" in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+{
+  "title": "中国制造再添全球之最",
+  "platform": "抖音",
+  "evidence_level": "title_only",
+  "hook": "推断：标题以“全球之最”制造悬念——哪个领域、哪项纪录、何时达成均未点破，勾住用户点开验证；“再添”暗示又一项新纪录，自带连续叙事感。",
+  "structure": "推断：典型“悬念开头→揭晓纪录→背景/规模→对比或意义升华→引导互动”的短结构；因无逐字稿，无法确认实际分镜与信息密度安排。",
+  "why_viral": "基于标题推断：击中“中国制造崛起”这一长期情绪热点，天然带民族自豪与爽感，适配抖音泛人群的快速情绪触发；未获取原文，链接为抖音搜索页，未核实具体纪录、作者、画面与数据。",
+  "formula": "蹭热点时效, 身份代入, 悬念好奇",
+  "summary": "用“全球之最”留悬念、用“中国制造”唤起身份自豪，靠热点+情绪驱动点击与传播，可复用为制造业成就类选题的标题与开头模板。"
+}
+
+---MD---
+## 拆解报告
+
+- viral_id：v_1ef336069327
+- 标题：中国制造再添全球之最
+- 平台：抖音
+- 依据级别：`title_only`（未获取原文；链接为抖音搜索页，无法访问到原视频内容，以下所有维度均为基于标题的推断，非事实复述）
+
+### 1. 前 3 秒钩子（推断）
+标题本身即钩子：“全球之最”是不给答案的悬念，具体领域、具体纪录、何时达成全不点破，逼用户点开求证；“再添”制造“又一项新纪录”的连续感，暗示内容有增量信息。
+
+### 2. 选题角度（推断）
+蹭“中国制造/产业崛起”这一长期热点话题。该选题自带国家叙事，不需要解释背景就能触发关注制造业、国货、时事新闻的泛抖音人群；时效性成就类内容适合在事件发酵期内发布。
+
+### 3. 内容结构（推断）
+推测为短视频常见结构：悬念式开头（不直接揭晓纪录）→ 揭晓具体纪录与背景 → 规模/难度/对比佐证 → 意义升华（中国制造/产业自信）→ 互动引导。无逐字稿，实际分段与信息密度无法核实。
+
+### 4. 情绪与人群（推断）
+主打自豪感与爽感：民族成就带来的集体荣誉感。目标人群为关注制造业、国家成就、科技突破的抖音泛用户，男女跨度大，中年与年轻用户都可能被触动。
+
+### 5. 金句与留存节点（推断）
+标题句“中国制造再添全球之最”本身即最高记忆点，适合做片头大字幕和结尾回扣；推测中途会以具体数字（纪录数值、规模、排名）制造第二个记忆点，但无原文无法确认。
+
+### 6. 剪辑节奏（推断）
+无逐字稿与画面，无法拆解实际剪辑。若按该类题材常见做法，推测会用快切素材、大字幕强调关键数字、BGM 渐强配合揭晓时刻；仅作方向性推断，不构成对原视频的复述。
+
+### 7. 转化设计（推断）
+无法确证原视频引导动作。结合标题情绪，推测常见做法为“点赞让更多人看到中国制造”“评论区猜是哪个领域”一类互动引导，以及关注账号追后续成就类内容；均为推断。
+
+### 8. 公式标签
+- 蹭热点时效（产业成就/国家叙事类热点）
+- 身份代入（“中国制造”唤起集体身份）
+- 悬念好奇（“全球之最”不揭晓具体答案）
+
+### 依据级别与局限
+`title_only`：所有维度均为推断，未编造作者、数据、画面、字幕或逐字内容。链接未访问成功，仅基于标题与平台语境拆解选题角度与公式。
+
+exec
+/bin/zsh -lc 'rg -n "5e005063f17e|周口|贾鲁河" data/flywheel data/stats 2>/dev/null | head -40' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+data/flywheel/breakdown_batch.json:9:    "viral_id": "v_5e005063f17e",
+data/flywheel/breakdown_batch.json:11:    "title": "周口贾鲁河溃口正开展封堵作业"
+data/flywheel/viral_videos.json:418:      "id": "v_5e005063f17e",
+data/flywheel/viral_videos.json:420:      "title": "周口贾鲁河溃口正开展封堵作业",
+data/flywheel/platform_virals.json:88:          "viral_id": "v_5e005063f17e",
+data/flywheel/platform_virals.json:89:          "title": "周口贾鲁河溃口正开展封堵作业",
+data/flywheel/breakdowns/v_5e005063f17e.log:73:- viral_id：v_5e005063f17e
+data/flywheel/breakdowns/v_5e005063f17e.log:75:- 标题：周口贾鲁河溃口正开展封堵作业
+data/flywheel/breakdowns/v_5e005063f17e.log:103:-rw-r--r--@  1 xiaowuliao  staff    6133 Aug 14 16:56 v_5e005063f17e.log
+data/flywheel/breakdowns/v_5e005063f17e.log:174:输出目录已存在，且已有一个 `v_5e005063f17e.log`（可能含抓取信息），我先读取它和相关样本，避免与数据飞轮既有字段/风格冲突。
+data/flywheel/breakdowns/v_5e005063f17e.log:176:/bin/zsh -lc 'cat data/flywheel/breakdowns/v_5e005063f17e.log' in /Users/xiaowuliao/Projects/自媒体发布agent
+data/flywheel/breakdowns/v_5e005063f17e.log:250:- viral_id：v_5e005063f17e
+data/flywheel/breakdowns/v_5e005063f17e.log:252:- 标题：周口贾鲁河溃口正开展封堵作业
+data/flywheel/breakdowns/v_5e005063f17e.log:280:-rw-r--r--@  1 xiaowuliao  staff    6133 Aug 14 16:56 v_5e005063f17e.log
+data/flywheel/breakdowns/v_5e005063f17e.log:351:输出目录已存在，且已有一个 `v_5e005063f17e.log`（可能含抓取信息），我先读取它和相关样本，避免与数据飞轮既有字段/风格冲突。
+
+exec
+/bin/zsh -lc "sed -n 405,430p data/flywheel/viral_videos.json; printf '\\n---batch---\\n'; sed -n 1,25p data/flywheel/breakdown_batch.json; printf '\\n---platform---\\n'; sed -n 80,100p data/flywheel/platform_virals.json" in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+      "theme": "",
+      "hook": "",
+      "structure": "",
+      "why_viral": "",
+      "formula": "",
+      "status": "tracked",
+      "heat": "1107.8w",
+      "tag": "新",
+      "notes": "平台榜单自动采集（抖音，热度 1107.8w，第 2 名）",
+      "created_at": "2026-08-14 16:55:04",
+      "updated_at": "2026-08-14 16:55:04"
+    },
+    {
+      "id": "v_5e005063f17e",
+      "platform": "抖音",
+      "title": "周口贾鲁河溃口正开展封堵作业",
+      "author": "",
+      "url": "https://www.douyin.com/root/search/%E5%91%A8%E5%8F%A3%E8%B4%BE%E9%B2%81%E6%B2%B3%E6%BA%83%E5%8F%A3%E6%AD%A3%E5%BC%80%E5%B1%95%E5%B0%81%E5%A0%B5%E4%BD%9C%E4%B8%9A",
+      "published_at": "",
+      "reads": 0,
+      "likes": 0,
+      "collects": 0,
+      "comments": 0,
+      "theme": "",
+      "hook": "",
+      "structure": "",
+
+---batch---
+{
+  "running": true,
+  "date": "2026-08-14",
+  "total": 9,
+  "done": 0,
+  "failed": 0,
+  "skipped": 0,
+  "current": {
+    "viral_id": "v_5e005063f17e",
+    "platform": "抖音",
+    "title": "周口贾鲁河溃口正开展封堵作业"
+  },
+  "started_at": "2026-08-14 16:55:42",
+  "updated_at": "2026-08-14 16:55:42",
+  "finished_at": ""
+}
+---platform---
+          "rank": 10,
+          "heat": "791.4w",
+          "tag": "热",
+          "link": "https://www.xiaohongshu.com/search_result?keyword=%E8%92%B8%E5%87%BA%E4%BA%86%E5%A5%B6%E9%A6%99%E7%88%86%E7%B1%B3%E8%8A%B1%E9%A6%92%E5%A4%B4&source=web_explore_feed"
+        }
+      ],
+      "抖音": [
+        {
+          "viral_id": "v_5e005063f17e",
+          "title": "周口贾鲁河溃口正开展封堵作业",
+          "rank": 1,
+          "heat": "1153.9w",
+          "tag": "热",
+          "link": "https://www.douyin.com/root/search/%E5%91%A8%E5%8F%A3%E8%B4%BE%E9%B2%81%E6%B2%B3%E6%BA%83%E5%8F%A3%E6%AD%A3%E5%BC%80%E5%B1%95%E5%B0%81%E5%A0%B5%E4%BD%9C%E4%B8%9A"
+        },
+        {
+          "viral_id": "v_467aadb2c34a",
+          "title": "今晚油价调降",
+          "rank": 2,
+          "heat": "1107.8w",
+          "tag": "新",
+
+codex
+项目数据飞轮里有该条的热度与榜单上下文（抖音榜头部、热度约 1100–1150w）。我再快速试一次链接，确认能否取到原文，然后落盘。
+web search: 
+web search: https://www.douyin.com/root/search/%E5%91%A8%E5%8F%A3%E8%B4%BE%E9%B2%81%E6%B2%B3%E6%BA%83%E5%8F%A3%E6%AD%A3%E5%BC%80%E5%B1%95%E5%B0%81%E5%A0%B5%E4%BD%9C%E4%B8%9A#ws_call_id=call_00_5cMUyJDvtP7mFXcnybpb6618
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_5e005063f17e.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_5e005063f17e.md
+diff --git a/data/flywheel/breakdowns/v_5e005063f17e.json b/data/flywheel/breakdowns/v_5e005063f17e.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e156202bcc10798b643299802247eb9afd31a1f5
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_5e005063f17e.json
+@@ -0,0 +1,10 @@
++{
++  "title": "周口贾鲁河溃口正开展封堵作业",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "推断：标题即钩子——具体地名“周口贾鲁河”+强冲突词“溃口”制造危机感，“正开展封堵作业”是进行时状态，事件未完结，天然形成“堵住没有、进展如何”的悬念；对周口及河南用户有“就在身边”的代入感。",
++  "structure": "推断：突发进展类短视频常见结构——现状速报开场→现场与措施画面→封堵进度更新→风险提示/后续安排→引导关注追更。无逐字稿，实际分镜与信息密度无法确认。",
++  "why_viral": "基于标题推断：①蹭灾情/防汛时效热点，突发灾害自带强关注与转发欲；②“周口/贾鲁河/溃口/封堵作业”均是可检索关键词，标题直接承接搜索流量；③“正开展”制造进行时悬念，促进追更与评论询问。榜单上下文佐证：数据飞轮记录该条为抖音热榜头部（热度约 1100–1150 万、排名前 2，不同快照略有出入）。未获取原文（链接为抖音站内搜索页，无法访问正文），未编造作者、画面、数据与逐字内容。",
++  "formula": "蹭热点时效, 悬念好奇",
++  "summary": "突发灾情+进行时状态标题，用强冲突词和“正开展”制造悬念与追更需求，靠地名与搜索词承接本地流量；可复用于“地点+事件+正在做什么”的时效类选题。"
++}
+diff --git a/data/flywheel/breakdowns/v_5e005063f17e.md b/data/flywheel/breakdowns/v_5e005063f17e.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c170de944a15655ed4b21105d11895bb99a6e060
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_5e005063f17e.md
+@@ -0,0 +1,34 @@
++## 拆解报告
++
++- viral_id：v_5e005063f17e
++- 标题：周口贾鲁河溃口正开展封堵作业
++- 平台：抖音
++- 依据级别：`title_only`（未获取原文；链接为抖音站内搜索页，无法访问到原视频内容。以下所有维度均为基于标题与榜单上下文的推断，非事实复述）
++
++### 1. 前 3 秒钩子（推断）
++标题本身即钩子：“周口贾鲁河”给出具体地名，拉近事件距离；“溃口”是强冲突、强危机词；“正开展封堵作业”把事件置于进行时——没说完、没定论，用户会想知道“堵住没有、进展如何”，形成点开即追更的悬念。
++
++### 2. 选题角度（推断）
++蹭灾情/防汛这类时效性强的突发热点。突发灾害自带高关注度与强转发欲，尤其对周口、河南本地用户有直接利害关系；在外务工的河南人也常主动搜家乡灾情。标题中的“周口/贾鲁河/溃口/封堵作业”同时是高频搜索词，选题兼具热点流量与搜索流量。
++
++### 3. 内容结构（推断）
++推测为突发进展类常见结构：现状速报开场 → 现场与救援/施工画面 → 封堵进度更新 → 风险提示或后续安排 → 引导关注追更。无逐字稿，实际分段、镜头顺序与信息密度安排无法核实。
++
++### 4. 情绪与人群（推断）
++主打担忧、关心与共情，叠加“事情正在解决”的安全感期待。目标人群为周口及河南本地居民、在外关心家乡的河南人，以及持续关注汛情的社会新闻用户；灾害波及面越大，人群外溢越广。
++
++### 5. 金句与留存节点（推断）
++标题句“溃口正开展封堵作业”本身就是最高记忆点，适合做片头大字幕与结尾回扣。推测每 10–15 秒以一次“新进展”（措施、人员、封堵进度）作为留存节点，但无原文无法确认具体表述。
++
++### 6. 剪辑节奏（推断）
++无逐字稿与画面，无法拆解实际剪辑。若按同类现场报道题材推测，常见做法为现场实拍/航拍素材快切、大字幕报进度、BGM 制造紧张感、卡点于关键进展；仅作方向性推断，不构成对原视频的复述。
++
++### 7. 转化设计（推断）
++无法确证原视频引导动作。结合标题语境推测：评论区易被“现在堵住了吗”一类追问带热；转发用于提醒亲友避险；关注用于持续追踪封堵结果；主页可做同类灾情进展合集承接追更需求。均为推断。
++
++### 8. 公式标签
++- 蹭热点时效（突发灾情/防汛热点）
++- 悬念好奇（“正开展”进行时状态，结果未定）
++
++### 依据级别与局限
++`title_only`：所有维度均为推断，未编造作者、数据、画面、字幕或逐字内容。榜单上下文来自项目数据飞轮记录（抖音热榜头部，热度约 1100–1150 万、排名前 2，不同快照略有出入）。链接为抖音站内搜索页，未获取原文，仅基于标题与榜单上下文拆解选题角度与公式。
+
+diff --git a/data/flywheel/breakdowns/v_5e005063f17e.json b/data/flywheel/breakdowns/v_5e005063f17e.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e156202bcc10798b643299802247eb9afd31a1f5
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_5e005063f17e.json
+@@ -0,0 +1,10 @@
++{
++  "title": "周口贾鲁河溃口正开展封堵作业",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "推断：标题即钩子——具体地名“周口贾鲁河”+强冲突词“溃口”制造危机感，“正开展封堵作业”是进行时状态，事件未完结，天然形成“堵住没有、进展如何”的悬念；对周口及河南用户有“就在身边”的代入感。",
++  "structure": "推断：突发进展类短视频常见结构——现状速报开场→现场与措施画面→封堵进度更新→风险提示/后续安排→引导关注追更。无逐字稿，实际分镜与信息密度无法确认。",
++  "why_viral": "基于标题推断：①蹭灾情/防汛时效热点，突发灾害自带强关注与转发欲；②“周口/贾鲁河/溃口/封堵作业”均是可检索关键词，标题直接承接搜索流量；③“正开展”制造进行时悬念，促进追更与评论询问。榜单上下文佐证：数据飞轮记录该条为抖音热榜头部（热度约 1100–1150 万、排名前 2，不同快照略有出入）。未获取原文（链接为抖音站内搜索页，无法访问正文），未编造作者、画面、数据与逐字内容。",
++  "formula": "蹭热点时效, 悬念好奇",
++  "summary": "突发灾情+进行时状态标题，用强冲突词和“正开展”制造悬念与追更需求，靠地名与搜索词承接本地流量；可复用于“地点+事件+正在做什么”的时效类选题。"
++}
+diff --git a/data/flywheel/breakdowns/v_5e005063f17e.md b/data/flywheel/breakdowns/v_5e005063f17e.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c170de944a15655ed4b21105d11895bb99a6e060
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_5e005063f17e.md
+@@ -0,0 +1,34 @@
++## 拆解报告
++
++- viral_id：v_5e005063f17e
++- 标题：周口贾鲁河溃口正开展封堵作业
++- 平台：抖音
++- 依据级别：`title_only`（未获取原文；链接为抖音站内搜索页，无法访问到原视频内容。以下所有维度均为基于标题与榜单上下文的推断，非事实复述）
++
++### 1. 前 3 秒钩子（推断）
++标题本身即钩子：“周口贾鲁河”给出具体地名，拉近事件距离；“溃口”是强冲突、强危机词；“正开展封堵作业”把事件置于进行时——没说完、没定论，用户会想知道“堵住没有、进展如何”，形成点开即追更的悬念。
++
++### 2. 选题角度（推断）
++蹭灾情/防汛这类时效性强的突发热点。突发灾害自带高关注度与强转发欲，尤其对周口、河南本地用户有直接利害关系；在外务工的河南人也常主动搜家乡灾情。标题中的“周口/贾鲁河/溃口/封堵作业”同时是高频搜索词，选题兼具热点流量与搜索流量。
++
++### 3. 内容结构（推断）
++推测为突发进展类常见结构：现状速报开场 → 现场与救援/施工画面 → 封堵进度更新 → 风险提示或后续安排 → 引导关注追更。无逐字稿，实际分段、镜头顺序与信息密度安排无法核实。
++
++### 4. 情绪与人群（推断）
++主打担忧、关心与共情，叠加“事情正在解决”的安全感期待。目标人群为周口及河南本地居民、在外关心家乡的河南人，以及持续关注汛情的社会新闻用户；灾害波及面越大，人群外溢越广。
++
++### 5. 金句与留存节点（推断）
++标题句“溃口正开展封堵作业”本身就是最高记忆点，适合做片头大字幕与结尾回扣。推测每 10–15 秒以一次“新进展”（措施、人员、封堵进度）作为留存节点，但无原文无法确认具体表述。
++
++### 6. 剪辑节奏（推断）
++无逐字稿与画面，无法拆解实际剪辑。若按同类现场报道题材推测，常见做法为现场实拍/航拍素材快切、大字幕报进度、BGM 制造紧张感、卡点于关键进展；仅作方向性推断，不构成对原视频的复述。
++
++### 7. 转化设计（推断）
++无法确证原视频引导动作。结合标题语境推测：评论区易被“现在堵住了吗”一类追问带热；转发用于提醒亲友避险；关注用于持续追踪封堵结果；主页可做同类灾情进展合集承接追更需求。均为推断。
++
++### 8. 公式标签
++- 蹭热点时效（突发灾情/防汛热点）
++- 悬念好奇（“正开展”进行时状态，结果未定）
++
++### 依据级别与局限
++`title_only`：所有维度均为推断，未编造作者、数据、画面、字幕或逐字内容。榜单上下文来自项目数据飞轮记录（抖音热榜头部，热度约 1100–1150 万、排名前 2，不同快照略有出入）。链接为抖音站内搜索页，未获取原文，仅基于标题与榜单上下文拆解选题角度与公式。
+
+exec
+/bin/zsh -lc "jq -e . data/flywheel/breakdowns/v_5e005063f17e.json >/dev/null && printf 'JSON OK\\n'; wc -m data/flywheel/breakdowns/v_5e005063f17e.md" in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+JSON OK
+    1135 data/flywheel/breakdowns/v_5e005063f17e.md
+
+diff --git a/data/flywheel/breakdowns/v_5e005063f17e.json b/data/flywheel/breakdowns/v_5e005063f17e.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e156202bcc10798b643299802247eb9afd31a1f5
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_5e005063f17e.json
+@@ -0,0 +1,10 @@
++{
++  "title": "周口贾鲁河溃口正开展封堵作业",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "推断：标题即钩子——具体地名“周口贾鲁河”+强冲突词“溃口”制造危机感，“正开展封堵作业”是进行时状态，事件未完结，天然形成“堵住没有、进展如何”的悬念；对周口及河南用户有“就在身边”的代入感。",
++  "structure": "推断：突发进展类短视频常见结构——现状速报开场→现场与措施画面→封堵进度更新→风险提示/后续安排→引导关注追更。无逐字稿，实际分镜与信息密度无法确认。",
++  "why_viral": "基于标题推断：①蹭灾情/防汛时效热点，突发灾害自带强关注与转发欲；②“周口/贾鲁河/溃口/封堵作业”均是可检索关键词，标题直接承接搜索流量；③“正开展”制造进行时悬念，促进追更与评论询问。榜单上下文佐证：数据飞轮记录该条为抖音热榜头部（热度约 1100–1150 万、排名前 2，不同快照略有出入）。未获取原文（链接为抖音站内搜索页，无法访问正文），未编造作者、画面、数据与逐字内容。",
++  "formula": "蹭热点时效, 悬念好奇",
++  "summary": "突发灾情+进行时状态标题，用强冲突词和“正开展”制造悬念与追更需求，靠地名与搜索词承接本地流量；可复用于“地点+事件+正在做什么”的时效类选题。"
++}
+diff --git a/data/flywheel/breakdowns/v_5e005063f17e.md b/data/flywheel/breakdowns/v_5e005063f17e.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c170de944a15655ed4b21105d11895bb99a6e060
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_5e005063f17e.md
+@@ -0,0 +1,34 @@
++## 拆解报告
++
++- viral_id：v_5e005063f17e
++- 标题：周口贾鲁河溃口正开展封堵作业
++- 平台：抖音
++- 依据级别：`title_only`（未获取原文；链接为抖音站内搜索页，无法访问到原视频内容。以下所有维度均为基于标题与榜单上下文的推断，非事实复述）
++
++### 1. 前 3 秒钩子（推断）
++标题本身即钩子：“周口贾鲁河”给出具体地名，拉近事件距离；“溃口”是强冲突、强危机词；“正开展封堵作业”把事件置于进行时——没说完、没定论，用户会想知道“堵住没有、进展如何”，形成点开即追更的悬念。
++
++### 2. 选题角度（推断）
++蹭灾情/防汛这类时效性强的突发热点。突发灾害自带高关注度与强转发欲，尤其对周口、河南本地用户有直接利害关系；在外务工的河南人也常主动搜家乡灾情。标题中的“周口/贾鲁河/溃口/封堵作业”同时是高频搜索词，选题兼具热点流量与搜索流量。
++
++### 3. 内容结构（推断）
++推测为突发进展类常见结构：现状速报开场 → 现场与救援/施工画面 → 封堵进度更新 → 风险提示或后续安排 → 引导关注追更。无逐字稿，实际分段、镜头顺序与信息密度安排无法核实。
++
++### 4. 情绪与人群（推断）
++主打担忧、关心与共情，叠加“事情正在解决”的安全感期待。目标人群为周口及河南本地居民、在外关心家乡的河南人，以及持续关注汛情的社会新闻用户；灾害波及面越大，人群外溢越广。
++
++### 5. 金句与留存节点（推断）
++标题句“溃口正开展封堵作业”本身就是最高记忆点，适合做片头大字幕与结尾回扣。推测每 10–15 秒以一次“新进展”（措施、人员、封堵进度）作为留存节点，但无原文无法确认具体表述。
++
++### 6. 剪辑节奏（推断）
++无逐字稿与画面，无法拆解实际剪辑。若按同类现场报道题材推测，常见做法为现场实拍/航拍素材快切、大字幕报进度、BGM 制造紧张感、卡点于关键进展；仅作方向性推断，不构成对原视频的复述。
++
++### 7. 转化设计（推断）
++无法确证原视频引导动作。结合标题语境推测：评论区易被“现在堵住了吗”一类追问带热；转发用于提醒亲友避险；关注用于持续追踪封堵结果；主页可做同类灾情进展合集承接追更需求。均为推断。
++
++### 8. 公式标签
++- 蹭热点时效（突发灾情/防汛热点）
++- 悬念好奇（“正开展”进行时状态，结果未定）
++
++### 依据级别与局限
++`title_only`：所有维度均为推断，未编造作者、数据、画面、字幕或逐字内容。榜单上下文来自项目数据飞轮记录（抖音热榜头部，热度约 1100–1150 万、排名前 2，不同快照略有出入）。链接为抖音站内搜索页，未获取原文，仅基于标题与榜单上下文拆解选题角度与公式。
+
+codex
+拆解完成，依据级别 `title_only`：链接是抖音站内搜索页，无法访问正文，所有维度均按“推断”标注，未编造画面、数据或逐字内容；榜单上下文取自项目数据飞轮（抖音热榜头部，热度约 1100–1150 万、排名前 2，不同快照略有出入）。公式标签：蹭热点时效 + 悬念好奇。
+
+文件已写入：
+- [v_5e005063f17e.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_5e005063f17e.json)
+- [v_5e005063f17e.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_5e005063f17e.md)
+
+可复用创作指令（≤200 字）：
+
+突发/灾害类选题用“地点+事件+进行时”标题：前 3 秒直接报现场状态，中间每 10–15 秒给一个新进展（措施/人员/结果），结尾留“蹲后续”悬念；关键词埋地点+事件名承接搜索，评论区引导问进展，主页做合集持续追踪。
+diff --git a/data/flywheel/breakdowns/v_5e005063f17e.json b/data/flywheel/breakdowns/v_5e005063f17e.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e156202bcc10798b643299802247eb9afd31a1f5
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_5e005063f17e.json
+@@ -0,0 +1,10 @@
++{
++  "title": "周口贾鲁河溃口正开展封堵作业",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "推断：标题即钩子——具体地名“周口贾鲁河”+强冲突词“溃口”制造危机感，“正开展封堵作业”是进行时状态，事件未完结，天然形成“堵住没有、进展如何”的悬念；对周口及河南用户有“就在身边”的代入感。",
++  "structure": "推断：突发进展类短视频常见结构——现状速报开场→现场与措施画面→封堵进度更新→风险提示/后续安排→引导关注追更。无逐字稿，实际分镜与信息密度无法确认。",
++  "why_viral": "基于标题推断：①蹭灾情/防汛时效热点，突发灾害自带强关注与转发欲；②“周口/贾鲁河/溃口/封堵作业”均是可检索关键词，标题直接承接搜索流量；③“正开展”制造进行时悬念，促进追更与评论询问。榜单上下文佐证：数据飞轮记录该条为抖音热榜头部（热度约 1100–1150 万、排名前 2，不同快照略有出入）。未获取原文（链接为抖音站内搜索页，无法访问正文），未编造作者、画面、数据与逐字内容。",
++  "formula": "蹭热点时效, 悬念好奇",
++  "summary": "突发灾情+进行时状态标题，用强冲突词和“正开展”制造悬念与追更需求，靠地名与搜索词承接本地流量；可复用于“地点+事件+正在做什么”的时效类选题。"
++}
+diff --git a/data/flywheel/breakdowns/v_5e005063f17e.md b/data/flywheel/breakdowns/v_5e005063f17e.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c170de944a15655ed4b21105d11895bb99a6e060
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_5e005063f17e.md
+@@ -0,0 +1,34 @@
++## 拆解报告
++
++- viral_id：v_5e005063f17e
++- 标题：周口贾鲁河溃口正开展封堵作业
++- 平台：抖音
++- 依据级别：`title_only`（未获取原文；链接为抖音站内搜索页，无法访问到原视频内容。以下所有维度均为基于标题与榜单上下文的推断，非事实复述）
++
++### 1. 前 3 秒钩子（推断）
++标题本身即钩子：“周口贾鲁河”给出具体地名，拉近事件距离；“溃口”是强冲突、强危机词；“正开展封堵作业”把事件置于进行时——没说完、没定论，用户会想知道“堵住没有、进展如何”，形成点开即追更的悬念。
++
++### 2. 选题角度（推断）
++蹭灾情/防汛这类时效性强的突发热点。突发灾害自带高关注度与强转发欲，尤其对周口、河南本地用户有直接利害关系；在外务工的河南人也常主动搜家乡灾情。标题中的“周口/贾鲁河/溃口/封堵作业”同时是高频搜索词，选题兼具热点流量与搜索流量。
++
++### 3. 内容结构（推断）
++推测为突发进展类常见结构：现状速报开场 → 现场与救援/施工画面 → 封堵进度更新 → 风险提示或后续安排 → 引导关注追更。无逐字稿，实际分段、镜头顺序与信息密度安排无法核实。
++
++### 4. 情绪与人群（推断）
++主打担忧、关心与共情，叠加“事情正在解决”的安全感期待。目标人群为周口及河南本地居民、在外关心家乡的河南人，以及持续关注汛情的社会新闻用户；灾害波及面越大，人群外溢越广。
++
++### 5. 金句与留存节点（推断）
++标题句“溃口正开展封堵作业”本身就是最高记忆点，适合做片头大字幕与结尾回扣。推测每 10–15 秒以一次“新进展”（措施、人员、封堵进度）作为留存节点，但无原文无法确认具体表述。
++
++### 6. 剪辑节奏（推断）
++无逐字稿与画面，无法拆解实际剪辑。若按同类现场报道题材推测，常见做法为现场实拍/航拍素材快切、大字幕报进度、BGM 制造紧张感、卡点于关键进展；仅作方向性推断，不构成对原视频的复述。
++
++### 7. 转化设计（推断）
++无法确证原视频引导动作。结合标题语境推测：评论区易被“现在堵住了吗”一类追问带热；转发用于提醒亲友避险；关注用于持续追踪封堵结果；主页可做同类灾情进展合集承接追更需求。均为推断。
++
++### 8. 公式标签
++- 蹭热点时效（突发灾情/防汛热点）
++- 悬念好奇（“正开展”进行时状态，结果未定）
++
++### 依据级别与局限
++`title_only`：所有维度均为推断，未编造作者、数据、画面、字幕或逐字内容。榜单上下文来自项目数据飞轮记录（抖音热榜头部，热度约 1100–1150 万、排名前 2，不同快照略有出入）。链接为抖音站内搜索页，未获取原文，仅基于标题与榜单上下文拆解选题角度与公式。
+
+tokens used
+24,167
+拆解完成，依据级别 `title_only`：链接是抖音站内搜索页，无法访问正文，所有维度均按“推断”标注，未编造画面、数据或逐字内容；榜单上下文取自项目数据飞轮（抖音热榜头部，热度约 1100–1150 万、排名前 2，不同快照略有出入）。公式标签：蹭热点时效 + 悬念好奇。
+
+文件已写入：
+- [v_5e005063f17e.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_5e005063f17e.json)
+- [v_5e005063f17e.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_5e005063f17e.md)
+
+可复用创作指令（≤200 字）：
+
+突发/灾害类选题用“地点+事件+进行时”标题：前 3 秒直接报现场状态，中间每 10–15 秒给一个新进展（措施/人员/结果），结尾留“蹲后续”悬念；关键词埋地点+事件名承接搜索，评论区引导问进展，主页做合集持续追踪。
+
+===== 拆解开始 v_5e005063f17e =====

@@ -47,6 +47,12 @@ FIELD_SOURCE = re.compile(r"(?:source|url|链接)\s*[:：]\s*(\S+)")
 TAG_RE = re.compile(r"#[\u4e00-\u9fa5A-Za-z0-9_\-]+")
 XHS_CTA_RE = re.compile(r"评论区|评论|留言|聊聊|互动|收藏|点赞|关注|告诉我|讨论|下方")
 
+# 小红书涨粉转化硬门（C13）：关注 CTA 必须绑定"下期预告/合集/系列"入口
+XHS_FOLLOW_RE = re.compile(r"关注")
+XHS_NEXT_HOOK_RE = re.compile(r"下期|下一期|合集|系列|第\s*\d+\s*篇|主页")
+XHS_COLLECTION_RE = re.compile(r"合集|主页")
+SERIES_FIELD_RE = re.compile(r"^(.+?)\s*[|｜]\s*第\s*(\d+)\s*篇$")
+
 # 公众号参考来源（P0：禁止"链接待补"、至少 1 个可点击来源）
 REF_HEADER_RE = re.compile(r"^#+\s*(参考来源|数据来源|来源|References)", re.M)
 
@@ -270,6 +276,19 @@ def xhs_data_viz_issues(output_dir):
     return issues
 
 
+def count_series_across_outputs(outputs_root, series_name):
+    """统计 outputs_root 下已声明同一系列名的 小红书 文案数量。"""
+    count = 0
+    for p in sorted(glob.glob(os.path.join(outputs_root, "*", "小红书", "*.md"))):
+        fm = parse_frontmatter(read_text(p))
+        if not fm:
+            continue
+        m = SERIES_FIELD_RE.match((fm.get("series") or "").strip())
+        if m and m.group(1).strip() == series_name:
+            count += 1
+    return count
+
+
 def find_material_pack(output_dir, explicit):
     if explicit:
         return explicit if os.path.exists(explicit) else None
@@ -289,6 +308,8 @@ def main():
     ap.add_argument("output_dir", help="产出目录 outputs/YYYY-MM-DD_主题名/")
     ap.add_argument("--materials", help="显式指定素材包路径")
     ap.add_argument("--strict", action="store_true", help="严格模式：WARN 也视为 FAIL")
+    ap.add_argument("--outputs-root", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs"),
+                    help="outputs 根目录（用于跨 Job 统计系列篇数，默认仓库 outputs/）")
     ap.add_argument("--json", action="store_true", help="输出 JSON 报告")
     ap.add_argument("--out", help="将 JSON 报告落盘到指定路径（供周报聚合，建议 outputs/<job_id>/validate_report.json）")
     args = ap.parse_args()
@@ -430,6 +451,42 @@ def main():
                 report(lvl, "C9-gzh-ref-missing",
                        "[公众号] 缺少文末『参考来源』区块（产出标准要求）")
 
+    # ---------- C13: 小红书关注转化硬门（涨粉计划） ----------
+    for p, v in draft_meta.items():
+        plat = next(k for k in PLATFORM_DIRS if k in p)
+        if plat != "小红书":
+            continue
+        body = v["text"]
+        fm = v["fm"] or {}
+        if not XHS_FOLLOW_RE.search(body):
+            report("FAIL", "C13-xhs-follow-cta",
+                   f"[小红书] {os.path.basename(p)} 缺少『关注』CTA（要求：关注 + 下期预告/合集入口）")
+        elif not XHS_NEXT_HOOK_RE.search(body):
+            report("FAIL", "C13-xhs-next-hook",
+                   f"[小红书] {os.path.basename(p)} 关注 CTA 未绑定下期预告/合集/系列入口，"
+                   "禁止只用『评论区聊聊』收尾")
+
+        series = (fm.get("series") or "").strip()
+        if not series:
+            continue
+        m = SERIES_FIELD_RE.match(series)
+        if not m:
+            report("FAIL", "C13-series-format",
+                   f"[小红书] {os.path.basename(p)} series 字段格式错误：{series}"
+                   "（应为 系列名|第N篇，如 AI内容工厂|第3篇）")
+            continue
+        name = m.group(1).strip()
+        total = count_series_across_outputs(args.outputs_root, name)
+        if total >= 3:
+            if not XHS_COLLECTION_RE.search(body):
+                report("FAIL", "C13-series-collection",
+                       f"[小红书] {os.path.basename(p)} 系列「{name}」已有 {total} 篇，"
+                       "文案必须引导『合集/主页』入口")
+        else:
+            report("WARN", "C13-series-progress",
+                   f"[小红书] {os.path.basename(p)} 系列「{name}」当前 {total} 篇"
+                   "（满 3 篇需挂合集并在文案引导『合集/主页』）")
+
     # ---------- C10: 目录完整性（P0） ----------
     for lvl, code, msg in platform_completeness(args.output_dir):
         report(lvl, code, msg)
@@ -462,7 +519,7 @@ def main():
         print("📜 素材契约校验报告")
         print("=" * 60)
         for r in results:
-            icon = {"PASS": "✅", "WARN": "⚠️", "FAIL": "❌"}[r["level"]]
+            icon = {"PASS": "✅", "WARN": "⚠️", "FAIL": "❌"}[r["level"]]  # nosec B105  # 状态图标非密码
             print(f"{icon} [{r['code']}] {r['message']}")
         print("-" * 60)
         verdict = "❌ REJECTED" if fails else ("⚠️ CONDITIONAL PASS" if warns else "✅ PASSED")

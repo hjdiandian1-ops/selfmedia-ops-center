@@ -1,0 +1,5 @@
+interface:
+  display_name: "小吴聊封面设计 Skill"
+  short_description: "小红书/公众号封面构图与 AI 生图提示词，支持真人出镜参考图。"
+  brand_color: "#DC2626"
+  default_prompt: "使用 $cover-design-skill 为这篇内容设计小红书/公众号封面并生成生图提示词。"

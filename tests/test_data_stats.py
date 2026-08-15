@@ -62,25 +62,31 @@ def _write_outputs(outputs_dir, job_id, viz_count=2, card_count=4):
 def _dirs(tmp_path):
     jobs = tmp_path / "jobs"
     outputs = tmp_path / "outputs"
+    data = tmp_path / "data"
     jobs.mkdir()
     outputs.mkdir()
-    return str(jobs), str(outputs)
+    data.mkdir()
+    return str(jobs), str(outputs), str(data)
 
 
 def test_empty_summary(tmp_path):
-    jobs, outputs = _dirs(tmp_path)
-    s = data_stats.build_summary(jobs, outputs)
+    jobs, outputs, data = _dirs(tmp_path)
+    s = data_stats.build_summary(jobs, outputs, data_dir=data)
     assert s["jobs_total"] == 0
     assert s["publish_events"] == 0
     assert s["backfill_records"] == 0
     assert s["hits"] == 0
+    assert s["xhs_followers_gained"] == 0
+    assert s["xhs_follower_rate"] == 0.0
+    assert "by_follower_rate" in s["best"]
+    assert "format" in s["content_insights"]
     assert s["recent"] == []
     assert len(s["trend"]) == 7
     assert [p["platform"] for p in s["by_platform"]] == ["小红书", "公众号", "短视频"]
 
 
 def test_aggregation_with_platform_theme_and_features(tmp_path):
-    jobs, outputs = _dirs(tmp_path)
+    jobs, outputs, data = _dirs(tmp_path)
     yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
     three_days_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -94,7 +100,8 @@ def test_aggregation_with_platform_theme_and_features(tmp_path):
         ],
         records=[
             {"platform": "小红书", "collected_at": yesterday, "reads": 5000, "likes": 300,
-             "collects": 50, "comments": 10, "engagement": 0.072, "hit": True},
+             "collects": 50, "comments": 10, "engagement": 0.072, "hit": True,
+             "followers_gained": 2, "format": "图文", "ctr": 24.3},
             {"platform": "公众号", "collected_at": three_days_ago, "reads": 1200, "likes": 30,
              "collects": 5, "comments": 2, "engagement": 0.0308, "hit": False},
         ],
@@ -108,7 +115,7 @@ def test_aggregation_with_platform_theme_and_features(tmp_path):
                published_at=yesterday,
                title="30 块钱的账")
 
-    s = data_stats.build_summary(jobs, outputs)
+    s = data_stats.build_summary(jobs, outputs, data_dir=data)
     assert s["jobs_total"] == 2
     assert s["published_jobs"] == 2
     assert s["publish_events"] == 3
@@ -119,6 +126,8 @@ def test_aggregation_with_platform_theme_and_features(tmp_path):
     assert s["total_collects"] == 55
     assert s["total_comments"] == 12
     assert s["avg_engagement"] == round(397 / 6200, 4)
+    assert s["xhs_followers_gained"] == 2
+    assert s["xhs_follower_rate"] == round(2 / 5000, 6)
     assert s["recent"][0]["job_id"] == "2026-08-01_数字标题"
     assert s["recent"][0]["platform"] == "小红书"
 
@@ -147,14 +156,14 @@ def test_aggregation_with_platform_theme_and_features(tmp_path):
 
 
 def test_pending_recycle_and_missing_features(tmp_path):
-    jobs, outputs = _dirs(tmp_path)
+    jobs, outputs, data = _dirs(tmp_path)
     old = (datetime.now() - timedelta(hours=49)).strftime("%Y-%m-%d %H:%M:%S")
     _write_state(jobs, "2026-07-30_待回收", state="archive", theme="工具实测")
     _write_log(jobs, "2026-07-30_待回收",
                publish=[{"platform": "公众号", "status": "success", "at": old}],
                published_at=old)
 
-    s = data_stats.build_summary(jobs, outputs)
+    s = data_stats.build_summary(jobs, outputs, data_dir=data)
     assert s["pending_recycle"] == 1
     assert s["data_status"]["untracked_posts"] == 1
     assert s["content_insights"]["title_number"] == []
@@ -163,9 +172,9 @@ def test_pending_recycle_and_missing_features(tmp_path):
 
 
 def test_report_and_summary_files(tmp_path):
-    jobs, outputs = _dirs(tmp_path)
+    jobs, outputs, data = _dirs(tmp_path)
     root = tmp_path / "root"
-    s = data_stats.build_summary(jobs, outputs)
+    s = data_stats.build_summary(jobs, outputs, data_dir=data)
     p1 = data_stats.save_summary(str(root), summary=s)
     p2 = data_stats.write_report(str(root), summary=s)
     assert os.path.exists(p1)

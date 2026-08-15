@@ -19,21 +19,20 @@ _CANDIDATES = [
 
 def _load_env():
     for path in _CANDIDATES:
-        if not os.path.exists(path):
-            continue
-        with open(path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
-        return
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    # 后面的 .env（项目根）覆盖前面的 nas-n8n/.env
+                    os.environ[k.strip()] = v.strip().strip('"').strip("'")
 
 
 _load_env()
 
-NAS_IP = os.environ.get("NAS_IP", "192.168.50.229")
+NAS_IP = os.environ.get("NAS_IP", "localhost")
 NAS_SSH_PORT = int(os.environ.get("NAS_SSH_PORT", "233"))
 NAS_USER = os.environ.get("NAS_USER", "")
 NAS_PASS = os.environ.get("NAS_PASS", "")

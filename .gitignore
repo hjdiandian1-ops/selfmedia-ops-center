@@ -36,3 +36,6 @@ outputs/**/小红书发布素材包/
 
 # 历史测试残留
 output_test_flow/
+
+# 公开仓库快照（构建产物，不入私有仓库 git）
+/release/selfmedia-ops-center/

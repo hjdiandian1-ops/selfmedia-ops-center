@@ -26,6 +26,7 @@ from datetime import datetime
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 JOBS_DIR = os.path.join(ROOT, "jobs")
 OUT_DIR = os.path.join(ROOT, "outputs")
+DATA_DIR = os.path.join(ROOT, "data", "stats")
 
 
 def read_json(path):
@@ -37,11 +38,14 @@ def read_json(path):
 
 
 def collect():
+    from datetime import timedelta
     stats = {
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "jobs_total": 0, "by_state": Counter(), "reject_total": 0,
         "scores": [], "validate_verdicts": Counter(), "fail_codes": Counter(),
         "published_records": [], "hits": [],
+        "xhs_week": {"notes_count": 0, "followers_gained": 0, "reads": 0,
+                     "best_note": None, "account": {}},
     }
 
     for sf in glob.glob(os.path.join(JOBS_DIR, "*", "state.json")):
@@ -73,6 +77,25 @@ def collect():
             stats["published_records"].append(rec)
             if r.get("hit"):
                 stats["hits"].append(rec)
+
+    # 小红书涨粉复盘：取最近 7 天更新过的导出笔记（import_xhs_notes.py 落盘）
+    xhs_notes = read_json(os.path.join(DATA_DIR, "xhs_notes.json")) or {}
+    week_ago = datetime.now() - timedelta(days=7)
+    week_notes = []
+    for note in (xhs_notes.get("notes") or {}).values():
+        try:
+            updated = datetime.strptime(note.get("updated_at", ""), "%Y-%m-%d %H:%M:%S")
+        except Exception:
+            continue
+        if updated >= week_ago:
+            week_notes.append(note)
+    stats["xhs_week"]["notes_count"] = len(week_notes)
+    stats["xhs_week"]["followers_gained"] = sum(n.get("followers_gained", 0) for n in week_notes)
+    stats["xhs_week"]["reads"] = sum(n.get("reads", 0) for n in week_notes)
+    if week_notes:
+        stats["xhs_week"]["best_note"] = max(
+            week_notes, key=lambda n: n.get("followers_gained", 0))
+    stats["xhs_week"]["account"] = read_json(os.path.join(DATA_DIR, "xhs_account.json")) or {}
 
     stats["by_state"] = dict(stats["by_state"])
     stats["validate_verdicts"] = dict(stats["validate_verdicts"])
@@ -110,10 +133,46 @@ def render_md(s):
     if s["published_records"]:
         for r in s["published_records"]:
             mark = "🔥" if r.get("hit") else "  "
-            lines.append(f"- {mark} {r['job_id']} [{r['platform']}] 阅读 {r['reads']} / 赞 {r['likes']} / 互动率 {r.get('engagement', 0):.1%}")
+            follower_txt = f" / 涨粉 {r.get('followers_gained', 0)}" if r.get("platform") == "小红书" else ""
+            lines.append(
+                f"- {mark} {r['job_id']} [{r['platform']}] 阅读 {r['reads']} / 赞 {r['likes']} / "
+                f"互动率 {r.get('engagement', 0):.1%}{follower_txt}")
     else:
         lines.append("- 暂无发布回收数据")
-    lines += ["", f"- 爆款数：{len(s['hits'])}（应全部已入库 skills/范文库/）", ""]
+    lines += ["", f"- 爆款数：{len(s['hits'])}（应全部已入库 skills/范文库/）"]
+
+    xw = s["xhs_week"]
+    lines += ["", "## 5. 小红书涨粉复盘（本周）"]
+    acc = xw["account"]
+    lines.append(
+        f"- 本周更新笔记：{xw['notes_count']} 条 ｜ 观看：{xw['reads']} ｜ 涨粉：{xw['followers_gained']}"
+    )
+    if acc:
+        rate_txt = "—"
+        if acc.get("profile_visits") and xw["followers_gained"]:
+            rate_txt = f"{xw['followers_gained'] / acc['profile_visits']:.2%}"
+        lines.append(
+            f"- 账号快照：粉丝 {acc.get('followers') or '—'} / 关注 {acc.get('following') or '—'} / "
+            f"赞藏 {acc.get('likes_collects') or '—'} / 主页访客 {acc.get('profile_visits') or '—'} "
+            f"（{acc.get('period') or '未填周期'}，主页访客→关注 {rate_txt}；"
+            "近似口径：本周导入涨粉/主页访客，首次全量导入会偏高）"
+        )
+    if xw["best_note"]:
+        bn = xw["best_note"]
+        lines.append(
+            f"- 最佳转化笔记：《{bn.get('title') or '未命名'}》观看 {bn.get('reads', 0)} / "
+            f"涨粉 {bn.get('followers_gained', 0)} / 涨粉率 "
+            f"{bn.get('follower_rate', 0):.2%}"
+        )
+        lines.append(
+            "- 下周边际调整：围绕该笔记的主题/标题公式做续集或系列化，保持「下期预告 + 关注 CTA」，"
+            "并检查主页合集承接。"
+        )
+    elif xw["notes_count"]:
+        lines.append("- 下周边际调整：本周笔记均未涨粉，优先检查主页装修与关注 CTA，确认后再提量。")
+    else:
+        lines.append("- 暂无本周数据：请运行 scripts/import_xhs_notes.py --file 笔记列表明细表.xlsx 导入。")
+    lines.append("")
     return "\n".join(lines)
 
 

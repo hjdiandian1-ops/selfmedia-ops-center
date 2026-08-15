@@ -1,0 +1,55 @@
+{
+  "output_dir": "outputs/2026-07-31_AICodex指南/",
+  "checked_at": "2026-08-14 16:37:45",
+  "verdict": "WARN",
+  "summary": {
+    "platforms": [
+      "小红书",
+      "公众号"
+    ],
+    "high": 0,
+    "medium": 2,
+    "total_hits": 17
+  },
+  "hits": [
+    {
+      "rule": "prose_quotes",
+      "severity": "medium",
+      "source": "[L]",
+      "pattern": "正文引号(开引号)计数",
+      "count": 15,
+      "examples": [
+        "正文出现 7 处引号/书名号（真实人物原话除外）",
+        "正文出现 8 处引号/书名号（真实人物原话除外）"
+      ],
+      "suggestion": "AI 爱用引号造词；真实引语允许，强调性引号删除。",
+      "platform": "小红书",
+      "platforms": [
+        "小红书",
+        "公众号"
+      ]
+    },
+    {
+      "rule": "binary_shell",
+      "severity": "medium",
+      "source": "[B][A]",
+      "pattern": "不是.{0,24}?(?:而是|是)|与其说.{0,24}?(?:不如说|倒不如说)",
+      "count": 2,
+      "examples": [
+        "…天，   AI Codex 不是给程序员准备的黑科技   ，而是每位普通人掌控自动化、搭建属于自己数字工具箱的超级钥匙。…",
+        "…天，   AI Codex 不是给程序员准备的黑科技   ，而是每位普通人掌控自动化、搭建属于自己数字工具箱的超级钥匙。…"
+      ],
+      "suggestion": "「不是 A 而是 B」全文 ≤2 次；≥3 次为二元对比模板，改成直陈事实。",
+      "platform": "公众号",
+      "platforms": [
+        "公众号"
+      ]
+    }
+  ],
+  "manual_review": [
+    "展示型三拍（对仗短句+点评）与均匀段落形状机器不判定，需人工复核。",
+    "引号/破折号命中需人工确认是否属于真实引语/技术标识例外。",
+    "REJECTED 退回对应主编重写；WARN 由资深校对排版逐条复核后写入 评分报告.md。"
+  ],
+  "rules_note": "规则来源：[A] zero-click/avoid-ai-writing-zh ｜ [L] liuliu-66-create/ll-humanizer-zh ｜ [B] B1lli/remove-ai-flavor-writing-skill（详见 skills/anti-ai-flavor-skill/SKILL.md）"
+}

@@ -1,0 +1,9 @@
+# 自媒体运营中心 · 运行时依赖（顶层声明）
+# 锁定版本见 requirements.lock（由 pip-compile 生成）
+fastapi
+uvicorn
+pydantic
+paramiko
+requests
+playwright
+pytest

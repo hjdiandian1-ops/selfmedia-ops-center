@@ -1,0 +1,127 @@
+{
+  "output_dir": "outputs/2026-08-05_AI算力剪刀差/",
+  "checked_at": "2026-08-14 16:37:45",
+  "verdict": "REJECTED",
+  "summary": {
+    "platforms": [
+      "小红书",
+      "公众号",
+      "短视频"
+    ],
+    "high": 1,
+    "medium": 5,
+    "total_hits": 100
+  },
+  "hits": [
+    {
+      "rule": "binary_shell",
+      "severity": "high",
+      "source": "[B][A]",
+      "pattern": "不是.{0,24}?(?:而是|是)|与其说.{0,24}?(?:不如说|倒不如说)",
+      "count": 12,
+      "examples": [
+        "…个体工作流吃进去了。␤␤重点不是工具，是站位：**巨头打价格战，你去捡降下来的生产力。**␤␤-…",
+        "…💬 最后一句话␤␤AI 降价不是行业在通缩，是利润在搬家。看懂了钱往哪搬，才知道自己该站哪。␤␤你觉得…",
+        "…         AI 降价不是通缩，是利润在搬家。 ␤           ␤        …"
+      ],
+      "suggestion": "「不是 A 而是 B」全文 ≤2 次；≥3 次为二元对比模板，改成直陈事实。",
+      "platform": "小红书",
+      "platforms": [
+        "小红书",
+        "公众号",
+        "短视频"
+      ]
+    },
+    {
+      "rule": "prose_quotes",
+      "severity": "medium",
+      "source": "[L]",
+      "pattern": "正文引号(开引号)计数",
+      "count": 45,
+      "examples": [
+        "正文出现 4 处引号/书名号（真实人物原话除外）",
+        "正文出现 13 处引号/书名号（真实人物原话除外）",
+        "正文出现 28 处引号/书名号（真实人物原话除外）"
+      ],
+      "suggestion": "AI 爱用引号造词；真实引语允许，强调性引号删除。",
+      "platform": "小红书",
+      "platforms": [
+        "小红书",
+        "公众号",
+        "短视频"
+      ]
+    },
+    {
+      "rule": "dash_rhetoric",
+      "severity": "medium",
+      "source": "[L]",
+      "pattern": "——",
+      "count": 32,
+      "examples": [
+        "正文出现 2 处修辞破折号",
+        "正文出现 22 处修辞破折号",
+        "正文出现 8 处修辞破折号"
+      ],
+      "suggestion": "破折号作修辞标点禁用；技术标识中的连字符例外。",
+      "platform": "小红书",
+      "platforms": [
+        "小红书",
+        "公众号",
+        "短视频"
+      ]
+    },
+    {
+      "rule": "parallel_structure",
+      "severity": "medium",
+      "source": "[A]",
+      "pattern": "连续同前缀行 ≥5 行",
+      "count": 9,
+      "examples": [
+        "连续 5 行以相同前缀开头",
+        "连续 4 行以相同前缀开头"
+      ],
+      "suggestion": "排比连续 4 次以上建议拆成有信息差的分句。",
+      "platform": "公众号",
+      "platforms": [
+        "公众号",
+        "短视频"
+      ]
+    },
+    {
+      "rule": "essence_claim",
+      "severity": "medium",
+      "source": "[B]",
+      "pattern": "本质上|真正重要的是|核心在于|底层逻辑(?:是|在于|就是)?",
+      "count": 1,
+      "examples": [
+        "…关注 @小吴聊 · 看懂产业底层逻辑 ␤       ␤     ␤␤   ␤␤  ␤ ␤ …"
+      ],
+      "suggestion": "「本质上/真正重要的是/核心在于」1 次 WARN，≥3 次 REJECTED；直接说结论。",
+      "platform": "小红书",
+      "platforms": [
+        "小红书"
+      ]
+    },
+    {
+      "rule": "speak_for_reader",
+      "severity": "medium",
+      "source": "[L]",
+      "pattern": "你可能会想|相信你已经|你一定会(?:发现|觉得)|你能感受到|你会发现",
+      "count": 1,
+      "examples": [
+        "…。␤␤把这两条新闻摆在一起，你会发现一个拧巴的画面：模型公司在应用层把价格打到骨折，转身却把…"
+      ],
+      "suggestion": "「你可能会想/相信你已经发现」替读者说话，改说自己看到什么。",
+      "platform": "公众号",
+      "platforms": [
+        "公众号"
+      ]
+    }
+  ],
+  "manual_review": [
+    "展示型三拍（对仗短句+点评）与均匀段落形状机器不判定，需人工复核。",
+    "引号/破折号命中需人工确认是否属于真实引语/技术标识例外。",
+    "REJECTED 退回对应主编重写；WARN 由资深校对排版逐条复核后写入 评分报告.md。"
+  ],
+  "rules_note": "规则来源：[A] zero-click/avoid-ai-writing-zh ｜ [L] liuliu-66-create/ll-humanizer-zh ｜ [B] B1lli/remove-ai-flavor-writing-skill（详见 skills/anti-ai-flavor-skill/SKILL.md）"
+}

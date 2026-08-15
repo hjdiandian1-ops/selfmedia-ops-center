@@ -1,0 +1,683 @@
+2026-08-13T17:07:17.772200Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:07:17.780878Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:07:17.804339Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:07:17.804357Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc17-ac89-7c80-bc95-82b64936186e
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_da3cd5f6ae85
+- 平台：抖音
+- 标题：我选择海岛作为我生活的解药
+- 链接：https://www.douyin.com/root/search/%E6%88%91%E9%80%89%E6%8B%A9%E6%B5%B7%E5%B2%9B%E4%BD%9C%E4%B8%BA%E6%88%91%E7%94%9F%E6%B4%BB%E7%9A%84%E8%A7%A3%E8%8D%AF
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:07:18.270044Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:07:19.013167Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:07:19.502762Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:07:19.505163Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+codex
+我先看一下项目里 `data/flywheel/breakdowns` 的现状，再按标题推断完成拆解并写入文件。
+exec
+/bin/zsh -lc 'rg --files data 2>/dev/null | head -50; ls -la data/flywheel/breakdowns 2>/dev/null || echo "NO_DIR"' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+data/stats/数据统计报告.md
+data/stats/xhs_notes.json
+data/stats/xhs_account.json
+data/stats/dashboard/publish.json
+data/stats/dashboard/import_report.json
+data/stats/summary.json
+data/production/queue.json
+data/flywheel/breakdown_batch.json
+data/flywheel/pipeline_feedback.md
+data/flywheel/viral_videos.json
+data/flywheel/viral_weekly_2026-W33.md
+data/flywheel/platform_virals.json
+data/flywheel/breakdowns/v_ccd0f0320b43.json
+data/flywheel/breakdowns/v_6292f86f3f75.md
+data/flywheel/breakdowns/v_1ef336069327.md
+data/flywheel/breakdowns/v_dbcb92ffbec0.json
+data/flywheel/breakdowns/v_f6062e356b69.log
+data/flywheel/breakdowns/v_20260813010837_de7be7.log
+data/flywheel/breakdowns/v_670d018e20ef.json
+data/flywheel/breakdowns/v_670d018e20ef.log
+data/flywheel/breakdowns/v_6292f86f3f75.json
+data/flywheel/breakdowns/v_a165e614db98.log
+data/flywheel/breakdowns/v_ccd0f0320b43.md
+data/flywheel/breakdowns/v_670d018e20ef.md
+data/flywheel/breakdowns/v_1ef336069327.json
+data/flywheel/breakdowns/v_6292f86f3f75.log
+data/flywheel/breakdowns/v_da3cd5f6ae85.log
+data/flywheel/breakdowns/v_e102465d66e9.md
+data/flywheel/breakdowns/v_ccd0f0320b43.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.log
+data/flywheel/breakdowns/v_e102465d66e9.log
+data/flywheel/breakdowns/v_f6062e356b69.md
+data/flywheel/breakdowns/v_e102465d66e9.json
+data/flywheel/breakdowns/v_a165e614db98.json
+data/flywheel/breakdowns/v_dbcb92ffbec0.md
+data/flywheel/breakdowns/v_f6062e356b69.json
+data/flywheel/breakdowns/v_a165e614db98.md
+data/flywheel/breakdowns/v_1ef336069327.log
+data/flywheel/viral_candidates.json
+data/flywheel/lessons.json
+total 808
+drwxr-xr-x@ 28 xiaowuliao  staff    896 Aug 14 01:07 .
+drwxr-xr-x@ 10 xiaowuliao  staff    320 Aug 14 01:07 ..
+-rw-r--r--@  1 xiaowuliao  staff   1050 Aug 14 01:07 v_1ef336069327.json
+-rw-r--r--@  1 xiaowuliao  staff  40801 Aug 14 01:07 v_1ef336069327.log
+-rw-r--r--@  1 xiaowuliao  staff   2591 Aug 14 01:07 v_1ef336069327.md
+-rw-r--r--@  1 xiaowuliao  staff    360 Aug 13 01:08 v_20260813010837_de7be7.log
+-rw-r--r--@  1 xiaowuliao  staff   1261 Aug 14 01:01 v_6292f86f3f75.json
+-rw-r--r--@  1 xiaowuliao  staff  35772 Aug 14 01:01 v_6292f86f3f75.log
+-rw-r--r--@  1 xiaowuliao  staff   2321 Aug 14 01:01 v_6292f86f3f75.md
+-rw-r--r--@  1 xiaowuliao  staff   1225 Aug 14 01:00 v_670d018e20ef.json
+-rw-r--r--@  1 xiaowuliao  staff  41671 Aug 14 01:00 v_670d018e20ef.log
+-rw-r--r--@  1 xiaowuliao  staff   2931 Aug 14 01:00 v_670d018e20ef.md
+-rw-r--r--@  1 xiaowuliao  staff   1304 Aug 14 01:06 v_a165e614db98.json
+-rw-r--r--@  1 xiaowuliao  staff  25661 Aug 14 01:06 v_a165e614db98.log
+-rw-r--r--@  1 xiaowuliao  staff   2203 Aug 14 01:06 v_a165e614db98.md
+-rw-r--r--@  1 xiaowuliao  staff   1461 Aug 14 01:03 v_ccd0f0320b43.json
+-rw-r--r--@  1 xiaowuliao  staff  41877 Aug 14 01:03 v_ccd0f0320b43.log
+-rw-r--r--@  1 xiaowuliao  staff   2620 Aug 14 01:03 v_ccd0f0320b43.md
+-rw-r--r--@  1 xiaowuliao  staff   6100 Aug 14 01:07 v_da3cd5f6ae85.log
+-rw-r--r--@  1 xiaowuliao  staff   1697 Aug 14 01:04 v_dbcb92ffbec0.json
+-rw-r--r--@  1 xiaowuliao  staff  53693 Aug 14 01:04 v_dbcb92ffbec0.log
+-rw-r--r--@  1 xiaowuliao  staff   2732 Aug 14 01:04 v_dbcb92ffbec0.md
+-rw-r--r--@  1 xiaowuliao  staff   1188 Aug 14 00:59 v_e102465d66e9.json
+-rw-r--r--@  1 xiaowuliao  staff  35274 Aug 14 00:59 v_e102465d66e9.log
+-rw-r--r--@  1 xiaowuliao  staff   2151 Aug 14 00:59 v_e102465d66e9.md
+-rw-r--r--@  1 xiaowuliao  staff   1352 Aug 14 01:05 v_f6062e356b69.json
+-rw-r--r--@  1 xiaowuliao  staff  42840 Aug 14 01:05 v_f6062e356b69.log
+-rw-r--r--@  1 xiaowuliao  staff   2378 Aug 14 01:05 v_f6062e356b69.md
+
+exec
+/bin/zsh -lc 'cat data/flywheel/breakdowns/v_da3cd5f6ae85.log' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+2026-08-13T17:07:17.772200Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:07:17.780878Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:07:17.804339Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:07:17.804357Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc17-ac89-7c80-bc95-82b64936186e
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_da3cd5f6ae85
+- 平台：抖音
+- 标题：我选择海岛作为我生活的解药
+- 链接：https://www.douyin.com/root/search/%E6%88%91%E9%80%89%E6%8B%A9%E6%B5%B7%E5%B2%9B%E4%BD%9C%E4%B8%BA%E6%88%91%E7%94%9F%E6%B4%BB%E7%9A%84%E8%A7%A3%E8%8D%AF
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:07:18.270044Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:07:19.013167Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:07:19.502762Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:07:19.505163Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+codex
+我先看一下项目里 `data/flywheel/breakdowns` 的现状，再按标题推断完成拆解并写入文件。
+exec
+/bin/zsh -lc 'rg --files data 2>/dev/null | head -50; ls -la data/flywheel/breakdowns 2>/dev/null || echo "NO_DIR"' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+data/stats/数据统计报告.md
+data/stats/xhs_notes.json
+data/stats/xhs_account.json
+data/stats/dashboard/publish.json
+data/stats/dashboard/import_report.json
+data/stats/summary.json
+data/production/queue.json
+data/flywheel/breakdown_batch.json
+data/flywheel/pipeline_feedback.md
+data/flywheel/viral_videos.json
+data/flywheel/viral_weekly_2026-W33.md
+data/flywheel/platform_virals.json
+data/flywheel/breakdowns/v_ccd0f0320b43.json
+data/flywheel/breakdowns/v_6292f86f3f75.md
+data/flywheel/breakdowns/v_1ef336069327.md
+data/flywheel/breakdowns/v_dbcb92ffbec0.json
+data/flywheel/breakdowns/v_f6062e356b69.log
+data/flywheel/breakdowns/v_20260813010837_de7be7.log
+data/flywheel/breakdowns/v_670d018e20ef.json
+data/flywheel/breakdowns/v_670d018e20ef.log
+data/flywheel/breakdowns/v_6292f86f3f75.json
+data/flywheel/breakdowns/v_a165e614db98.log
+data/flywheel/breakdowns/v_ccd0f0320b43.md
+data/flywheel/breakdowns/v_670d018e20ef.md
+data/flywheel/breakdowns/v_1ef336069327.json
+data/flywheel/breakdowns/v_6292f86f3f75.log
+data/flywheel/breakdowns/v_da3cd5f6ae85.log
+data/flywheel/breakdowns/v_e102465d66e9.md
+data/flywheel/breakdowns/v_ccd0f0320b43.log
+data/flywheel/breakdowns/v_dbcb92ffbec0.log
+data/flywheel/breakdowns/v_e102465d66e9.log
+data/flywheel/breakdowns/v_f6062e356b69.md
+data/flywheel/breakdowns/v_e102465d66e9.json
+data/flywheel/breakdowns/v_a165e614db98.json
+data/flywheel/breakdowns/v_dbcb92ffbec0.md
+data/flywheel/breakdowns/v_f6062e356b69.json
+data/flywheel/breakdowns/v_a165e614db98.md
+data/flywheel/breakdowns/v_1ef336069327.log
+data/flywheel/viral_candidates.json
+data/flywheel/lessons.json
+total 808
+drwxr-xr-x@ 28 xiaowuliao  staff    896 Aug 14 01:07 .
+drwxr-xr-x@ 10 xiaowuliao  staff    320 Aug 14 01:07 ..
+-rw-r--r--@  1 xiaowuliao  staff   1050 Aug 14 01:07 v_1ef336069327.json
+-rw-r--r--@  1 xiaowuliao  staff  40801 Aug 14 01:07 v_1ef336069327.log
+-rw-r--r--@  1 xiaowuliao  staff   2591 Aug 14 01:07 v_1ef336069327.md
+-rw-r--r--@  1 xiaowuliao  staff    360 Aug 13 01:08 v_20260813010837_de7be7.log
+-rw-r--r--@  1 xiaowuliao  staff   1261 Aug 14 01:01 v_6292f86f3f75.json
+-rw-r--r--@  1 xiaowuliao  staff  35772 Aug 14 01:01 v_6292f86f3f75.log
+-rw-r--r--@  1 xiaowuliao  staff   2321 Aug 14 01:01 v_6292f86f3f75.md
+-rw-r--r--@  1 xiaowuliao  staff   1225 Aug 14 01:00 v_670d018e20ef.json
+-rw-r--r--@  1 xiaowuliao  staff  41671 Aug 14 01:00 v_670d018e20ef.log
+-rw-r--r--@  1 xiaowuliao  staff   2931 Aug 14 01:00 v_670d018e20ef.md
+-rw-r--r--@  1 xiaowuliao  staff   1304 Aug 14 01:06 v_a165e614db98.json
+-rw-r--r--@  1 xiaowuliao  staff  25661 Aug 14 01:06 v_a165e614db98.log
+-rw-r--r--@  1 xiaowuliao  staff   2203 Aug 14 01:06 v_a165e614db98.md
+-rw-r--r--@  1 xiaowuliao  staff   1461 Aug 14 01:03 v_ccd0f0320b43.json
+-rw-r--r--@  1 xiaowuliao  staff  41877 Aug 14 01:03 v_ccd0f0320b43.log
+-rw-r--r--@  1 xiaowuliao  staff   2620 Aug 14 01:03 v_ccd0f0320b43.md
+-rw-r--r--@  1 xiaowuliao  staff   6100 Aug 14 01:07 v_da3cd5f6ae85.log
+-rw-r--r--@  1 xiaowuliao  staff   1697 Aug 14 01:04 v_dbcb92ffbec0.json
+-rw-r--r--@  1 xiaowuliao  staff  53693 Aug 14 01:04 v_dbcb92ffbec0.log
+-rw-r--r--@  1 xiaowuliao  staff   2732 Aug 14 01:04 v_dbcb92ffbec0.md
+-rw-r--r--@  1 xiaowuliao  staff   1188 Aug 14 00:59 v_e102465d66e9.json
+-rw-r--r--@  1 xiaowuliao  staff  35274 Aug 14 00:59 v_e102465d66e9.log
+-rw-r--r--@  1 xiaowuliao  staff   2151 Aug 14 00:59 v_e102465d66e9.md
+-rw-r--r--@  1 xiaowuliao  staff   1352 Aug 14 01:05 v_f6062e356b69.json
+-rw-r--r--@  1 xiaowuliao  staff  42840 Aug 14 01:05 v_f6062e356b69.log
+-rw-r--r--@  1 xiaowuliao  staff   2378 Aug 14 01:05 v_f6062e356b69.md
+
+
+exec
+/bin/zsh -lc 'cat data/flywheel/breakdowns/v_dbcb92ffbec0.json data/flywheel/breakdowns/v_dbcb92ffbec0.md' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+{
+  "title": "定格这一刻的日照金山",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "基于标题推断：标题承担第一道点击闸——「日照金山」是稀缺自然景观的画面承诺，直接给出高期待视觉锚点；「定格这一刻」用「瞬间不可复制」的仪式感制造错过即遗憾的情绪，让用户想点开替自己看这一眼。封面细节无证据，不做推断。",
+  "structure": "基于标题推断：未获取原文，链接为小红书搜索页。按旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾；信息密度低、情绪浓度高，靠画面递进而非段落逻辑。不编造具体分镜、图数与段落。",
+  "why_viral": "基于标题推断：①「日照金山」自带稀缺性与幸运寓意，是旅行摄影圈高向往度意象，标题直接触发「我也想亲眼看到」的身份代入；②「定格这一刻」放大瞬间仪式感，与收藏、许愿、分享同款经历等行为天然契合；③短句凝练、画面感强，适合作为封面文案与金句传播；④可能承接「日照金山」等旅行搜索词（推断，未获原文佐证）。链接为搜索页，未获取单条笔记正文，不编造作者、数据、封面或画面细节。",
+  "formula": "悬念好奇, 身份代入",
+  "summary": "以稀缺自然奇观「日照金山」做高向往选题，以「定格这一刻」的仪式感触发代入与收藏欲，靠画面与情绪而非信息量取胜；可复用为「稀缺景观+定格瞬间」的情绪型标题公式，正文以地点时刻与高光画面承接收藏。"
+}
+## 拆解报告
+
+依据级别：`title_only`（未获取原文，链接为小红书搜索页且未提供正文；基于标题与输入拆解，所有维度均为推断）
+
+### 1. 前 3 秒钩子（推断）
+
+标题即第一道点击闸，包含两层机制：
+
+- 「日照金山」→ 稀缺景观的画面承诺：金色雪山是强视觉意象，点开预期明确——「这一眼值得看」。
+- 「定格这一刻」→ 瞬间仪式感：强调「这一刻不可复制、稍纵即逝」，制造错过即遗憾的情绪，把「看看」推向「想亲眼看/替我看一眼」。
+
+小红书真实的第一道闸是封面/首图，本维度仅基于标题判断，不推断封面细节。
+
+### 2. 选题角度（推断）
+
+「日照金山」是旅行、摄影、祈福圈公认的高向往意象，常与雪山目的地、好运寓意绑定，自带「看到即幸运」的社交谈资。选题本质是「稀缺美景 + 情绪价值」，而非信息差或干货；标题短句也可能承接「日照金山」等搜索词（推断）。未获取原文，无法确认是否蹭具体热点、季节或特定地点。
+
+### 3. 内容结构（推断）
+
+按小红书旅行/风光品类通式推断：高光首图/封面钩子 → 地点与时刻交代 → 现场画面展开 → 点题收尾。信息密度低、情绪浓度高，靠画面递进与「金山变亮」的视觉高潮留住用户，而非段落逻辑。未获取原文，不推断具体分镜、图数或段落。
+
+### 4. 情绪与人群（推断）
+
+- 主打情绪：敬畏、向往、治愈，以及「幸运」期待。
+- 目标人群：旅行爱好者、雪山/摄影爱好者、向往川西/西藏/云南等地的用户，以及用风光内容自我疗愈的泛小红书用户。
+
+### 5. 金句与留存节点（推断）
+
+标题「定格这一刻的日照金山」本身即是可截图、可转述的短金句，颗粒度适合传播。图文/视频的留存节点大概率在「金山亮起的瞬间」与「地点、时刻信息」——用户为收藏攻略或重看美景而停留。正文是否有其他金句无法确认。
+
+### 6. 排版节奏（推断）
+
+小红书图文场景：封面用一张最强的日照金山画面并配大字标题；正文字数宜少，用空行与短句保持呼吸感，地点与时刻可单独成段；若含拍摄攻略则清单化呈现。仅作平台通用推断，无原文可依据。
+
+### 7. 转化设计（推断）
+
+高向往风光内容天然导向收藏（想去/想再看）与评论（问地点、许愿、分享同款经历）；「定格这一刻」的仪式感也容易引发评论区「接好运」式互动。具体引导话术无证据，不编造。
+
+### 8. 公式标签
+
+悬念好奇 / 身份代入
+
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_da3cd5f6ae85.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_da3cd5f6ae85.md
+diff --git a/data/flywheel/breakdowns/v_da3cd5f6ae85.json b/data/flywheel/breakdowns/v_da3cd5f6ae85.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..3a0fa873990c2fd0041cdce67453eb5082a0e3da
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_da3cd5f6ae85.json
+@@ -0,0 +1,10 @@
++{
++  "title": "我选择海岛作为我生活的解药",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "基于标题推断：第一人称「我选择」直接建立身份代入，「海岛」给足画面想象，「生活的解药」用比喻把旅行目的地变成「治病的药」，一句话同时抛出『她是谁、她在哪、她为什么』，制造『我是不是也该这样』的悬念。未获取原文，前 3 秒实际画面无证据，不做编造。",
++  "structure": "基于标题推断：未获取原文，链接为抖音搜索页。按「逃离/旅居」品类通式推断：现实压力铺垫 → 海岛画面展开 → 状态对比/转折 → 点题收尾；靠慢镜头与生活碎片制造情绪递进。不编造具体分镜、台词与时长。",
++  "why_viral": "基于标题推断：①「生活的解药」击中城市人群的疲惫与逃离情绪，把「去海岛」从旅游升级成一种生活选择，身份代入极强；②标题自带悬念（什么样的生活需要解药？海岛怎么治？），驱动点开与完播；③「解药」是可套用的金句模板，易引发评论『我的解药是XX』与收藏向往；④「海岛旅居/逃离城市」是长期热门搜索主题（推断，未获原文佐证）。链接为搜索页，未获取单条视频原文，不编造作者、数据、画面或文案细节。",
++  "formula": "身份代入, 悬念好奇, 冲突对比",
++  "summary": "用「我选择…作为…的解药」把旅行叙事升级成生活选择，以身份代入和悬念击中疲惫人群的逃离情绪，靠金句模板引发评论与收藏；可复用为『生活痛点+向往场景+解药比喻』的情绪型标题公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_da3cd5f6ae85.md b/data/flywheel/breakdowns/v_da3cd5f6ae85.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..671c2ff13bb30a63bf239ee926984717451e1032
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_da3cd5f6ae85.md
+@@ -0,0 +1,46 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接为抖音搜索页，未提供正文/逐字稿；所有维度均为推断，不编造数据、画面、台词与作者信息）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即钩子设计，包含三层机制：
++
++- 「我选择」→ 第一人称主动选择，瞬间建立身份代入：「这个人做了我不敢做的事」。
++- 「海岛」→ 强画面承诺，点开预期明确：蓝天、海、慢生活。
++- 「生活的解药」→ 反常识比喻：海岛不是度假地，而是「药」，暗示此前生活是「病」，制造悬念——她经历了什么？海岛怎么治好了她？
++
++未获取逐字稿，前 3 秒实际镜头与台词无证据，不做编造。
++
++### 2. 选题角度（推断）
++
++踩中长期的「逃离/治愈」情绪：城市通勤、加班、内耗带来的疲惫感，让「换一种活法」成为高共鸣命题。选题本质是「生活痛点 + 向往场景」，而非信息差干货；「海岛旅居」「逃离城市」同时是潜在搜索词（推断）。是否蹭具体热点、季节或目的地无法确认。
++
++### 3. 内容结构（推断）
++
++按「逃离/旅居」品类通式推断：现实压力快速铺垫 → 海岛画面展开 → 逃离前后状态对比/转折 → 点题收尾。信息密度低、情绪浓度高，靠生活碎片的递进而非信息堆叠留住用户。未获取原文，不推断具体分镜、台词与时长。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：焦虑（生活需要解药）、共鸣、向往、治愈，以及「放下一切」的轻微爽感。
++- 目标人群：城市上班族、25-40 岁、有内耗或倦怠感、向往自由/旅居/慢生活的泛抖音用户。
++
++### 5. 金句与留存节点（推断）
++
++标题「我选择海岛作为我生活的解药」本身是可截图的短金句，且「把____作为我生活的解药」是可套用模板。留存节点大概率在「逃离前 vs 逃离后」的状态对比和海边生活的治愈画面上，具体文案无证据。
++
++### 6. 剪辑节奏（推断）
++
++抖音场景的通用推断：前 3 秒用快节奏或冲突字幕抢完播，中段切治愈系慢镜头（日出、海浪、行走），BGM 轻缓，金句压字幕，结尾卡点点题。实际剪辑无证据，仅作平台类型推断。
++
++### 7. 转化设计（推断）
++
++- 评论：抛「你的解药是什么」类话题，引发互动与二创。
++- 收藏：海岛旅居/逃离生活的向往感或生活清单容易触发收藏。
++- 关注/进主页：若内容系列化（持续记录海岛生活），「连载」属性会引导关注。
++
++具体引导话术无证据，不编造。
++
++### 8. 公式标签
++
++身份代入 / 悬念好奇 / 冲突对比
+
+diff --git a/data/flywheel/breakdowns/v_da3cd5f6ae85.json b/data/flywheel/breakdowns/v_da3cd5f6ae85.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..3a0fa873990c2fd0041cdce67453eb5082a0e3da
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_da3cd5f6ae85.json
+@@ -0,0 +1,10 @@
++{
++  "title": "我选择海岛作为我生活的解药",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "基于标题推断：第一人称「我选择」直接建立身份代入，「海岛」给足画面想象，「生活的解药」用比喻把旅行目的地变成「治病的药」，一句话同时抛出『她是谁、她在哪、她为什么』，制造『我是不是也该这样』的悬念。未获取原文，前 3 秒实际画面无证据，不做编造。",
++  "structure": "基于标题推断：未获取原文，链接为抖音搜索页。按「逃离/旅居」品类通式推断：现实压力铺垫 → 海岛画面展开 → 状态对比/转折 → 点题收尾；靠慢镜头与生活碎片制造情绪递进。不编造具体分镜、台词与时长。",
++  "why_viral": "基于标题推断：①「生活的解药」击中城市人群的疲惫与逃离情绪，把「去海岛」从旅游升级成一种生活选择，身份代入极强；②标题自带悬念（什么样的生活需要解药？海岛怎么治？），驱动点开与完播；③「解药」是可套用的金句模板，易引发评论『我的解药是XX』与收藏向往；④「海岛旅居/逃离城市」是长期热门搜索主题（推断，未获原文佐证）。链接为搜索页，未获取单条视频原文，不编造作者、数据、画面或文案细节。",
++  "formula": "身份代入, 悬念好奇, 冲突对比",
++  "summary": "用「我选择…作为…的解药」把旅行叙事升级成生活选择，以身份代入和悬念击中疲惫人群的逃离情绪，靠金句模板引发评论与收藏；可复用为『生活痛点+向往场景+解药比喻』的情绪型标题公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_da3cd5f6ae85.md b/data/flywheel/breakdowns/v_da3cd5f6ae85.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..671c2ff13bb30a63bf239ee926984717451e1032
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_da3cd5f6ae85.md
+@@ -0,0 +1,46 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接为抖音搜索页，未提供正文/逐字稿；所有维度均为推断，不编造数据、画面、台词与作者信息）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即钩子设计，包含三层机制：
++
++- 「我选择」→ 第一人称主动选择，瞬间建立身份代入：「这个人做了我不敢做的事」。
++- 「海岛」→ 强画面承诺，点开预期明确：蓝天、海、慢生活。
++- 「生活的解药」→ 反常识比喻：海岛不是度假地，而是「药」，暗示此前生活是「病」，制造悬念——她经历了什么？海岛怎么治好了她？
++
++未获取逐字稿，前 3 秒实际镜头与台词无证据，不做编造。
++
++### 2. 选题角度（推断）
++
++踩中长期的「逃离/治愈」情绪：城市通勤、加班、内耗带来的疲惫感，让「换一种活法」成为高共鸣命题。选题本质是「生活痛点 + 向往场景」，而非信息差干货；「海岛旅居」「逃离城市」同时是潜在搜索词（推断）。是否蹭具体热点、季节或目的地无法确认。
++
++### 3. 内容结构（推断）
++
++按「逃离/旅居」品类通式推断：现实压力快速铺垫 → 海岛画面展开 → 逃离前后状态对比/转折 → 点题收尾。信息密度低、情绪浓度高，靠生活碎片的递进而非信息堆叠留住用户。未获取原文，不推断具体分镜、台词与时长。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：焦虑（生活需要解药）、共鸣、向往、治愈，以及「放下一切」的轻微爽感。
++- 目标人群：城市上班族、25-40 岁、有内耗或倦怠感、向往自由/旅居/慢生活的泛抖音用户。
++
++### 5. 金句与留存节点（推断）
++
++标题「我选择海岛作为我生活的解药」本身是可截图的短金句，且「把____作为我生活的解药」是可套用模板。留存节点大概率在「逃离前 vs 逃离后」的状态对比和海边生活的治愈画面上，具体文案无证据。
++
++### 6. 剪辑节奏（推断）
++
++抖音场景的通用推断：前 3 秒用快节奏或冲突字幕抢完播，中段切治愈系慢镜头（日出、海浪、行走），BGM 轻缓，金句压字幕，结尾卡点点题。实际剪辑无证据，仅作平台类型推断。
++
++### 7. 转化设计（推断）
++
++- 评论：抛「你的解药是什么」类话题，引发互动与二创。
++- 收藏：海岛旅居/逃离生活的向往感或生活清单容易触发收藏。
++- 关注/进主页：若内容系列化（持续记录海岛生活），「连载」属性会引导关注。
++
++具体引导话术无证据，不编造。
++
++### 8. 公式标签
++
++身份代入 / 悬念好奇 / 冲突对比
+
+exec
+/bin/zsh -lc 'jq empty data/flywheel/breakdowns/v_da3cd5f6ae85.json && echo VALID' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+VALID
+
+diff --git a/data/flywheel/breakdowns/v_da3cd5f6ae85.json b/data/flywheel/breakdowns/v_da3cd5f6ae85.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..3a0fa873990c2fd0041cdce67453eb5082a0e3da
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_da3cd5f6ae85.json
+@@ -0,0 +1,10 @@
++{
++  "title": "我选择海岛作为我生活的解药",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "基于标题推断：第一人称「我选择」直接建立身份代入，「海岛」给足画面想象，「生活的解药」用比喻把旅行目的地变成「治病的药」，一句话同时抛出『她是谁、她在哪、她为什么』，制造『我是不是也该这样』的悬念。未获取原文，前 3 秒实际画面无证据，不做编造。",
++  "structure": "基于标题推断：未获取原文，链接为抖音搜索页。按「逃离/旅居」品类通式推断：现实压力铺垫 → 海岛画面展开 → 状态对比/转折 → 点题收尾；靠慢镜头与生活碎片制造情绪递进。不编造具体分镜、台词与时长。",
++  "why_viral": "基于标题推断：①「生活的解药」击中城市人群的疲惫与逃离情绪，把「去海岛」从旅游升级成一种生活选择，身份代入极强；②标题自带悬念（什么样的生活需要解药？海岛怎么治？），驱动点开与完播；③「解药」是可套用的金句模板，易引发评论『我的解药是XX』与收藏向往；④「海岛旅居/逃离城市」是长期热门搜索主题（推断，未获原文佐证）。链接为搜索页，未获取单条视频原文，不编造作者、数据、画面或文案细节。",
++  "formula": "身份代入, 悬念好奇, 冲突对比",
++  "summary": "用「我选择…作为…的解药」把旅行叙事升级成生活选择，以身份代入和悬念击中疲惫人群的逃离情绪，靠金句模板引发评论与收藏；可复用为『生活痛点+向往场景+解药比喻』的情绪型标题公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_da3cd5f6ae85.md b/data/flywheel/breakdowns/v_da3cd5f6ae85.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..671c2ff13bb30a63bf239ee926984717451e1032
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_da3cd5f6ae85.md
+@@ -0,0 +1,46 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接为抖音搜索页，未提供正文/逐字稿；所有维度均为推断，不编造数据、画面、台词与作者信息）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即钩子设计，包含三层机制：
++
++- 「我选择」→ 第一人称主动选择，瞬间建立身份代入：「这个人做了我不敢做的事」。
++- 「海岛」→ 强画面承诺，点开预期明确：蓝天、海、慢生活。
++- 「生活的解药」→ 反常识比喻：海岛不是度假地，而是「药」，暗示此前生活是「病」，制造悬念——她经历了什么？海岛怎么治好了她？
++
++未获取逐字稿，前 3 秒实际镜头与台词无证据，不做编造。
++
++### 2. 选题角度（推断）
++
++踩中长期的「逃离/治愈」情绪：城市通勤、加班、内耗带来的疲惫感，让「换一种活法」成为高共鸣命题。选题本质是「生活痛点 + 向往场景」，而非信息差干货；「海岛旅居」「逃离城市」同时是潜在搜索词（推断）。是否蹭具体热点、季节或目的地无法确认。
++
++### 3. 内容结构（推断）
++
++按「逃离/旅居」品类通式推断：现实压力快速铺垫 → 海岛画面展开 → 逃离前后状态对比/转折 → 点题收尾。信息密度低、情绪浓度高，靠生活碎片的递进而非信息堆叠留住用户。未获取原文，不推断具体分镜、台词与时长。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：焦虑（生活需要解药）、共鸣、向往、治愈，以及「放下一切」的轻微爽感。
++- 目标人群：城市上班族、25-40 岁、有内耗或倦怠感、向往自由/旅居/慢生活的泛抖音用户。
++
++### 5. 金句与留存节点（推断）
++
++标题「我选择海岛作为我生活的解药」本身是可截图的短金句，且「把____作为我生活的解药」是可套用模板。留存节点大概率在「逃离前 vs 逃离后」的状态对比和海边生活的治愈画面上，具体文案无证据。
++
++### 6. 剪辑节奏（推断）
++
++抖音场景的通用推断：前 3 秒用快节奏或冲突字幕抢完播，中段切治愈系慢镜头（日出、海浪、行走），BGM 轻缓，金句压字幕，结尾卡点点题。实际剪辑无证据，仅作平台类型推断。
++
++### 7. 转化设计（推断）
++
++- 评论：抛「你的解药是什么」类话题，引发互动与二创。
++- 收藏：海岛旅居/逃离生活的向往感或生活清单容易触发收藏。
++- 关注/进主页：若内容系列化（持续记录海岛生活），「连载」属性会引导关注。
++
++具体引导话术无证据，不编造。
++
++### 8. 公式标签
++
++身份代入 / 悬念好奇 / 冲突对比
+
+codex
+已完成拆解，依据级别为 `title_only`（未获取原文，链接为抖音搜索页，所有维度均为推断）。文件已写入：
+
+- [v_da3cd5f6ae85.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_da3cd5f6ae85.json)
+- [v_da3cd5f6ae85.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_da3cd5f6ae85.md)
+
+可复用创作指令（≤200 字）：
+
+标题用「我选择____作为我生活的解药」模板；开头 3 秒先用闹钟/通勤/加班等疲惫画面+一句『生活需要解药』制造代入与悬念；中段接海岛日出、海边漫步、慢生活碎片，做逃离前后对比；结尾点题『不是逃避，是换一种活法』，抛评论钩子『你的解药是什么？』；BGM 选轻治愈系，字幕压金句，节奏前快后慢，结尾引导收藏与关注旅居后续。
+diff --git a/data/flywheel/breakdowns/v_da3cd5f6ae85.json b/data/flywheel/breakdowns/v_da3cd5f6ae85.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..3a0fa873990c2fd0041cdce67453eb5082a0e3da
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_da3cd5f6ae85.json
+@@ -0,0 +1,10 @@
++{
++  "title": "我选择海岛作为我生活的解药",
++  "platform": "抖音",
++  "evidence_level": "title_only",
++  "hook": "基于标题推断：第一人称「我选择」直接建立身份代入，「海岛」给足画面想象，「生活的解药」用比喻把旅行目的地变成「治病的药」，一句话同时抛出『她是谁、她在哪、她为什么』，制造『我是不是也该这样』的悬念。未获取原文，前 3 秒实际画面无证据，不做编造。",
++  "structure": "基于标题推断：未获取原文，链接为抖音搜索页。按「逃离/旅居」品类通式推断：现实压力铺垫 → 海岛画面展开 → 状态对比/转折 → 点题收尾；靠慢镜头与生活碎片制造情绪递进。不编造具体分镜、台词与时长。",
++  "why_viral": "基于标题推断：①「生活的解药」击中城市人群的疲惫与逃离情绪，把「去海岛」从旅游升级成一种生活选择，身份代入极强；②标题自带悬念（什么样的生活需要解药？海岛怎么治？），驱动点开与完播；③「解药」是可套用的金句模板，易引发评论『我的解药是XX』与收藏向往；④「海岛旅居/逃离城市」是长期热门搜索主题（推断，未获原文佐证）。链接为搜索页，未获取单条视频原文，不编造作者、数据、画面或文案细节。",
++  "formula": "身份代入, 悬念好奇, 冲突对比",
++  "summary": "用「我选择…作为…的解药」把旅行叙事升级成生活选择，以身份代入和悬念击中疲惫人群的逃离情绪，靠金句模板引发评论与收藏；可复用为『生活痛点+向往场景+解药比喻』的情绪型标题公式。"
++}
+diff --git a/data/flywheel/breakdowns/v_da3cd5f6ae85.md b/data/flywheel/breakdowns/v_da3cd5f6ae85.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..671c2ff13bb30a63bf239ee926984717451e1032
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_da3cd5f6ae85.md
+@@ -0,0 +1,46 @@
++## 拆解报告
++
++依据级别：`title_only`（未获取原文，链接为抖音搜索页，未提供正文/逐字稿；所有维度均为推断，不编造数据、画面、台词与作者信息）
++
++### 1. 前 3 秒钩子（推断）
++
++标题即钩子设计，包含三层机制：
++
++- 「我选择」→ 第一人称主动选择，瞬间建立身份代入：「这个人做了我不敢做的事」。
++- 「海岛」→ 强画面承诺，点开预期明确：蓝天、海、慢生活。
++- 「生活的解药」→ 反常识比喻：海岛不是度假地，而是「药」，暗示此前生活是「病」，制造悬念——她经历了什么？海岛怎么治好了她？
++
++未获取逐字稿，前 3 秒实际镜头与台词无证据，不做编造。
++
++### 2. 选题角度（推断）
++
++踩中长期的「逃离/治愈」情绪：城市通勤、加班、内耗带来的疲惫感，让「换一种活法」成为高共鸣命题。选题本质是「生活痛点 + 向往场景」，而非信息差干货；「海岛旅居」「逃离城市」同时是潜在搜索词（推断）。是否蹭具体热点、季节或目的地无法确认。
++
++### 3. 内容结构（推断）
++
++按「逃离/旅居」品类通式推断：现实压力快速铺垫 → 海岛画面展开 → 逃离前后状态对比/转折 → 点题收尾。信息密度低、情绪浓度高，靠生活碎片的递进而非信息堆叠留住用户。未获取原文，不推断具体分镜、台词与时长。
++
++### 4. 情绪与人群（推断）
++
++- 主打情绪：焦虑（生活需要解药）、共鸣、向往、治愈，以及「放下一切」的轻微爽感。
++- 目标人群：城市上班族、25-40 岁、有内耗或倦怠感、向往自由/旅居/慢生活的泛抖音用户。
++
++### 5. 金句与留存节点（推断）
++
++标题「我选择海岛作为我生活的解药」本身是可截图的短金句，且「把____作为我生活的解药」是可套用模板。留存节点大概率在「逃离前 vs 逃离后」的状态对比和海边生活的治愈画面上，具体文案无证据。
++
++### 6. 剪辑节奏（推断）
++
++抖音场景的通用推断：前 3 秒用快节奏或冲突字幕抢完播，中段切治愈系慢镜头（日出、海浪、行走），BGM 轻缓，金句压字幕，结尾卡点点题。实际剪辑无证据，仅作平台类型推断。
++
++### 7. 转化设计（推断）
++
++- 评论：抛「你的解药是什么」类话题，引发互动与二创。
++- 收藏：海岛旅居/逃离生活的向往感或生活清单容易触发收藏。
++- 关注/进主页：若内容系列化（持续记录海岛生活），「连载」属性会引导关注。
++
++具体引导话术无证据，不编造。
++
++### 8. 公式标签
++
++身份代入 / 悬念好奇 / 冲突对比
+
+tokens used
+15,999
+已完成拆解，依据级别为 `title_only`（未获取原文，链接为抖音搜索页，所有维度均为推断）。文件已写入：
+
+- [v_da3cd5f6ae85.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_da3cd5f6ae85.json)
+- [v_da3cd5f6ae85.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_da3cd5f6ae85.md)
+
+可复用创作指令（≤200 字）：
+
+标题用「我选择____作为我生活的解药」模板；开头 3 秒先用闹钟/通勤/加班等疲惫画面+一句『生活需要解药』制造代入与悬念；中段接海岛日出、海边漫步、慢生活碎片，做逃离前后对比；结尾点题『不是逃避，是换一种活法』，抛评论钩子『你的解药是什么？』；BGM 选轻治愈系，字幕压金句，节奏前快后慢，结尾引导收藏与关注旅居后续。
+
+===== 拆解开始 v_da3cd5f6ae85 =====

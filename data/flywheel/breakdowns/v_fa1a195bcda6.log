@@ -1,0 +1,481 @@
+2026-08-13T17:10:30.167202Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:10:30.177899Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:10:30.205205Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:10:30.205238Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc1a-9c14-72c3-a601-ba461ef47647
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评论/关注/进主页的引导动作。
+8. **公式标签**：从下面选 1-3 个：数字冲击 / 反常识 / 身份代入 / 悬念好奇 / 干货清单 / 冲突对比 / 社会证明 / 蹭热点时效 / 实操教学。
+
+## 输出（严格按此执行）
+1. 把结果 JSON 写到 `data/flywheel/breakdowns/<viral_id>.json`：
+```json
+{
+  "title": "原标题",
+  "platform": "小红书",
+  "evidence_level": "title_only",
+  "hook": "前3秒钩子拆解",
+  "structure": "结构拆解",
+  "why_viral": "爆点归因（含证据）",
+  "formula": "公式1, 公式2",
+  "summary": "一句话总结为什么火、能复用什么"
+}
+```
+2. `evidence_level` 取值：`content`（有正文/逐字稿）｜ `title_only`（仅标题与热度/榜单上下文）｜ `mixed`（部分原文）。`title_only` 时所有维度均为“推断”，必须在 `why_viral` 中标注“基于标题推断”，不得编造具体数据、封面细节或逐字内容。
+3. 同时写 `data/flywheel/breakdowns/<viral_id>.md`，格式为“## 拆解报告”+ 八个维度小节+依据级别，供人读。
+4. 最后在输出里给出一段 ≤200 字的“可复用创作指令”，不要写进 JSON。
+
+## 纪律
+- 只基于提供的原文/链接内容拆解，不编造数据；链接无法访问就注明“未获取原文，基于标题与输入拆解”。
+- `title_only` 的拆解定位是“选题角度与公式推断”，不是事实复述；禁止编造作者、数据、画面或文案细节。
+- 不写完整复制稿；只提炼方法与公式。
+
+
+## 本次拆解对象
+- viral_id：v_fa1a195bcda6
+- 平台：公众号
+- 标题：遇到倒塌横木，不要直接跨过去！危险！
+- 链接：https://mp.weixin.qq.com/s?__biz=MzY4ODEwNjU2Mg==&mid=2247485493&idx=1&sn=f663e5dfa8c328fcb2b3c2944c7fdb1f#rd
+- 原文/逐字稿：
+（未提供，请基于标题拆解并注明）
+
+拆解完成后把 JSON 与 Markdown 写到指定路径，然后输出一段 ≤200 字可复用创作指令。
+2026-08-13T17:10:30.873522Z  WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex failed with status 401 Unauthorized: {"detail":"Unauthorized"}
+2026-08-13T17:10:30.995923Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/.tmp/marketplaces/chatcut-inc/codex/.codex-plugin/plugin.json
+2026-08-13T17:10:31.636094Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+2026-08-13T17:10:31.637420Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt[0]: prompt must be at most 128 characters path=file:///Users/xiaowuliao/.codex/.tmp/plugins/plugins/ngs-analysis/.codex-plugin/plugin.json
+codex
+我先检查目标目录是否存在，然后按标题拆解（原文未提供，链接不额外抓取，依据级别为 title_only）写入 JSON 与 Markdown。
+exec
+/bin/zsh -lc 'ls -la data/flywheel/breakdowns' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+total 1312
+drwxr-xr-x@ 37 xiaowuliao  staff    1184 Aug 14 01:10 .
+drwxr-xr-x@ 10 xiaowuliao  staff     320 Aug 14 01:10 ..
+-rw-r--r--@  1 xiaowuliao  staff    1691 Aug 14 01:09 v_0d8565de6a1f.json
+-rw-r--r--@  1 xiaowuliao  staff   45859 Aug 14 01:09 v_0d8565de6a1f.log
+-rw-r--r--@  1 xiaowuliao  staff    2918 Aug 14 01:09 v_0d8565de6a1f.md
+-rw-r--r--@  1 xiaowuliao  staff    1050 Aug 14 01:07 v_1ef336069327.json
+-rw-r--r--@  1 xiaowuliao  staff   40801 Aug 14 01:07 v_1ef336069327.log
+-rw-r--r--@  1 xiaowuliao  staff    2591 Aug 14 01:07 v_1ef336069327.md
+-rw-r--r--@  1 xiaowuliao  staff     360 Aug 13 01:08 v_20260813010837_de7be7.log
+-rw-r--r--@  1 xiaowuliao  staff    1261 Aug 14 01:01 v_6292f86f3f75.json
+-rw-r--r--@  1 xiaowuliao  staff   35772 Aug 14 01:01 v_6292f86f3f75.log
+-rw-r--r--@  1 xiaowuliao  staff    2321 Aug 14 01:01 v_6292f86f3f75.md
+-rw-r--r--@  1 xiaowuliao  staff    1225 Aug 14 01:00 v_670d018e20ef.json
+-rw-r--r--@  1 xiaowuliao  staff   41671 Aug 14 01:00 v_670d018e20ef.log
+-rw-r--r--@  1 xiaowuliao  staff    2931 Aug 14 01:00 v_670d018e20ef.md
+-rw-r--r--@  1 xiaowuliao  staff    1304 Aug 14 01:06 v_a165e614db98.json
+-rw-r--r--@  1 xiaowuliao  staff   25661 Aug 14 01:06 v_a165e614db98.log
+-rw-r--r--@  1 xiaowuliao  staff    2203 Aug 14 01:06 v_a165e614db98.md
+-rw-r--r--@  1 xiaowuliao  staff    1461 Aug 14 01:03 v_ccd0f0320b43.json
+-rw-r--r--@  1 xiaowuliao  staff   41877 Aug 14 01:03 v_ccd0f0320b43.log
+-rw-r--r--@  1 xiaowuliao  staff    2620 Aug 14 01:03 v_ccd0f0320b43.md
+-rw-r--r--@  1 xiaowuliao  staff    1721 Aug 14 01:08 v_da3cd5f6ae85.json
+-rw-r--r--@  1 xiaowuliao  staff   47233 Aug 14 01:08 v_da3cd5f6ae85.log
+-rw-r--r--@  1 xiaowuliao  staff    2757 Aug 14 01:08 v_da3cd5f6ae85.md
+-rw-r--r--@  1 xiaowuliao  staff    1697 Aug 14 01:04 v_dbcb92ffbec0.json
+-rw-r--r--@  1 xiaowuliao  staff   53693 Aug 14 01:04 v_dbcb92ffbec0.log
+-rw-r--r--@  1 xiaowuliao  staff    2732 Aug 14 01:04 v_dbcb92ffbec0.md
+-rw-r--r--@  1 xiaowuliao  staff    1188 Aug 14 00:59 v_e102465d66e9.json
+-rw-r--r--@  1 xiaowuliao  staff   35274 Aug 14 00:59 v_e102465d66e9.log
+-rw-r--r--@  1 xiaowuliao  staff    2151 Aug 14 00:59 v_e102465d66e9.md
+-rw-r--r--@  1 xiaowuliao  staff    1647 Aug 14 01:10 v_e8cb600743af.json
+-rw-r--r--@  1 xiaowuliao  staff  100876 Aug 14 01:10 v_e8cb600743af.log
+-rw-r--r--@  1 xiaowuliao  staff    3003 Aug 14 01:10 v_e8cb600743af.md
+-rw-r--r--@  1 xiaowuliao  staff    1352 Aug 14 01:05 v_f6062e356b69.json
+-rw-r--r--@  1 xiaowuliao  staff   42840 Aug 14 01:05 v_f6062e356b69.log
+-rw-r--r--@  1 xiaowuliao  staff    2378 Aug 14 01:05 v_f6062e356b69.md
+-rw-r--r--@  1 xiaowuliao  staff    6124 Aug 14 01:11 v_fa1a195bcda6.log
+
+codex
+目录已存在，且该 viral_id 已有一个 `.log` 文件（可能是链接抓取记录）。我快速查看它是否含原文，避免遗漏可用证据。
+exec
+/bin/zsh -lc 'head -c 3000 data/flywheel/breakdowns/v_fa1a195bcda6.log' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+2026-08-13T17:10:30.167202Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:10:30.177899Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: maximum of 3 prompts is supported path=file:///Users/xiaowuliao/.codex/plugins/cache/chatcut-inc/chatcut/0.2.23/.codex-plugin/plugin.json
+2026-08-13T17:10:30.205205Z  WARN codex_core_skills::loader: ignoring interface.icon_small: icon path with '..' must resolve under plugin assets/
+2026-08-13T17:10:30.205238Z  WARN codex_core_skills::loader: ignoring interface.icon_large: icon path with '..' must resolve under plugin assets/
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/xiaowuliao/Projects/自媒体发布agent
+model: deepseek-v4-flash
+provider: deepseek
+approval: on-request
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: max
+reasoning summaries: none
+session id: 019ffc1a-9c14-72c3-a601-ba461ef47647
+--------
+user
+请严格按下面的 Skill 拆解一条爆款内容。
+
+---
+name: viral-breakdown-skill
+description: 爆款内容拆解（小红书/抖音/公众号等）。输入链接或粘贴的标题/正文/逐字稿，按固定维度拆解，输出结构化 JSON 与 Markdown 报告，提炼可复用爆款公式。供数据飞轮爆款跟踪使用。
+---
+
+# 爆款拆解 Skill
+
+## 输入
+- 标题（必填）
+- 原文：笔记正文 / 视频逐字稿 / 长文（可部分）
+- 链接（可选）
+- 平台（可选：小红书/抖音/B站/视频号/X/公众号/其他）
+- 热度/排名（可选：来自榜单的 score/hot_value/阅读量）
+
+## 平台拆解重点（按平台聚焦，不要每项都写满）
+- **小红书**：封面/首图点击率是第一道闸；标题是否埋搜索词；内容是否有收藏价值（清单/教程/避坑）与评论话题；情绪与人群是否精准。
+- **抖音**：前 3 秒钩子决定完播；信息密度与节奏决定停留时长；收藏/关注/评论等深度行为权重大于浅赞；选题是否有搜索价值。
+- **公众号**：标题是否清晰完整、主题明确（少故弄玄虚）；开头是否快速给结论；观点/真实案例是否有转发欲；是否埋长尾搜索关键词。
+
+## 拆解维度（每项都要给具体证据，不许空话）
+1. **前 3 秒钩子**：开头怎么抓人（数字/冲突/反常识/提问/身份代入）。
+2. **选题角度**：为什么这个选题会有人看；蹭了什么热点/情绪/人群。
+3. **内容结构**：段落/分镜顺序，起承转合，信息密度安排。
+4. **情绪与人群**：主打情绪（焦虑/好奇/共鸣/爽感）、目标人群。
+5. **金句与留存节点**：每 10-15 秒/段落的记忆点，让人想看完或收藏。
+6. **剪辑节奏**（视频才填）：镜头切换、字幕、BGM、卡点；图文则写排版节奏。
+7. **转化设计**：点赞/收藏/评
+codex
+该 log 只是运行记录，不含原文。按 title_only 依据级别写入两份文件。
+apply patch
+patch: completed
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_fa1a195bcda6.json
+/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_fa1a195bcda6.md
+diff --git a/data/flywheel/breakdowns/v_fa1a195bcda6.json b/data/flywheel/breakdowns/v_fa1a195bcda6.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d932883827f6e93c6e1415acdf5c41f24055074
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_fa1a195bcda6.json
+@@ -0,0 +1,10 @@
++{
++  "title": "遇到倒塌横木,不要直接跨过去!危险!",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即钩子:以“遇到倒塌横木”给出具体场景,让户外/徒步/通勤人群自动代入;再用“不要直接跨过去!”制造反常识认知缺口——跨过倒木本是本能动作,禁令让人追问“为什么不能”;“危险!”短句加叹号进一步放大紧迫感。推断正文开头会延续该场景并用后果悬念拉住读者。",
++  "structure": "推断结构:场景带入(遇到倒塌横木)→ 悬疑设问(为什么不能跨)→ 危险机理/案例讲解 → 正确做法与替代方案 → 口诀式总结 → 转发收藏引导;公众号排版适合短段+配图+小标题,信息密度按“问题—解释—方案”三段递进。",
++  "why_viral": "基于标题推断:标题同时命中反常识、安全焦虑与身份代入三类传播因子。“不要直接跨过去”制造认知缺口,读者为获得答案点开;安全类内容天然强转发(转发给家人/户外群)且常青不依赖时效;覆盖徒步、登山、通勤、家长等泛人群。未获取原文,仅凭标题与平台上下文拆解,未编造具体数据、案例或正文细节。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用一个反直觉的安全禁令制造认知缺口:标题负责点开,安全属性负责收藏与转发;可复用的是“人人以为顺手的事其实有致命风险”的选题公式,配“为什么不能—怎么办”的悬念结构。"
++}
+diff --git a/data/flywheel/breakdowns/v_fa1a195bcda6.md b/data/flywheel/breakdowns/v_fa1a195bcda6.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..28824641a58b624f8566f63b95a01c184d576841
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_fa1a195bcda6.md
+@@ -0,0 +1,44 @@
++## 拆解报告
++
++- viral_id:v_fa1a195bcda6
++- 平台:公众号
++- 标题:遇到倒塌横木,不要直接跨过去!危险!
++- 链接:https://mp.weixin.qq.com/s?__biz=MzY4ODEwNjU2Mg==&mid=2247485493&idx=1&sn=f663e5dfa8c328fcb2b3c2944c7fdb1f#rd
++
++**依据级别:title_only(仅标题与平台上下文;未获取原文,基于标题与输入拆解,以下维度均为推断,非事实复述)**
++
++### 1. 前 3 秒钩子(推断)
++
++标题本身完成三道钩子:①“遇到倒塌横木”给出具体场景,让户外/徒步/通勤人群自动代入;②“不要直接跨过去!”是反常识禁令,制造“为什么不能”的认知缺口;③“危险!”短句+叹号叠加紧迫感,促使点开。推断正文开头会延续场景并用后果悬念承接。
++
++### 2. 选题角度(推断)
++
++安全避坑类选题,踩中“意外伤害”的普遍恐惧,人群广且常青,不依赖热点时效,天然适合公众号长尾传播。标题刻意选择“看似常见、实则危险”的日常动作,熟悉感越强,反常识张力越大。
++
++### 3. 内容结构(推断)
++
++推断为:场景开头 → 悬疑设问(为什么不能跨)→ 危险机理/案例讲解 → 正确做法 → 口诀式收尾 → 转发引导。信息密度呈“提出问题—解释原因—给出方案”三段递进,公众号宜用短段+配图+小标题降低阅读门槛。
++
++### 4. 情绪与人群(推断)
++
++主打“恐惧+好奇+心安”:先制造危险感,再用正确做法让读者安心。目标人群为户外爱好者、日常通勤者、家长及关注“保命常识”的泛用户。
++
++### 5. 金句与留存节点(推断)
++
++标题“不要直接跨过去!”本身即记忆点;推断正文以“错误做法 vs 正确做法”的对比制造每段留存,末尾大概率出现一句可口头传播的口诀式金句。以上为推断,不指向任何原文具体表述。
++
++### 6. 排版节奏(图文,推断)
++
++推断采用:短段落+加粗警示句+实拍/示意动图+清单式小标题;危险点与正确做法对比排版,方便扫读、截图与转发。
++
++### 7. 转化设计(推断)
++
++安全类内容最强转化是“转发”与“收藏”:转发=给家人的“保命”社交币。推断文末会引导“收藏备用/转给身边人/关注获取更多安全常识”。
++
++### 8. 公式标签
++
++反常识、悬念好奇、身份代入(1-3 个,选 3 个)
++
++### 爆点归因(基于标题推断)
++
++标题同时命中反常识、安全焦虑与身份代入:禁令制造认知缺口让人点开,安全属性驱动收藏与转发,场景熟悉感扩大人群覆盖面。未获取原文,未编造具体数据、案例、封面或逐字内容。
+
+diff --git a/data/flywheel/breakdowns/v_fa1a195bcda6.json b/data/flywheel/breakdowns/v_fa1a195bcda6.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d932883827f6e93c6e1415acdf5c41f24055074
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_fa1a195bcda6.json
+@@ -0,0 +1,10 @@
++{
++  "title": "遇到倒塌横木,不要直接跨过去!危险!",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即钩子:以“遇到倒塌横木”给出具体场景,让户外/徒步/通勤人群自动代入;再用“不要直接跨过去!”制造反常识认知缺口——跨过倒木本是本能动作,禁令让人追问“为什么不能”;“危险!”短句加叹号进一步放大紧迫感。推断正文开头会延续该场景并用后果悬念拉住读者。",
++  "structure": "推断结构:场景带入(遇到倒塌横木)→ 悬疑设问(为什么不能跨)→ 危险机理/案例讲解 → 正确做法与替代方案 → 口诀式总结 → 转发收藏引导;公众号排版适合短段+配图+小标题,信息密度按“问题—解释—方案”三段递进。",
++  "why_viral": "基于标题推断:标题同时命中反常识、安全焦虑与身份代入三类传播因子。“不要直接跨过去”制造认知缺口,读者为获得答案点开;安全类内容天然强转发(转发给家人/户外群)且常青不依赖时效;覆盖徒步、登山、通勤、家长等泛人群。未获取原文,仅凭标题与平台上下文拆解,未编造具体数据、案例或正文细节。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用一个反直觉的安全禁令制造认知缺口:标题负责点开,安全属性负责收藏与转发;可复用的是“人人以为顺手的事其实有致命风险”的选题公式,配“为什么不能—怎么办”的悬念结构。"
++}
+diff --git a/data/flywheel/breakdowns/v_fa1a195bcda6.md b/data/flywheel/breakdowns/v_fa1a195bcda6.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..28824641a58b624f8566f63b95a01c184d576841
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_fa1a195bcda6.md
+@@ -0,0 +1,44 @@
++## 拆解报告
++
++- viral_id:v_fa1a195bcda6
++- 平台:公众号
++- 标题:遇到倒塌横木,不要直接跨过去!危险!
++- 链接:https://mp.weixin.qq.com/s?__biz=MzY4ODEwNjU2Mg==&mid=2247485493&idx=1&sn=f663e5dfa8c328fcb2b3c2944c7fdb1f#rd
++
++**依据级别:title_only(仅标题与平台上下文;未获取原文,基于标题与输入拆解,以下维度均为推断,非事实复述)**
++
++### 1. 前 3 秒钩子(推断)
++
++标题本身完成三道钩子:①“遇到倒塌横木”给出具体场景,让户外/徒步/通勤人群自动代入;②“不要直接跨过去!”是反常识禁令,制造“为什么不能”的认知缺口;③“危险!”短句+叹号叠加紧迫感,促使点开。推断正文开头会延续场景并用后果悬念承接。
++
++### 2. 选题角度(推断)
++
++安全避坑类选题,踩中“意外伤害”的普遍恐惧,人群广且常青,不依赖热点时效,天然适合公众号长尾传播。标题刻意选择“看似常见、实则危险”的日常动作,熟悉感越强,反常识张力越大。
++
++### 3. 内容结构(推断)
++
++推断为:场景开头 → 悬疑设问(为什么不能跨)→ 危险机理/案例讲解 → 正确做法 → 口诀式收尾 → 转发引导。信息密度呈“提出问题—解释原因—给出方案”三段递进,公众号宜用短段+配图+小标题降低阅读门槛。
++
++### 4. 情绪与人群(推断)
++
++主打“恐惧+好奇+心安”:先制造危险感,再用正确做法让读者安心。目标人群为户外爱好者、日常通勤者、家长及关注“保命常识”的泛用户。
++
++### 5. 金句与留存节点(推断)
++
++标题“不要直接跨过去!”本身即记忆点;推断正文以“错误做法 vs 正确做法”的对比制造每段留存,末尾大概率出现一句可口头传播的口诀式金句。以上为推断,不指向任何原文具体表述。
++
++### 6. 排版节奏(图文,推断)
++
++推断采用:短段落+加粗警示句+实拍/示意动图+清单式小标题;危险点与正确做法对比排版,方便扫读、截图与转发。
++
++### 7. 转化设计(推断)
++
++安全类内容最强转化是“转发”与“收藏”:转发=给家人的“保命”社交币。推断文末会引导“收藏备用/转给身边人/关注获取更多安全常识”。
++
++### 8. 公式标签
++
++反常识、悬念好奇、身份代入(1-3 个,选 3 个)
++
++### 爆点归因(基于标题推断)
++
++标题同时命中反常识、安全焦虑与身份代入:禁令制造认知缺口让人点开,安全属性驱动收藏与转发,场景熟悉感扩大人群覆盖面。未获取原文,未编造具体数据、案例、封面或逐字内容。
+
+codex
+写入成功，做一次格式校验（JSON 合法性 + 文件存在）。
+exec
+/bin/zsh -lc 'python3 -m json.tool data/flywheel/breakdowns/v_fa1a195bcda6.json >/dev/null && echo JSON_OK && wc -l data/flywheel/breakdowns/v_fa1a195bcda6.md' in /Users/xiaowuliao/Projects/自媒体发布agent
+ succeeded in 0ms:
+JSON_OK
+      44 data/flywheel/breakdowns/v_fa1a195bcda6.md
+
+diff --git a/data/flywheel/breakdowns/v_fa1a195bcda6.json b/data/flywheel/breakdowns/v_fa1a195bcda6.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d932883827f6e93c6e1415acdf5c41f24055074
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_fa1a195bcda6.json
+@@ -0,0 +1,10 @@
++{
++  "title": "遇到倒塌横木,不要直接跨过去!危险!",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即钩子:以“遇到倒塌横木”给出具体场景,让户外/徒步/通勤人群自动代入;再用“不要直接跨过去!”制造反常识认知缺口——跨过倒木本是本能动作,禁令让人追问“为什么不能”;“危险!”短句加叹号进一步放大紧迫感。推断正文开头会延续该场景并用后果悬念拉住读者。",
++  "structure": "推断结构:场景带入(遇到倒塌横木)→ 悬疑设问(为什么不能跨)→ 危险机理/案例讲解 → 正确做法与替代方案 → 口诀式总结 → 转发收藏引导;公众号排版适合短段+配图+小标题,信息密度按“问题—解释—方案”三段递进。",
++  "why_viral": "基于标题推断:标题同时命中反常识、安全焦虑与身份代入三类传播因子。“不要直接跨过去”制造认知缺口,读者为获得答案点开;安全类内容天然强转发(转发给家人/户外群)且常青不依赖时效;覆盖徒步、登山、通勤、家长等泛人群。未获取原文,仅凭标题与平台上下文拆解,未编造具体数据、案例或正文细节。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用一个反直觉的安全禁令制造认知缺口:标题负责点开,安全属性负责收藏与转发;可复用的是“人人以为顺手的事其实有致命风险”的选题公式,配“为什么不能—怎么办”的悬念结构。"
++}
+diff --git a/data/flywheel/breakdowns/v_fa1a195bcda6.md b/data/flywheel/breakdowns/v_fa1a195bcda6.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..28824641a58b624f8566f63b95a01c184d576841
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_fa1a195bcda6.md
+@@ -0,0 +1,44 @@
++## 拆解报告
++
++- viral_id:v_fa1a195bcda6
++- 平台:公众号
++- 标题:遇到倒塌横木,不要直接跨过去!危险!
++- 链接:https://mp.weixin.qq.com/s?__biz=MzY4ODEwNjU2Mg==&mid=2247485493&idx=1&sn=f663e5dfa8c328fcb2b3c2944c7fdb1f#rd
++
++**依据级别:title_only(仅标题与平台上下文;未获取原文,基于标题与输入拆解,以下维度均为推断,非事实复述)**
++
++### 1. 前 3 秒钩子(推断)
++
++标题本身完成三道钩子:①“遇到倒塌横木”给出具体场景,让户外/徒步/通勤人群自动代入;②“不要直接跨过去!”是反常识禁令,制造“为什么不能”的认知缺口;③“危险!”短句+叹号叠加紧迫感,促使点开。推断正文开头会延续场景并用后果悬念承接。
++
++### 2. 选题角度(推断)
++
++安全避坑类选题,踩中“意外伤害”的普遍恐惧,人群广且常青,不依赖热点时效,天然适合公众号长尾传播。标题刻意选择“看似常见、实则危险”的日常动作,熟悉感越强,反常识张力越大。
++
++### 3. 内容结构(推断)
++
++推断为:场景开头 → 悬疑设问(为什么不能跨)→ 危险机理/案例讲解 → 正确做法 → 口诀式收尾 → 转发引导。信息密度呈“提出问题—解释原因—给出方案”三段递进,公众号宜用短段+配图+小标题降低阅读门槛。
++
++### 4. 情绪与人群(推断)
++
++主打“恐惧+好奇+心安”:先制造危险感,再用正确做法让读者安心。目标人群为户外爱好者、日常通勤者、家长及关注“保命常识”的泛用户。
++
++### 5. 金句与留存节点(推断)
++
++标题“不要直接跨过去!”本身即记忆点;推断正文以“错误做法 vs 正确做法”的对比制造每段留存,末尾大概率出现一句可口头传播的口诀式金句。以上为推断,不指向任何原文具体表述。
++
++### 6. 排版节奏(图文,推断)
++
++推断采用:短段落+加粗警示句+实拍/示意动图+清单式小标题;危险点与正确做法对比排版,方便扫读、截图与转发。
++
++### 7. 转化设计(推断)
++
++安全类内容最强转化是“转发”与“收藏”:转发=给家人的“保命”社交币。推断文末会引导“收藏备用/转给身边人/关注获取更多安全常识”。
++
++### 8. 公式标签
++
++反常识、悬念好奇、身份代入(1-3 个,选 3 个)
++
++### 爆点归因(基于标题推断)
++
++标题同时命中反常识、安全焦虑与身份代入:禁令制造认知缺口让人点开,安全属性驱动收藏与转发,场景熟悉感扩大人群覆盖面。未获取原文,未编造具体数据、案例、封面或逐字内容。
+
+codex
+已完成拆解并写入指定路径。依据级别为 `title_only`（未获取原文，仅凭标题与公众号平台上下文；八个维度均已标注“推断”，`why_viral` 中已注明“基于标题推断”，未编造数据、案例或正文细节）。
+
+- [v_fa1a195bcda6.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_fa1a195bcda6.json)
+- [v_fa1a195bcda6.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_fa1a195bcda6.md)
+
+核心结论：标题用“反常识安全禁令 + 悬念 + 身份代入”三连钩子——跨倒木是本能动作，禁令制造认知缺口；“危险！”叠加紧迫感。安全类选题人群广、转发欲强、常青不依赖时效，公式标签为：反常识、悬念好奇、身份代入。
+
+可复用创作指令：写一条“反常识安全禁令”：选一个大众习以为常的顺手动作（跨倒木、捡掉落电线、扶倒下的梯子），用“遇到X，千万不要Y！危险！”做标题；正文按“为什么不能—危险在哪—正确怎么做”三段展开，每段配对比图和一句口诀；结尾引导“转给家人、收藏备用”。选题不求时效，只求人群广、恐惧真实。
+diff --git a/data/flywheel/breakdowns/v_fa1a195bcda6.json b/data/flywheel/breakdowns/v_fa1a195bcda6.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d932883827f6e93c6e1415acdf5c41f24055074
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_fa1a195bcda6.json
+@@ -0,0 +1,10 @@
++{
++  "title": "遇到倒塌横木,不要直接跨过去!危险!",
++  "platform": "公众号",
++  "evidence_level": "title_only",
++  "hook": "标题即钩子:以“遇到倒塌横木”给出具体场景,让户外/徒步/通勤人群自动代入;再用“不要直接跨过去!”制造反常识认知缺口——跨过倒木本是本能动作,禁令让人追问“为什么不能”;“危险!”短句加叹号进一步放大紧迫感。推断正文开头会延续该场景并用后果悬念拉住读者。",
++  "structure": "推断结构:场景带入(遇到倒塌横木)→ 悬疑设问(为什么不能跨)→ 危险机理/案例讲解 → 正确做法与替代方案 → 口诀式总结 → 转发收藏引导;公众号排版适合短段+配图+小标题,信息密度按“问题—解释—方案”三段递进。",
++  "why_viral": "基于标题推断:标题同时命中反常识、安全焦虑与身份代入三类传播因子。“不要直接跨过去”制造认知缺口,读者为获得答案点开;安全类内容天然强转发(转发给家人/户外群)且常青不依赖时效;覆盖徒步、登山、通勤、家长等泛人群。未获取原文,仅凭标题与平台上下文拆解,未编造具体数据、案例或正文细节。",
++  "formula": "反常识, 悬念好奇, 身份代入",
++  "summary": "用一个反直觉的安全禁令制造认知缺口:标题负责点开,安全属性负责收藏与转发;可复用的是“人人以为顺手的事其实有致命风险”的选题公式,配“为什么不能—怎么办”的悬念结构。"
++}
+diff --git a/data/flywheel/breakdowns/v_fa1a195bcda6.md b/data/flywheel/breakdowns/v_fa1a195bcda6.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..28824641a58b624f8566f63b95a01c184d576841
+--- /dev/null
++++ b/data/flywheel/breakdowns/v_fa1a195bcda6.md
+@@ -0,0 +1,44 @@
++## 拆解报告
++
++- viral_id:v_fa1a195bcda6
++- 平台:公众号
++- 标题:遇到倒塌横木,不要直接跨过去!危险!
++- 链接:https://mp.weixin.qq.com/s?__biz=MzY4ODEwNjU2Mg==&mid=2247485493&idx=1&sn=f663e5dfa8c328fcb2b3c2944c7fdb1f#rd
++
++**依据级别:title_only(仅标题与平台上下文;未获取原文,基于标题与输入拆解,以下维度均为推断,非事实复述)**
++
++### 1. 前 3 秒钩子(推断)
++
++标题本身完成三道钩子:①“遇到倒塌横木”给出具体场景,让户外/徒步/通勤人群自动代入;②“不要直接跨过去!”是反常识禁令,制造“为什么不能”的认知缺口;③“危险!”短句+叹号叠加紧迫感,促使点开。推断正文开头会延续场景并用后果悬念承接。
++
++### 2. 选题角度(推断)
++
++安全避坑类选题,踩中“意外伤害”的普遍恐惧,人群广且常青,不依赖热点时效,天然适合公众号长尾传播。标题刻意选择“看似常见、实则危险”的日常动作,熟悉感越强,反常识张力越大。
++
++### 3. 内容结构(推断)
++
++推断为:场景开头 → 悬疑设问(为什么不能跨)→ 危险机理/案例讲解 → 正确做法 → 口诀式收尾 → 转发引导。信息密度呈“提出问题—解释原因—给出方案”三段递进,公众号宜用短段+配图+小标题降低阅读门槛。
++
++### 4. 情绪与人群(推断)
++
++主打“恐惧+好奇+心安”:先制造危险感,再用正确做法让读者安心。目标人群为户外爱好者、日常通勤者、家长及关注“保命常识”的泛用户。
++
++### 5. 金句与留存节点(推断)
++
++标题“不要直接跨过去!”本身即记忆点;推断正文以“错误做法 vs 正确做法”的对比制造每段留存,末尾大概率出现一句可口头传播的口诀式金句。以上为推断,不指向任何原文具体表述。
++
++### 6. 排版节奏(图文,推断)
++
++推断采用:短段落+加粗警示句+实拍/示意动图+清单式小标题;危险点与正确做法对比排版,方便扫读、截图与转发。
++
++### 7. 转化设计(推断)
++
++安全类内容最强转化是“转发”与“收藏”:转发=给家人的“保命”社交币。推断文末会引导“收藏备用/转给身边人/关注获取更多安全常识”。
++
++### 8. 公式标签
++
++反常识、悬念好奇、身份代入(1-3 个,选 3 个)
++
++### 爆点归因(基于标题推断)
++
++标题同时命中反常识、安全焦虑与身份代入:禁令制造认知缺口让人点开,安全属性驱动收藏与转发,场景熟悉感扩大人群覆盖面。未获取原文,未编造具体数据、案例、封面或逐字内容。
+
+tokens used
+10,549
+已完成拆解并写入指定路径。依据级别为 `title_only`（未获取原文，仅凭标题与公众号平台上下文；八个维度均已标注“推断”，`why_viral` 中已注明“基于标题推断”，未编造数据、案例或正文细节）。
+
+- [v_fa1a195bcda6.json](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_fa1a195bcda6.json)
+- [v_fa1a195bcda6.md](/Users/xiaowuliao/Projects/自媒体发布agent/data/flywheel/breakdowns/v_fa1a195bcda6.md)
+
+核心结论：标题用“反常识安全禁令 + 悬念 + 身份代入”三连钩子——跨倒木是本能动作，禁令制造认知缺口；“危险！”叠加紧迫感。安全类选题人群广、转发欲强、常青不依赖时效，公式标签为：反常识、悬念好奇、身份代入。
+
+可复用创作指令：写一条“反常识安全禁令”：选一个大众习以为常的顺手动作（跨倒木、捡掉落电线、扶倒下的梯子），用“遇到X，千万不要Y！危险！”做标题；正文按“为什么不能—危险在哪—正确怎么做”三段展开，每段配对比图和一句口诀；结尾引导“转给家人、收藏备用”。选题不求时效，只求人群广、恐惧真实。
+
+===== 拆解开始 v_fa1a195bcda6 =====

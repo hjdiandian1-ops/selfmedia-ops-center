@@ -1,7 +1,7 @@
 {
   "output_dir": "outputs/2026-08-07_AI视频门槛坍塌/",
   "materials": "materials/2026-08/2026-08-07_AI视频门槛坍塌素材包.md",
-  "scored_at": "2026-08-07 12:54:48",
+  "scored_at": "2026-08-07 13:11:41",
   "pos": {
     "素材引用率": 20.0,
     "数据密度": 15,
@@ -23,12 +23,12 @@
     {
       "level": "PASS",
       "code": "P2-density",
-      "message": "具体数字 114 处 → 15/15"
+      "message": "具体数字 118 处 → 15/15"
     },
     {
       "level": "PASS",
       "code": "P3-realness",
-      "message": "第一人称/真实项目名/型号 8 处 → 15/15"
+      "message": "第一人称/真实项目名/型号 6 处 → 15/15"
     },
     {
       "level": "PASS",

@@ -24,9 +24,12 @@ description: 借鉴 GitHub LangGraph 架构的毒舌内容质量审查 Skill。�
 > 🖥️ **机器初筛（强制前置）**：评分前先运行以下命令获取机器分与逐项明细，再逐条人工复核证据（机器负责可数性，人工负责判断力）：
 > ```bash
 > python3 scripts/harsh_critic_score.py outputs/YYYY-MM-DD_主题名/ --out outputs/YYYY-MM-DD_主题名/harsh_report.json
+> python3 scripts/ai_flavor_check.py outputs/YYYY-MM-DD_主题名/ --out outputs/YYYY-MM-DD_主题名/ai_flavor_report.json   # 去 AI 味（结构级），与 harsh-critic 互补
 > python3 scripts/generate_score_report.py outputs/YYYY-MM-DD_主题名/   # 生成机器初筛版 评分报告.md
 > ```
 > 机器 REJECTED → 直接退回；机器 PASSED → 仍须人工复核 Hook 六维与孤行/审美（机器仅近似 6 维），并把逐条证据写入 `评分报告.md` 后才算定稿。
+>
+> 去 AI 味规则（句式壳/标点/语气/开头收尾）详见 `skills/anti-ai-flavor-skill/SKILL.md`；词汇层（营销号套话/爹味/禁用开头）在本 Skill 负责，两者不重复扣分。
 
 ---
 

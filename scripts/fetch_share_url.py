@@ -1,8 +1,13 @@
+import os
 import asyncio
 from playwright.async_api import async_playwright
 
 async def fetch_share():
-    url = "https://codebuddy.work/agents/share/mfuK9631ZYR9-mm6vXqJik8jlIXR2RUeNqJb9MZ2XWNV0KI0GDKZOQj0T9fD-HfP?platform=workbuddy"
+    # 分享链接含访问令牌，禁止硬编码：通过环境变量 WORKBUDDY_SHARE_URL 注入
+    url = os.environ.get(
+        "WORKBUDDY_SHARE_URL",
+        "https://codebuddy.work/agents/share/<你的分享token>?platform=workbuddy",
+    )
     print(f"🚀 正在用 Playwright 渲染抓取 WorkBuddy 页面: {url}")
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)

@@ -250,7 +250,7 @@ def main():
     print("🛑 Harsh Critic 机器初评（v2 双轨，需人工复核证据）")
     print("=" * 60)
     for r in results:
-        icon = {"PASS": "✅", "WARN": "⚠️", "FAIL": "❌"}[r["level"]]
+        icon = {"PASS": "✅", "WARN": "⚠️", "FAIL": "❌"}[r["level"]]  # nosec B105  # 状态图标非密码
         print(f"{icon} [{r['code']}] {r['message']}")
     print("-" * 60)
     print(f"正向质量分：{pos_total}/60（{pos}）")

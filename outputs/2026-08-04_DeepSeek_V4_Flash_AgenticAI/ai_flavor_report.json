@@ -1,0 +1,75 @@
+{
+  "output_dir": "outputs/2026-08-04_DeepSeek_V4_Flash_AgenticAI/",
+  "checked_at": "2026-08-14 16:37:45",
+  "verdict": "REJECTED",
+  "summary": {
+    "platforms": [
+      "小红书",
+      "公众号",
+      "短视频"
+    ],
+    "high": 2,
+    "medium": 1,
+    "total_hits": 18
+  },
+  "hits": [
+    {
+      "rule": "binary_shell",
+      "severity": "high",
+      "source": "[B][A]",
+      "pattern": "不是.{0,24}?(?:而是|是)|与其说.{0,24}?(?:不如说|倒不如说)",
+      "count": 4,
+      "examples": [
+        "… 极客操盘手总结：␤␤AI 不是用来替代人的，而是帮我们扛下那些繁琐机械的体力活，把时间留给真正有价值的思…",
+        "… 一个反常识的开场：最值钱的不是模型，是工程确定性␤␤实话实说，看到 DeepSeek 8 月最…",
+        "… 一个反常识的开场：最值钱的不是模型，是工程确定性 ␤   实话实说，看到 DeepSeek 8…"
+      ],
+      "suggestion": "「不是 A 而是 B」全文 ≤2 次；≥3 次为二元对比模板，改成直陈事实。",
+      "platform": "小红书",
+      "platforms": [
+        "小红书",
+        "公众号"
+      ]
+    },
+    {
+      "rule": "teacher_qa",
+      "severity": "high",
+      "source": "[L]",
+      "pattern": "(?:那么|所以)?[，,]?(?:这意味着什么|这意味着|答案是|答案很简单|原因很简单|原因在于|背后的逻辑(?:是|就是))",
+      "count": 3,
+      "examples": [
+        "…底击穿主流大模型算力门槛）。这意味着大模型 API 的成本对于个人开发者而言已经接近免费。␤…",
+        "…en 仅需 0.05 元）。这意味着大模型 API 的成本对于个人开发者而言已经接近免费。 …",
+        "…en 仅需 0.05 元）。这意味着大模型 API 的成本对于个人开发者而言已经接近免费。 …"
+      ],
+      "suggestion": "老师式自问自答（提问后立刻给答案）≤2 次；把问题留给读者思考。",
+      "platform": "公众号",
+      "platforms": [
+        "公众号"
+      ]
+    },
+    {
+      "rule": "parallel_structure",
+      "severity": "medium",
+      "source": "[A]",
+      "pattern": "连续同前缀行 ≥4 行",
+      "count": 11,
+      "examples": [
+        "连续 4 行以相同前缀开头",
+        "连续 7 行以相同前缀开头"
+      ],
+      "suggestion": "排比连续 4 次以上建议拆成有信息差的分句。",
+      "platform": "公众号",
+      "platforms": [
+        "公众号",
+        "短视频"
+      ]
+    }
+  ],
+  "manual_review": [
+    "展示型三拍（对仗短句+点评）与均匀段落形状机器不判定，需人工复核。",
+    "引号/破折号命中需人工确认是否属于真实引语/技术标识例外。",
+    "REJECTED 退回对应主编重写；WARN 由资深校对排版逐条复核后写入 评分报告.md。"
+  ],
+  "rules_note": "规则来源：[A] zero-click/avoid-ai-writing-zh ｜ [L] liuliu-66-create/ll-humanizer-zh ｜ [B] B1lli/remove-ai-flavor-writing-skill（详见 skills/anti-ai-flavor-skill/SKILL.md）"
+}

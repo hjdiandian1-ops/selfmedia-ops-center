@@ -1,0 +1,106 @@
+{
+  "output_dir": "outputs/2026-08-08_拒绝平庸AI产品/",
+  "checked_at": "2026-08-14 16:37:45",
+  "verdict": "REJECTED",
+  "summary": {
+    "platforms": [
+      "小红书",
+      "公众号"
+    ],
+    "high": 2,
+    "medium": 3,
+    "total_hits": 76
+  },
+  "hits": [
+    {
+      "rule": "binary_shell",
+      "severity": "high",
+      "source": "[B][A]",
+      "pattern": "不是.{0,24}?(?:而是|是)|与其说.{0,24}?(?:不如说|倒不如说)",
+      "count": 10,
+      "examples": [
+        "…选题和发布两个卡点出现。核心不是某一个模型，而是把 5-6 个工具串成别人抄不走的工作流。␤␤💬 你现在…",
+        "…见顶之后，真正拉开差距的已经不是「用不用 AI」，而是「怎么用、用哪些、搭成什么样」。今天这篇，我把 2026…",
+        "…x auto;\" />␤␤这不是「未来会普及」，这是**已经完成普及**。水电煤铺好了，接下来拼的是谁家先把…"
+      ],
+      "suggestion": "「不是 A 而是 B」全文 ≤2 次；≥3 次为二元对比模板，改成直陈事实。",
+      "platform": "小红书",
+      "platforms": [
+        "小红书",
+        "公众号"
+      ]
+    },
+    {
+      "rule": "teacher_qa",
+      "severity": "high",
+      "source": "[L]",
+      "pattern": "(?:那么|所以)?[，,]?(?:这意味着什么|这意味着|答案是|答案很简单|原因很简单|原因在于|背后的逻辑(?:是|就是))",
+      "count": 3,
+      "examples": [
+        "… 计价时，什么开始变贵？␤␤答案是**工作流、判断力和数据资产**。␤␤工具可以一夜之间降…",
+        "…时，什么开始变贵？ ␤   答案是 工作流、判断力和数据资产 。 ␤   工具可以一夜之间…",
+        "…时，什么开始变贵？ ␤   答案是 工作流、判断力和数据资产 。 ␤   工具可以一夜之间…"
+      ],
+      "suggestion": "老师式自问自答（提问后立刻给答案）≤2 次；把问题留给读者思考。",
+      "platform": "公众号",
+      "platforms": [
+        "公众号"
+      ]
+    },
+    {
+      "rule": "prose_quotes",
+      "severity": "medium",
+      "source": "[L]",
+      "pattern": "正文引号(开引号)计数",
+      "count": 37,
+      "examples": [
+        "正文出现 5 处引号/书名号（真实人物原话除外）",
+        "正文出现 32 处引号/书名号（真实人物原话除外）"
+      ],
+      "suggestion": "AI 爱用引号造词；真实引语允许，强调性引号删除。",
+      "platform": "小红书",
+      "platforms": [
+        "小红书",
+        "公众号"
+      ]
+    },
+    {
+      "rule": "dash_rhetoric",
+      "severity": "medium",
+      "source": "[L]",
+      "pattern": "——",
+      "count": 21,
+      "examples": [
+        "正文出现 7 处修辞破折号",
+        "正文出现 14 处修辞破折号"
+      ],
+      "suggestion": "破折号作修辞标点禁用；技术标识中的连字符例外。",
+      "platform": "小红书",
+      "platforms": [
+        "小红书",
+        "公众号"
+      ]
+    },
+    {
+      "rule": "parallel_structure",
+      "severity": "medium",
+      "source": "[A]",
+      "pattern": "连续同前缀行 ≥5 行",
+      "count": 5,
+      "examples": [
+        "连续 5 行以相同前缀开头"
+      ],
+      "suggestion": "排比连续 4 次以上建议拆成有信息差的分句。",
+      "platform": "公众号",
+      "platforms": [
+        "公众号"
+      ]
+    }
+  ],
+  "manual_review": [
+    "展示型三拍（对仗短句+点评）与均匀段落形状机器不判定，需人工复核。",
+    "引号/破折号命中需人工确认是否属于真实引语/技术标识例外。",
+    "REJECTED 退回对应主编重写；WARN 由资深校对排版逐条复核后写入 评分报告.md。"
+  ],
+  "rules_note": "规则来源：[A] zero-click/avoid-ai-writing-zh ｜ [L] liuliu-66-create/ll-humanizer-zh ｜ [B] B1lli/remove-ai-flavor-writing-skill（详见 skills/anti-ai-flavor-skill/SKILL.md）"
+}

@@ -197,3 +197,102 @@ def test_c12_xhs_viz_marker_pass(tmp_path):
     (d / "rednote_x_slides.html").write_text(
         '<div class="h-bar-chart"></div>', encoding="utf-8")
     assert VMC.xhs_data_viz_issues(str(tmp_path)) == []
+
+
+def _run_validator_args(out, pack, extra):
+    return subprocess.run(
+        [sys.executable, os.path.join(ROOT, "scripts", "validate_materials_contract.py"),
+         str(out), "--materials", str(pack), *extra],
+        capture_output=True, text=True,
+    )
+
+
+def _xhs_draft(body, series=""):
+    fm = [
+        "---",
+        "job_id: 2026-08-08_测试",
+        "platform: 小红书",
+        "consumed_materials: [M1]",
+        "hook_formula: dbs-xhs-title #1",
+    ]
+    if series:
+        fm.append(f"series: {series}")
+    fm.append("---")
+    return "\n".join(fm) + "\n" + body
+
+
+def test_c13_rejects_missing_follow_cta(tmp_path):
+    out, pack = _write_job(
+        tmp_path,
+        {"小红书": _xhs_draft(
+            "# 标题\n\n正文 30% 和 1 元。\n\n#标签1 #标签2 #标签3 #标签4 #标签5\n\n评论区聊聊👇"
+        )},
+        "真实数据｜核心：某公司增长 30%（source_type: 真实数据 | priority: 核心 | source: https://example.com/x）",
+    )
+    r = _run_validator_args(out, pack, ["--outputs-root", str(tmp_path)])
+    assert "C13-xhs-follow-cta" in r.stdout
+
+
+def test_c13_rejects_follow_without_next_hook(tmp_path):
+    out, pack = _write_job(
+        tmp_path,
+        {"小红书": _xhs_draft(
+            "# 标题\n\n正文 30% 和 1 元。\n\n#标签1 #标签2 #标签3 #标签4 #标签5\n\n觉得有用记得点赞关注！"
+        )},
+        "真实数据｜核心：某公司增长 30%（source_type: 真实数据 | priority: 核心 | source: https://example.com/x）",
+    )
+    r = _run_validator_args(out, pack, ["--outputs-root", str(tmp_path)])
+    assert "C13-xhs-next-hook" in r.stdout
+
+
+def test_c13_follow_cta_pass(tmp_path):
+    out, pack = _write_job(
+        tmp_path,
+        {"小红书": _xhs_draft(
+            "# 标题\n\n正文 30% 和 1 元。\n\n#标签1 #标签2 #标签3 #标签4 #标签5\n\n关注我，下期拆这条流水线的成本账。"
+        )},
+        "真实数据｜核心：某公司增长 30%（source_type: 真实数据 | priority: 核心 | source: https://example.com/x）",
+    )
+    r = _run_validator_args(out, pack, ["--outputs-root", str(tmp_path)])
+    assert "C13-xhs-follow-cta" not in r.stdout
+    assert "C13-xhs-next-hook" not in r.stdout
+
+
+def test_c13_series_format_fail(tmp_path):
+    out, pack = _write_job(
+        tmp_path,
+        {"小红书": _xhs_draft(
+            "# 标题\n\n正文 30% 和 1 元。\n\n#标签1 #标签2 #标签3 #标签4 #标签5\n\n关注我，下期拆账本。",
+            series="内容工厂3",
+        )},
+        "真实数据｜核心：某公司增长 30%（source_type: 真实数据 | priority: 核心 | source: https://example.com/x）",
+    )
+    r = _run_validator_args(out, pack, ["--outputs-root", str(tmp_path)])
+    assert "C13-series-format" in r.stdout
+
+
+def test_c13_series_collection_required_at_3(tmp_path):
+    outputs_root = tmp_path / "outputs"
+    # 已有同系列第 1、2 篇（不含合集引导）
+    for i, body in enumerate([
+        "关注我，下期继续拆。正文 30% 和 1 元。#标签1 #标签2 #标签3 #标签4 #标签5",
+        "关注我，下期继续拆。正文 30% 和 1 元。#标签1 #标签2 #标签3 #标签4 #标签5",
+    ], start=1):
+        d = outputs_root / f"2026-08-0{i}_旧" / "小红书"
+        d.mkdir(parents=True)
+        (d / "文案.md").write_text(_xhs_draft(body, series=f"AI内容工厂|第{i}篇"),
+                                   encoding="utf-8")
+    # 当前第 3 篇仍未引导合集 → FAIL
+    cur = outputs_root / "2026-08-08_当前" / "小红书"
+    cur.mkdir(parents=True)
+    (cur / "文案.md").write_text(_xhs_draft(
+        "# 标题\n\n正文 30% 和 1 元。\n\n#标签1 #标签2 #标签3 #标签4 #标签5\n\n关注我，下期继续拆。",
+        series="AI内容工厂|第3篇",
+    ), encoding="utf-8")
+    pack = outputs_root / "2026-08-08_当前" / "素材包.md"
+    pack.write_text(
+        "真实数据｜核心：某公司增长 30%（source_type: 真实数据 | priority: 核心 | source: https://example.com/x）",
+        encoding="utf-8",
+    )
+    r = _run_validator_args(str(cur.parent), pack, ["--outputs-root", str(outputs_root)])
+    assert "C13-series-collection" in r.stdout

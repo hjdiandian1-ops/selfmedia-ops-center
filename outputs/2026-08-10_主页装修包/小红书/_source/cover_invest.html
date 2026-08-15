@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; overflow:hidden; background:#070b14; }
+.stage {
+  position:relative; width:540px; height:720px; overflow:hidden;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255,176,32,.20) 0%, transparent 42%),
+    radial-gradient(circle at 12% 88%, rgba(255,176,32,.10) 0%, transparent 38%),
+    linear-gradient(160deg,#14102a 0%,#0e0a1c 55%,#070b14 100%);
+}
+.grid {
+  position:absolute; inset:0; opacity:.55;
+  background-image:
+    linear-gradient(rgba(255,176,32,.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,176,32,.07) 1px, transparent 1px);
+  background-size:36px 36px;
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 20%, transparent 80%);
+  mask-image: radial-gradient(circle at 50% 45%, #000 20%, transparent 80%);
+}
+.brand {
+  position:absolute; top:46px; left:48px;
+  display:flex; align-items:center; gap:12px;
+  color:#f4e6cf; font-family:"PingFang SC",sans-serif; font-size:21px; font-weight:600; letter-spacing:1px;
+}
+.brand .bd { width:13px; height:13px; border-radius:50%; background:#ffb020; box-shadow:0 0 14px #ffb020; }
+.hero { position:absolute; left:48px; top:258px; width:390px; z-index:2; }
+.kicker {
+  color:#ffd37a; font-size:21px; letter-spacing:6px; font-weight:700;
+  font-family:"SF Pro Display","PingFang SC",sans-serif; margin-bottom:20px;
+}
+h1 {
+  font-family:"SF Pro Display","PingFang SC",sans-serif;
+  font-size:92px; line-height:1.06; font-weight:800; letter-spacing:-2px; color:#fff7ea;
+}
+.sub { margin-top:24px; font-size:32px; font-weight:500; color:#d9c7a8; font-family:"PingFang SC",sans-serif; }
+.icon {
+  position:absolute; right:30px; top:120px; width:170px; height:170px;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid rgba(255,176,32,.35); border-radius:38px;
+  background: rgba(255,176,32,.06); box-shadow:0 0 46px rgba(255,176,32,.14);
+}
+.footer {
+  position:absolute; left:48px; bottom:52px; z-index:2;
+  display:flex; align-items:center; gap:14px;
+  color:#8d7a5c; font-size:20px; font-family:"PingFang SC",sans-serif;
+}
+.footer .line { width:36px; height:2px; background:#ffb020; }
+.chip {
+  position:absolute; right:48px; bottom:54px; z-index:2;
+  padding:12px 20px; border:2px solid rgba(255,255,255,.16); border-radius:999px;
+  color:#f4e6cf; font-size:19px; letter-spacing:3px; font-family:"PingFang SC",sans-serif;
+}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="grid"></div>
+    <div class="brand"><span class="bd"></span>小吴聊的AI Lab</div>
+    <div class="icon">
+      <svg width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="#ffb020" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 17l5-6 4 3 5-8"></path>
+        <path d="M3 21h18"></path>
+        <circle cx="17" cy="6" r="1.6" fill="#ffb020" stroke="none"></circle>
+      </svg>
+    </div>
+    <div class="hero">
+      <div class="kicker">INVESTMENT RESEARCH</div>
+      <h1>投资<br>研究</h1>
+      <div class="sub">看得懂的财报</div>
+    </div>
+    <div class="footer"><span class="line"></span>合集 · 每周研究</div>
+    <div class="chip">RESEARCH</div>
+  </div>
+</body>
+</html>
