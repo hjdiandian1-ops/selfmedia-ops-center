@@ -221,7 +221,11 @@ function renderOverviewPane(stats, d) {
   $("#ov-health-note").textContent = noteParts.join(" · ");
   svgRadar($("#ov-radar"), ov.radar);
   $("#ov-focus").textContent = ov.focus || "先回填/导入数据后开始诊断。";
-  renderPlatformCompareChart(d.platforms || {});
+  const axes = (ov.radar && ov.radar.axes) || [];
+  $("#ov-health-explain").innerHTML = `
+    <div class="muted" style="margin-bottom:6px">健康度 = 各可算指标相对基准的归一化加权分（0-100），缺失指标不计权并置灰。</div>
+    ${axes.map((a) => `
+      <div class="kv">${esc(a.label)}：<b>${a.value == null ? "—" : esc(a.value) + " / 100"}</b></div>`).join("")}`;
 
   const states = Object.entries(stats.by_state || {});
   const total = stats.jobs_total || 1;
@@ -247,52 +251,6 @@ function renderOverviewTrend() {
   $("#ov-series").innerHTML = Object.entries(series).map(([k, s]) =>
     `<button class="tab ${k === key ? "active" : ""}" onclick="setOverviewSeries('${k}')">${s.label}</button>`).join("");
   svgLineChart($("#ov-trend"), lastStatsTrend.map((t) => t.label), series, key);
-}
-
-function renderPlatformCompareChart(platforms) {
-  const box = $("#ov-compare");
-  if (!box) return;
-  const order = ["小红书", "公众号", "短视频"];
-  const metrics = [
-    { key: "publish_count", label: "发布", fmt: (v) => v },
-    { key: "backfill_count", label: "回填", fmt: (v) => v },
-    { key: "total_reads", label: "阅读/播放", fmt: (v) => fmtNum(v) },
-    { key: "engagement", label: "互动率", fmt: (v) => v == null ? "—" : (v * 100).toFixed(1) + "%" },
-  ];
-  const W = 760, H = 300, PAD_L = 12, PAD_R = 12, PAD_T = 26, PAD_B = 46;
-  const innerW = W - PAD_L - PAD_R;
-  const innerH = H - PAD_T - PAD_B;
-  const groupW = innerW / metrics.length;
-  const barW = Math.min(40, groupW * 0.22);
-  const maxBy = {};
-  metrics.forEach((m) => {
-    let max = 0;
-    order.forEach((pl) => {
-      const t = (platforms[pl] || {}).totals || {};
-      const v = m.key === "engagement" ? t.engagement : t[m.key] || 0;
-      if (typeof v === "number" && v > max) max = v;
-    });
-    maxBy[m.key] = max || 1;
-  });
-  const bars = metrics.map((m, gi) => {
-    const gx = PAD_L + gi * groupW + groupW / 2;
-    return order.map((pl, pi) => {
-      const t = (platforms[pl] || {}).totals || {};
-      const v = m.key === "engagement" ? t.engagement : t[m.key] || 0;
-      const h = (typeof v === "number" && v > 0) ? Math.max(3, v / maxBy[m.key] * innerH) : 0;
-      const x = gx + (pi - 1) * (barW + 6) - barW / 2;
-      const y = PAD_T + innerH - h;
-      const val = `<text x="${(x + barW / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" class="gbar-val">${esc(m.fmt(v))}</text>`;
-      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="4" class="gbar ${esc(pl)}"/>${h ? val : ""}`;
-    }).join("");
-  }).join("");
-  const metricLabels = metrics.map((m, gi) => {
-    const gx = PAD_L + gi * groupW + groupW / 2;
-    return `<text x="${gx.toFixed(1)}" y="${H - 14}" text-anchor="middle" class="gbar-label">${esc(m.label)}</text>`;
-  }).join("");
-  const legend = order.map((pl) =>
-    `<span class="legend-item"><i class="legend-dot ${esc(pl)}"></i>${esc(pl)}</span>`).join("");
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="compare-svg">${bars}${metricLabels}</svg><div class="legend">${legend}</div>`;
 }
 
 function setOverviewSeries(k) {
