@@ -676,6 +676,7 @@ textarea {
 }
 .tri-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
 .tri-grid .card { height: 100%; display: flex; flex-direction: column; }
+.tri-grid .card, .pf-module-body { min-width: 0; }
 .tri-grid .card .stack { flex: 1; }
 .tri-grid .card .focus-card { flex: 1; }
 .pf-module {
@@ -765,6 +766,9 @@ textarea {
 .ov-pane details.card summary { font-size: 13px; }
 
 /* 响应式 */
+@media (max-width: 1280px) {
+  .tri-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 1180px) {
   .topics-layout { grid-template-columns: 1fr; }
 }
