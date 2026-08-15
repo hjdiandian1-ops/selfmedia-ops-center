@@ -324,11 +324,15 @@ def aggregate(events, jobs_dir, outputs_dir, data_dir=DATA_DIR, platforms=None):
     recent = sorted(metrics, key=lambda e: e["at"], reverse=True)[:20]
     recent = [{
         "job_id": e["job_id"], "theme": e["theme"], "platform": e["platform"],
-        "collected_at": e["at"],
+        "title": e["title"], "collected_at": e["at"],
+        "first_published_at": e.get("first_published_at", ""),
         "reads": e["reads"], "likes": e["likes"], "collects": e["collects"],
         "comments": e["comments"], "engagement": e["engagement"],
         "hit": e["hit"], "url": e["url"],
         "followers_gained": e["followers_gained"],
+        "exposure": e.get("exposure", 0), "ctr": e.get("ctr", 0),
+        "format": e.get("format", ""), "shares": e.get("shares", 0),
+        "avg_watch_seconds": e.get("avg_watch_seconds", 0),
     } for e in recent]
 
     # 最佳表现

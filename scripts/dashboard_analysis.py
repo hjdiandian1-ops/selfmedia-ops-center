@@ -437,7 +437,11 @@ def _backfill_records(jobs_dir, range_days):
             for r in data.get("records", []):
                 day = str(r.get("collected_at") or "")[:10]
                 if r.get("platform") and day >= start:
-                    out.append(r)
+                    out.append({
+                        **r,
+                        "job_id": d,
+                        "title": data.get("title") or r.get("title") or d,
+                    })
     out.sort(key=lambda r: str(r.get("collected_at") or ""), reverse=True)
     return out
 

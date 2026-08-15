@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-<link rel="stylesheet" href="/static/style.css?v=3.46">
+<link rel="stylesheet" href="/static/style.css?v=3.47">
 </head>
 <body>
 <div class="app">
@@ -112,7 +112,7 @@
             <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 10 条 · 自动快评</span></div>
             <div class="table-wrap">
               <table class="table">
-                <thead><tr><th>时间</th><th>任务</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th><th>快评</th></tr></thead>
+                <thead><tr><th>时间</th><th>标题</th><th>平台</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th><th>快评</th></tr></thead>
                 <tbody id="recent-table"></tbody>
               </table>
             </div>
@@ -454,7 +454,7 @@
           <div class="card-head"><h3>发布表现明细</h3><span class="muted">全部回填记录</span></div>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>时间</th><th>任务</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th></tr></thead>
+              <thead><tr><th>时间</th><th>标题</th><th>平台</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th></tr></thead>
               <tbody id="perf-table"></tbody>
             </table>
           </div>
@@ -606,6 +606,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.46"></script>
+    <script src="/static/app.js?v=3.47"></script>
 </body>
 </html>

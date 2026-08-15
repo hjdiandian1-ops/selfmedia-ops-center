@@ -523,7 +523,7 @@ function renderPlatformPane(name) {
       <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 10 条 · 自动快评</span></div>
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th>时间</th><th>任务</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th><th>快评</th></tr></thead>
+          <thead><tr><th>时间</th><th>标题</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th><th>快评</th></tr></thead>
           <tbody id="pf-recent"></tbody>
         </table>
       </div>
@@ -531,7 +531,7 @@ function renderPlatformPane(name) {
     ${xhsExtra}`;
   if (name !== "小红书") renderPlatformTrend(name, p.trend);
   renderWeakList($("#pf-weak"), p.weak_points || [], name);
-  renderRecentRows($("#pf-recent"), p.recent || []);
+  renderRecentRows($("#pf-recent"), p.recent || [], false);
   if (name === "小红书") {
     dashState.data = ovCache;
     dashState.weakPoints = ovCache.weak_points || [];
@@ -700,21 +700,33 @@ function quickClass(q) {
   return "";
 }
 
-function renderRecentRows(box, records) {
-  if (!records.length) return box.innerHTML = '<tr><td colspan="10" class="muted">暂无回填数据</td></tr>';
-  box.innerHTML = records.map((r) => `
+function noteRow(r, withPlatform) {
+  const ctr = r.ctr != null && Number(r.ctr) > 0
+    ? (Number(r.ctr) <= 1 ? (Number(r.ctr) * 100).toFixed(1) + "%" : esc(r.ctr) + "%")
+    : "—";
+  return `
     <tr>
-      <td>${esc((r.collected_at || "").slice(0, 16))}</td>
-      <td title="${esc(r.theme || "")}">${esc(r.job_id)}</td>
-      <td>${esc(r.platform || "—")}</td>
+      <td>${esc((r.first_published_at || r.collected_at || "").slice(0, 16))}</td>
+      <td title="${esc(r.theme || "")}">${esc(r.title || r.job_id)}</td>
+      ${withPlatform ? `<td>${esc(r.platform || "—")}</td>` : ""}
+      <td>${esc(r.format || "—")}</td>
+      <td class="num">${r.exposure ? fmtNum(r.exposure) : "—"}</td>
       <td class="num">${fmtNum(r.reads)}</td>
+      <td class="num">${ctr}</td>
       <td class="num">${fmtNum(r.likes)}</td>
-      <td class="num">${fmtNum(r.collects)}</td>
       <td class="num">${fmtNum(r.comments)}</td>
-      <td class="num">${pct(r.engagement)}</td>
+      <td class="num">${fmtNum(r.collects)}</td>
+      <td class="num">${r.followers_gained ? fmtNum(r.followers_gained) : "—"}</td>
+      <td class="num">${r.shares ? fmtNum(r.shares) : "—"}</td>
+      <td class="num">${r.avg_watch_seconds ? esc(r.avg_watch_seconds) + "秒" : "—"}</td>
       <td>${r.hit ? '<span class="badge hit">🔥 爆款</span>' : '<span class="badge">常规</span>'}</td>
-      <td>${r.quick ? `<span class="badge ${quickClass(r.quick)}">${esc(r.quick)}</span>` : "—"}</td>
-    </tr>`).join("");
+      ${r.quick ? `<td><span class="badge ${quickClass(r.quick)}">${esc(r.quick)}</span></td>` : ""}
+    </tr>`;
+}
+
+function renderRecentRows(box, records, withPlatform = true) {
+  if (!records.length) return box.innerHTML = '<tr><td colspan="15" class="muted">暂无回填数据</td></tr>';
+  box.innerHTML = records.map((r) => noteRow(r, withPlatform)).join("");
 }
 
 // ---------- 小红书式数据分析（四页签 + 薄弱点诊断） ----------
@@ -891,20 +903,8 @@ async function saveWeakLesson(id) {
 window.saveWeakLesson = saveWeakLesson;
 
 function renderRows(records) {
-  if (!records.length) return '<tr><td colspan="10" class="muted">暂无回填数据</td></tr>';
-  return records.map((r) => `
-    <tr>
-      <td>${esc((r.collected_at || "").slice(0, 16))}</td>
-      <td title="${esc(r.theme || "")}">${esc(r.job_id)}</td>
-      <td>${esc(r.platform || "—")}</td>
-      <td class="num">${fmtNum(r.reads)}</td>
-      <td class="num">${fmtNum(r.likes)}</td>
-      <td class="num">${fmtNum(r.collects)}</td>
-      <td class="num">${fmtNum(r.comments)}</td>
-      <td class="num">${r.followers_gained ? fmtNum(r.followers_gained) : "—"}</td>
-      <td class="num">${pct(r.engagement)}</td>
-      <td>${r.hit ? '<span class="badge hit">🔥 爆款</span>' : '<span class="badge">常规</span>'}</td>
-    </tr>`).join("");
+  if (!records.length) return '<tr><td colspan="15" class="muted">暂无回填数据</td></tr>';
+  return records.map((r) => noteRow(r, true)).join("");
 }
 
 // ---------- 选题 ----------
