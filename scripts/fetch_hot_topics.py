@@ -115,7 +115,7 @@ PROXY_URL = resolve_proxy()
 
 def fetch_http(url, proxy=None, timeout=20, ua="selfmedia-hot-radar/1.0", allow_private=False):
     """带代理的 HTTP GET，返回 bytes。默认拒绝内网/元数据地址（防 SSRF）。"""
-    if not allow_private and not safe_http_url(url):
+    if not allow_private and not safe_http_url(url, resolve_dns=False):
         raise ValueError(f"URL 不满足安全策略（仅 http/https 且非内网地址）: {url[:120]}")
     handlers = []
     if proxy:
