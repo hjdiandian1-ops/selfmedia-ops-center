@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-<link rel="stylesheet" href="/static/style.css?v=3.44">
+<link rel="stylesheet" href="/static/style.css?v=3.45">
 </head>
 <body>
 <div class="app">
@@ -395,7 +395,7 @@
         <div class="toolbar">
           <button class="btn tonal" id="btn-stats-refresh">刷新统计</button>
           <button class="btn tonal" id="btn-xhs-import">导入小红书明细表</button>
-          <button class="btn tonal" id="btn-dash-import" title="可一次选择多张：发布 / 观看 / 互动 / 涨粉">导入看板导出表（可多选）</button>
+          <button class="btn tonal" id="btn-dash-import" title="可一次选择：发布 / 观看 / 互动 / 涨粉 / 笔记明细（自动识别路由）">导入小红书数据表（可多选）</button>
           <input type="file" id="xhs-import-file" accept=".xlsx" style="display:none">
           <input type="file" id="dash-import-file" accept=".xlsx" multiple style="display:none">
           <span class="muted" id="stats-updated-at"></span>
@@ -608,6 +608,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.44"></script>
+    <script src="/static/app.js?v=3.45"></script>
 </body>
 </html>

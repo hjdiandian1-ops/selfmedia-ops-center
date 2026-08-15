@@ -2403,11 +2403,13 @@ $("#dash-import-file").addEventListener("change", async (e) => {
     const ok = [], fail = [];
     for (const file of files) {
       try {
-        const d = await api(`/api/stats/import-dashboard?filename=${encodeURIComponent(file.name)}`, {
-          method: "POST",
-          body: file,
+        // 笔记明细（列表明细）走笔记导入器，其余按看板四页签自动识别
+        const isNotes = /笔记|明细/.test(file.name);
+        const path = isNotes ? "/api/stats/import-xhs" : "/api/stats/import-dashboard";
+        const d = await api(`${path}?filename=${encodeURIComponent(file.name)}`, {
+          method: "POST", body: file,
         });
-        ok.push(d.kind || file.name);
+        ok.push(isNotes ? "笔记明细" : (d.kind || file.name));
       } catch (err) {
         fail.push(`${file.name}（${err.message}）`);
       }
