@@ -42,6 +42,9 @@
   --scrim: rgba(32, 33, 36, .55);
   --brand-gradient: linear-gradient(135deg, #1a73e8, #66a4f5);
   --brand-logo-bg: var(--brand-gradient);
+  --aurora-1: #dce9ff;
+  --aurora-2: #e8f0fe;
+  --aurora-3: #fdf0d8;
 }
 
 :root[data-theme="brand-red"] {
@@ -62,6 +65,9 @@
   --focus-ring: #fca5a5;
   --step-ring: #fee2e2;
   --brand-gradient: linear-gradient(135deg, #dc2626, #f87171);
+  --aurora-1: #fde2e2;
+  --aurora-2: #fee9e4;
+  --aurora-3: #fff3ec;
 }
 
 :root[data-theme="midnight"] {
@@ -99,6 +105,9 @@
   --applied-bg: #1a2b1f;
   --scrim: rgba(0, 0, 0, .62);
   --brand-gradient: linear-gradient(135deg, #7aa2f7, #3d59a1);
+  --aurora-1: #232a45;
+  --aurora-2: #1d233a;
+  --aurora-3: #2a2138;
 }
 
 :root[data-theme="pink"] {
@@ -140,6 +149,9 @@
   --applied-bg: #f6fdf8;
   --scrim: rgba(59, 36, 48, .55);
   --brand-gradient: linear-gradient(135deg, #ec4899, #f9a8d4);
+  --aurora-1: #fbd9e7;
+  --aurora-2: #fceaf2;
+  --aurora-3: #fdf0e8;
 }
 
 :root[data-theme="doraemon"] {
@@ -182,8 +194,18 @@
   --scrim: rgba(22, 50, 74, .55);
   --brand-gradient: linear-gradient(135deg, #1296db, #4fc3f7);
   --brand-logo-bg: url("/static/themes/doraemon-mascot.svg") center/cover no-repeat, linear-gradient(135deg, #1296db, #4fc3f7);
+  --aurora-1: #d8efff;
+  --aurora-2: #e8f5ff;
+  --aurora-3: #eef7ff;
 }
 html, body { height: 100%; }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(560px 420px at 12% 16%, var(--aurora-1), transparent 62%),
+    radial-gradient(680px 480px at 86% 26%, var(--aurora-2), transparent 62%),
+    radial-gradient(640px 480px at 48% 88%, var(--aurora-3), transparent 62%);
+}
 body {
   font-family: var(--font-stack);
   background: var(--surface-dim);
@@ -199,6 +221,9 @@ code { background: var(--code-bg); border-radius: 6px; padding: 2px 6px; font-si
 .sidebar {
   width: 240px; flex: 0 0 240px;
   background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
   border-right: 1px solid var(--outline-variant);
   display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh;
@@ -235,7 +260,11 @@ code { background: var(--code-bg); border-radius: 6px; padding: 2px 6px; font-si
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 28px 12px; background: var(--surface-dim);
+  padding: 18px 28px 12px;
+  background: var(--surface-dim);
+  background: color-mix(in srgb, var(--surface-dim) 78%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
   position: sticky; top: 0; z-index: 20;
 }
 .page-title { font-size: 22px; font-weight: 500; }
@@ -248,7 +277,11 @@ code { background: var(--code-bg); border-radius: 6px; padding: 2px 6px; font-si
 
 /* 卡片 */
 .card {
-  background: var(--surface); border-radius: var(--radius-lg);
+  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-1); padding: 20px; margin-bottom: 18px;
 }
 .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
@@ -260,7 +293,11 @@ code { background: var(--code-bg); border-radius: 6px; padding: 2px 6px; font-si
 /* KPI */
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 18px; }
 .kpi {
-  background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-1);
+  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-1);
   padding: 18px 20px;
 }
 .kpi .num { font-size: 28px; font-weight: 700; color: var(--primary-strong); line-height: 1.2; }
@@ -584,7 +621,11 @@ textarea {
   to { opacity: 1; }
 }
 .modal-box {
-  background: var(--surface); border-radius: var(--radius-lg);
+  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-2); width: min(860px, 94vw); max-height: 86vh;
   display: flex; flex-direction: column; overflow: hidden;
   animation: modal-box-in .2s ease;
@@ -672,7 +713,11 @@ textarea {
 .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .agent-card {
   border: 1px solid var(--outline-variant); border-radius: var(--radius-md);
-  padding: 16px; background: var(--surface);
+  padding: 16px;
+  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
 }
 .agent-card .head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .agent-card .emoji { font-size: 22px; }
@@ -824,11 +869,20 @@ textarea {
 .tri-grid .card .focus-card { flex: 1; }
 .pf-module {
   border: 1px solid var(--outline-variant); border-radius: var(--radius-lg);
-  background: var(--surface); box-shadow: var(--shadow-1);
+  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: var(--shadow-1);
   padding: 14px 18px; margin-bottom: 14px;
 }
-/* 内外层颜色分层：外层模块卡用 surface，内层内容卡用 hover-bg，避免同底色套娃 */
-.pf-module-body .card { background: var(--hover-bg); }
+/* 内外层颜色分层：外层模块卡用 surface，内层内容卡用 surface-hover（低对比）+ 毛玻璃 */
+.pf-module-body .card {
+  background: var(--surface-hover);
+  background: color-mix(in srgb, var(--surface-hover) 76%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
 .pf-module-head {
   display: flex; align-items: center; gap: 10px;
   padding-bottom: 10px; margin-bottom: 12px;
@@ -855,7 +909,11 @@ textarea {
 .health-score .delta { font-size: 14px; margin-left: 8px; }
 .focus-card {
   padding: 12px 14px; border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-md); background: var(--surface-dim);
+  border-radius: var(--radius-md);
+  background: var(--surface-dim);
+  background: color-mix(in srgb, var(--surface-dim) 82%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
   font-size: 14px; line-height: 1.7;
 }
 .radar-box svg { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto; }
