@@ -1,0 +1,11 @@
+{
+  "type": "kpi",
+  "title": "三组关键数字",
+  "primary": "#DC2626",
+  "items": [
+    {"label": "Kimi K3 总参数", "display": "2.8 万亿", "delta": "激活 1040 亿"},
+    {"label": "DeepSeek V4-Pro DeepSWE", "display": "62.7", "delta": "预览版仅 12.8"},
+    {"label": "DeepSeek 高峰输出价", "display": "27 元", "delta": "每百万 token"}
+  ],
+  "source": "CNMO / 动点科技（2026-08）"
+}
