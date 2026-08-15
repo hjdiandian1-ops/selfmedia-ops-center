@@ -1711,6 +1711,35 @@ class StatsBackfill(BaseModel):
     comments: int = 0
     url: str = ""
 
+
+class AccountSnapshot(BaseModel):
+    followers: int = 0
+    following: int = 0
+    likes_collects: int = 0
+
+
+@app.post("/api/stats/account-snapshot")
+def api_account_snapshot(payload: AccountSnapshot):
+    """保存账号快照（小红书总粉丝数等；导出表不含总粉丝，需手动维护）。"""
+    for name, val in (("followers", payload.followers), ("following", payload.following),
+                      ("likes_collects", payload.likes_collects)):
+        if not isinstance(val, int) or val < 0:
+            raise HTTPException(status_code=400, detail=f"{name} 必须是非负整数")
+    path = os.path.join(DATA_DIR, "xhs_account.json")
+    data = read_json(path) or {}
+    data.update({
+        "followers": payload.followers,
+        "following": payload.following,
+        "likes_collects": payload.likes_collects,
+        "updated_at": _now_str(),
+        "period": data.get("period", ""),
+    })
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "followers": payload.followers}
+
+
 @app.post("/api/publish/manual")
 def api_publish_manual(payload: ManualPublishRequest):
     """人工发布完成后标记记录：追加 mode=manual 的发布动作，保住 48h 回收闭环。"""

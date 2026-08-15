@@ -864,8 +864,12 @@ def build_dashboard(range_days=None, period="day", platforms=None,
                 "hits": s["hits"],
                 "hit_rate": s["hit_rate"],
                 "followers": s["followers_gained"],
+                "followers_gained": s["followers_gained"],
             },
         }
+    account = read_json(os.path.join(data_dir, "xhs_account.json")) or {}
+    if "小红书" in platform_data and account.get("followers") is not None:
+        platform_data["小红书"]["totals"]["followers"] = int(account["followers"])
     overview = _overview(platform_data, range_days)
     overview["recent"] = sorted(
         (r for p in platform_data.values() for r in p["recent"]),

@@ -451,6 +451,17 @@
         </div>
 
         <div class="card">
+          <div class="card-head"><h3>账号快照（粉丝总数）</h3><span class="muted">小红书导出表不含总粉丝，请每周/每月手动更新一次</span></div>
+          <div class="form-grid">
+            <div><label class="field-label">当前粉丝数</label><input id="snap-followers" type="number" min="0" value="0"></div>
+            <div><label class="field-label">关注数</label><input id="snap-following" type="number" min="0" value="0"></div>
+            <div><label class="field-label">赞藏数</label><input id="snap-likes-collects" type="number" min="0" value="0"></div>
+            <div style="display:flex;align-items:flex-end"><button class="btn filled" onclick="saveAccountSnapshot()">保存快照</button></div>
+          </div>
+          <p class="muted" id="snap-note" style="margin-top:8px"></p>
+        </div>
+
+        <div class="card">
           <div class="card-head"><h3>发布表现明细</h3><span class="muted">全部回填记录</span></div>
           <div class="table-wrap">
             <table class="table">

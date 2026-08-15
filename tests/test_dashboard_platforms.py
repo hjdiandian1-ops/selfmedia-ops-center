@@ -240,3 +240,21 @@ def test_xhs_import_prefers_notes_over_backfill(tmp_path):
     xhs = d["platforms"]["小红书"]
     assert xhs["totals"]["total_reads"] == 1500  # 导入笔记 1000 + 未匹配回填 500
     assert xhs["totals"]["engagement"] == 0.052  # (65+13)/1500
+
+
+def test_xhs_total_followers_uses_account_snapshot(tmp_path):
+    root = str(tmp_path)
+    _write_job(root, "job_xhs", "小红书", records=[
+        {"platform": "小红书", "collected_at": _days_ago_str(1), "reads": 100,
+         "likes": 5, "collects": 1, "comments": 1, "engagement": 0.07,
+         "followers_gained": 3, "hit": False},
+    ], publishes=[])
+    data = os.path.join(root, "data")
+    os.makedirs(data, exist_ok=True)
+    with open(os.path.join(data, "xhs_account.json"), "w", encoding="utf-8") as f:
+        json.dump({"followers": 45, "following": 41, "likes_collects": 387}, f, ensure_ascii=False)
+    d = DA.build_dashboard(range_days=7, jobs_dir=os.path.join(root, "jobs"),
+                           outputs_dir=os.path.join(root, "outputs"), data_dir=data)
+    xhs = d["platforms"]["小红书"]
+    assert xhs["totals"]["followers"] == 45
+    assert xhs["totals"]["followers_gained"] == 3

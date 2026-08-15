@@ -338,7 +338,7 @@ function renderOverviewTrend() {
     publishes: { label: "发布数", data: bucketed.publishes },
     reads: { label: "阅读/播放", data: bucketed.reads },
     engagement: { label: "互动率%", data: bucketed.engagement },
-    followers: { label: "粉丝", data: bucketed.followers },
+    followers: { label: "涨粉（新增）", data: bucketed.followers },
   };
   const keys = chartSeriesFor("overview");
   $("#ov-series").innerHTML = Object.entries(series).map(([k, s]) =>
@@ -714,7 +714,7 @@ function renderPlatformTrend(name, trend) {
     publishes: { label: "发布数", data: bucketed.publishes },
     reads: { label: "阅读/播放", data: bucketed.reads },
     engagement: { label: "互动率%", data: bucketed.engagement },
-    followers: { label: "粉丝", data: bucketed.followers },
+    followers: { label: "涨粉（新增）", data: bucketed.followers },
   };
   const keys = chartSeriesFor(name);
   $("#pf-series").innerHTML = Object.entries(seriesMap).map(([k, s]) =>
@@ -2599,6 +2599,15 @@ async function loadData() {
   try {
     const [stats, jobs] = await Promise.all([api("/api/stats"), api("/api/jobs")]);
     statsCache = stats;
+    const acc = stats.xhs_account || {};
+    if ($("#snap-followers")) $("#snap-followers").value = acc.followers ?? 0;
+    if ($("#snap-following")) $("#snap-following").value = acc.following ?? 0;
+    if ($("#snap-likes-collects")) $("#snap-likes-collects").value = acc.likes_collects ?? 0;
+    if ($("#snap-note")) {
+      $("#snap-note").textContent = acc.updated_at
+        ? `上次更新：${acc.updated_at}${acc.period ? "（" + acc.period + "）" : ""}`
+        : "尚未保存过快照";
+    }
     $("#stats-updated-at").textContent = "更新于 " + (stats.generated_at || "");
     statKpis(stats);
     renderDataStatus(stats.data_status || {}, stats);
@@ -2616,6 +2625,26 @@ async function loadData() {
     toast("数据加载失败: " + e.message, false);
   }
 }
+
+async function saveAccountSnapshot() {
+  const body = {
+    followers: Number($("#snap-followers").value) || 0,
+    following: Number($("#snap-following").value) || 0,
+    likes_collects: Number($("#snap-likes-collects").value) || 0,
+  };
+  try {
+    await api("/api/stats/account-snapshot", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    toast("账号快照已保存，粉丝数将以该数据为准");
+    loadData();
+    loadOverview();
+  } catch (e) {
+    toast("保存失败: " + e.message, false);
+  }
+}
+window.saveAccountSnapshot = saveAccountSnapshot;
 
 $("#backfill-form").addEventListener("submit", async (e) => {
   e.preventDefault();
