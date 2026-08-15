@@ -3020,10 +3020,12 @@ window.selectTemplate = selectTemplate;
 
 async function saveTemplates() {
   try {
-    const d = await api("/api/user-preferences", {
+    await api("/api/user-preferences", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ templates: tplSel }),
     });
+    const st = $("#tpl-save-status");
+    if (st) st.textContent = "已保存 " + new Date().toLocaleTimeString();
     toast("模板选择已保存，后续生成将按此模板初始化");
   } catch (e) {
     toast("保存模板失败: " + e.message, false);
