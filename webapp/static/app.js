@@ -221,6 +221,7 @@ function renderOverviewPane(stats, d) {
   $("#ov-health-note").textContent = noteParts.join(" · ");
   svgRadar($("#ov-radar"), ov.radar);
   $("#ov-focus").textContent = ov.focus || "先回填/导入数据后开始诊断。";
+  renderPlatformCompareChart(d.platforms || {});
 
   const states = Object.entries(stats.by_state || {});
   const total = stats.jobs_total || 1;
@@ -246,6 +247,36 @@ function renderOverviewTrend() {
   $("#ov-series").innerHTML = Object.entries(series).map(([k, s]) =>
     `<button class="tab ${k === key ? "active" : ""}" onclick="setOverviewSeries('${k}')">${s.label}</button>`).join("");
   svgLineChart($("#ov-trend"), lastStatsTrend.map((t) => t.label), series, key);
+}
+
+function renderPlatformCompareChart(platforms) {
+  const box = $("#ov-compare");
+  if (!box) return;
+  const order = ["小红书", "公众号", "短视频"];
+  const rows = [
+    { label: "阅读/播放", val: (p) => (p.totals || {}).total_reads || 0, fmt: (v) => fmtNum(v) },
+    { label: "互动率", val: (p) => (p.totals || {}).engagement, fmt: (v) => v == null ? "—" : (v * 100).toFixed(1) + "%" },
+    { label: "爆款", val: (p) => (p.totals || {}).hits || 0, fmt: (v) => v },
+  ];
+  box.innerHTML = rows.map((r) => {
+    const vals = order.map((pl) => {
+      const p = platforms[pl];
+      return { pl, v: p ? r.val(p) : 0 };
+    });
+    const max = Math.max(1, ...vals.map((x) => (typeof x.v === "number" ? x.v : 0)));
+    return `
+      <div class="cbar-row">
+        <span class="cbar-label">${esc(r.label)}</span>
+        ${vals.map((x) => {
+          const w = typeof x.v === "number" && x.v > 0 ? Math.max(2, Math.round(x.v / max * 100)) : 0;
+          return `
+            <div class="cbar-item">
+              <div class="cbar-track"><div class="cbar-fill ${esc(x.pl)}" style="width:${w}%"></div></div>
+              <span class="cbar-num">${esc(x.pl)} ${esc(r.fmt(x.v))}</span>
+            </div>`;
+        }).join("")}
+      </div>`;
+  }).join("");
 }
 
 function setOverviewSeries(k) {
@@ -312,7 +343,7 @@ function renderPlatformPane(name) {
     </div>
     <div class="card">
       <div class="card-head"><h3>趋势</h3></div>
-      <div id="pf-trend" class="trend-chart"></div>
+      <div id="pf-trend" class="line-chart-wrap"></div>
       <div class="series-tabs" id="pf-series"></div>
     </div>
     <div class="card">
@@ -337,7 +368,6 @@ function renderPlatformPane(name) {
     dashState.data = ovCache;
     dashState.weakPoints = ovCache.weak_points || [];
     renderDash();
-    renderWeakPoints();
     const files = (ovCache.sources || {}).dashboard_files || {};
     $("#dash-note").textContent =
       `更新于 ${ovCache.generated_at || ""} · 看板导出 ${Object.values(files).filter(Boolean).length}/4 · 笔记明细 ${(ovCache.sources || {}).notes_in_range || 0} 条`;
@@ -349,6 +379,7 @@ function xhsDashCardHtml() {
     <div class="card">
       <div class="card-head">
         <h3>小红书式数据分析（导出明细）</h3>
+        <span class="muted" id="dash-note"></span>
         <div class="dash-controls">
           <div class="tabs" id="dash-tabs">
             <button class="tab active" data-dash="watch" onclick="switchDashTab('watch')">观看</button>
@@ -371,11 +402,6 @@ function xhsDashCardHtml() {
         </div>
       </div>
       <div id="dash-extra" class="grid-2" style="margin-top:18px"></div>
-      <div class="card-head" style="margin-top:20px">
-        <h3>薄弱点诊断 · 提升方向</h3>
-        <span class="muted" id="dash-note"></span>
-      </div>
-      <div id="weak-points" class="stack"></div>
     </div>`;
 }
 
@@ -639,6 +665,7 @@ function renderDashExtra(tab) {
 
 function renderWeakPoints() {
   const box = $("#weak-points");
+  if (!box) return;
   if (!dashState.weakPoints.length) {
     return box.innerHTML = '<span class="muted">当前没有命中薄弱点规则；继续导入数据后会自动诊断。</span>';
   }
@@ -2117,7 +2144,6 @@ async function loadData() {
     statsCache = stats;
     $("#stats-updated-at").textContent = "更新于 " + (stats.generated_at || "");
     statKpis(stats);
-    renderPlatformCompare(stats.by_platform || []);
     renderDataStatus(stats.data_status || {}, stats);
     renderThemeTable(stats.by_theme || []);
     renderContentInsights(stats.content_insights || {});

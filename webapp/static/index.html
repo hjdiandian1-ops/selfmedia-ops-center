@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-<link rel="stylesheet" href="/static/style.css?v=3.38">
+<link rel="stylesheet" href="/static/style.css?v=3.39">
 </head>
 <body>
 <div class="app">
@@ -90,6 +90,10 @@
             <div class="card-head"><h3>本周最重要的一件事</h3></div>
             <div id="ov-focus" class="focus-card">—</div>
           </div>
+          <div class="card">
+            <div class="card-head"><h3>三平台对比</h3><span class="muted">阅读 / 互动率 / 爆款</span></div>
+            <div id="ov-compare" class="compare-chart"></div>
+          </div>
           <details class="card" style="padding:14px 18px">
             <summary style="cursor:pointer;font-weight:600">生产与发布汇总（任务状态 + 发布趋势）</summary>
             <div class="grid-2" style="margin-top:12px">
@@ -99,7 +103,7 @@
               </div>
               <div>
                 <h4 class="pool-title">发布趋势</h4>
-                <div id="ov-trend" class="trend-chart"></div>
+                <div id="ov-trend" class="line-chart-wrap"></div>
                 <div class="series-tabs" id="ov-series"></div>
               </div>
             </div>
@@ -399,11 +403,6 @@
 
         <div class="kpi-grid" id="stats-kpi"></div>
 
-        <div class="card">
-          <div class="card-head"><h3>平台对比</h3><span class="muted">发布动作 / 回填 / 阅读 / 互动率</span></div>
-          <div id="platform-compare" class="agent-grid"></div>
-        </div>
-
         <div class="grid-2">
           <div class="card">
             <div class="card-head"><h3>回填平台数据</h3><span class="muted">阅读 / 赞 / 藏 / 评</span></div>
@@ -593,6 +592,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.38"></script>
+    <script src="/static/app.js?v=3.39"></script>
 </body>
 </html>
