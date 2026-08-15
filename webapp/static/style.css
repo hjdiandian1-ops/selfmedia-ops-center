@@ -183,13 +183,20 @@ code { background: #f1f3f4; border-radius: 6px; padding: 2px 6px; font-size: 12p
 }
 .form-section-title {
   display: flex; align-items: center; gap: 8px;
-  margin: 18px 0 2px; padding-top: 14px;
+  margin: 20px 0 8px; padding-top: 16px;
   border-top: 1px solid var(--outline-variant);
   font-size: 13px; font-weight: 700; color: var(--on-surface);
 }
-.form-section-title:first-of-type {
-  border-top: none; margin-top: 6px; padding-top: 0;
+.form-section-title::before {
+  content: ""; width: 4px; height: 14px; border-radius: 2px;
+  background: var(--primary); flex: 0 0 auto;
 }
+.form-section-title:first-of-type {
+  border-top: none; margin-top: 10px; padding-top: 0;
+}
+#settings-modal .modal-box { width: min(620px, 94vw); }
+#settings-modal .form { padding: 6px 22px 20px; }
+#settings-modal .form .field-label { margin: 12px 0 5px; }
 #settings-modal .toolbar { margin-bottom: 0; }
 
 /* 选题 */
