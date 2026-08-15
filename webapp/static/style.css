@@ -736,6 +736,9 @@ textarea {
 .chart-tip-row span { flex: 1; color: var(--on-surface-variant); }
 .chart-tip-row b { font-variant-numeric: tabular-nums; }
 .tip-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; font-size: 12px; color: var(--on-surface-variant); }
+.chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.chart-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .chart-axis { font-size: 10px; fill: var(--on-surface-variant); }
 .health-explain {
   margin-top: 10px; padding-top: 10px;

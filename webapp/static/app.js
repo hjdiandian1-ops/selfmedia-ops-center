@@ -182,6 +182,7 @@ let currentOvTab = "overview";
 let lastStatsTrend = [];
 let dashPeriod = "day";
 let panelEditMode = false;
+let chartMulti = false;
 const ovSeriesSel = { overview: "reads", 小红书: "reads", 公众号: "reads", 短视频: "reads" };
 
 async function loadOverview() {
@@ -342,8 +343,9 @@ function renderOverviewTrend() {
     followers: { label: "粉丝", data: bucketed.followers },
   };
   $("#ov-series").innerHTML = Object.entries(series).map(([k, s]) =>
-    `<button class="tab ${k === key ? "active" : ""}" onclick="setOverviewSeries('${k}')">${s.label}</button>`).join("");
-  svgLineChart($("#ov-trend"), bucketed.labels, series, key);
+    `<button class="tab ${k === key && !chartMulti ? "active" : ""}" onclick="setOverviewSeries('${k}')">${s.label}</button>`).join("")
+    + `<button class="tab ${chartMulti ? "active" : ""}" onclick="toggleChartMulti()">多线对比</button>`;
+  svgLineChart($("#ov-trend"), bucketed.labels, series, key, chartMulti);
 }
 
 function setOverviewSeries(k) {
@@ -718,8 +720,9 @@ function renderPlatformTrend(name, trend) {
     followers: { label: "粉丝", data: bucketed.followers },
   };
   $("#pf-series").innerHTML = Object.entries(seriesMap).map(([k, s]) =>
-    `<button class="tab ${k === key ? "active" : ""}" onclick="setPlatformSeries('${esc(name)}','${k}')">${s.label}</button>`).join("");
-  svgLineChart($("#pf-trend"), bucketed.labels, seriesMap, key);
+    `<button class="tab ${k === key && !chartMulti ? "active" : ""}" onclick="setPlatformSeries('${esc(name)}','${k}')">${s.label}</button>`).join("")
+    + `<button class="tab ${chartMulti ? "active" : ""}" onclick="toggleChartMulti()">多线对比</button>`;
+  svgLineChart($("#pf-trend"), bucketed.labels, seriesMap, key, chartMulti);
 }
 
 function setPlatformSeries(platform, key) {
@@ -730,7 +733,17 @@ function setPlatformSeries(platform, key) {
 }
 window.setPlatformSeries = setPlatformSeries;
 
-function svgLineChart(el, labels, seriesMap, activeKey) {
+function toggleChartMulti() {
+  chartMulti = !chartMulti;
+  if (currentOvTab === "overview") {
+    renderOverviewTrend();
+  } else if (ovCache && ovCache.platforms && ovCache.platforms[currentOvTab]) {
+    renderPlatformTrend(currentOvTab, ovCache.platforms[currentOvTab].trend);
+  }
+}
+window.toggleChartMulti = toggleChartMulti;
+
+function svgLineChart(el, labels, seriesMap, activeKey, multi) {
   if (!el) return;
   const s = seriesMap[activeKey] || {};
   const data = s.data || [];
@@ -739,26 +752,43 @@ function svgLineChart(el, labels, seriesMap, activeKey) {
     return;
   }
   const W = 600, H = 190, PAD = 34;
-  const maxV = Math.max(1, ...data.map((v) => Number(v || 0)));
   const step = labels.length > 1 ? (W - PAD * 2) / (labels.length - 1) : W - PAD * 2;
-  const xy = data.map((v, i) => [PAD + i * step, H - PAD - (Number(v || 0) / maxV) * (H - PAD * 2)]);
+  const useMulti = multi && Object.keys(seriesMap).length > 1;
+  const geoms = Object.entries(seriesMap).map(([k, ss]) => {
+    const arr = ss.data || [];
+    const max = Math.max(1, ...arr.map((v) => Number(v || 0)));
+    return {
+      k, label: ss.label, arr, max,
+      pts: arr.map((v, i) => [PAD + i * step, H - PAD - (Number(v || 0) / max) * (H - PAD * 2)]),
+    };
+  });
+  const activeGeom = geoms.find((g) => g.k === activeKey) || geoms[0];
   const grid = [0.25, 0.5, 0.75].map((p) => {
     const y = H - PAD - p * (H - PAD * 2);
     return `<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PAD}" y2="${y.toFixed(1)}" class="chart-grid"/>`;
   }).join("");
   const labelsHtml = labels.map((l, i) =>
     `<text x="${(PAD + i * step).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${esc(l)}</text>`).join("");
-  const circles = xy.map((p) =>
+  const lines = useMulti
+    ? geoms.map((g) => `<path d="${smoothPath(g.pts)}" class="chart-line" style="stroke:${seriesColor(g.k)}"/>`).join("")
+    : `<path d="${smoothPath(activeGeom.pts)}" class="chart-line"/>`;
+  const circles = useMulti ? "" : activeGeom.pts.map((p) =>
     `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" class="chart-dot"/>`).join("");
   const guide = `<line id="chart-guide" x1="0" y1="8" x2="0" y2="${(H - PAD).toFixed(1)}" class="chart-guide" style="display:none"/>`;
-  const hi = `<circle id="chart-hi" r="5" class="chart-hi" style="display:none"/>`;
+  const hi = useMulti
+    ? geoms.map((g) => `<circle data-hi="${g.k}" r="4" class="chart-hi" style="display:none;stroke:${seriesColor(g.k)}"/>`).join("")
+    : `<circle id="chart-hi" r="5" class="chart-hi" style="display:none"/>`;
   const overlay = `<rect x="${PAD}" y="6" width="${(W - PAD * 2).toFixed(1)}" height="${(H - PAD * 2).toFixed(1)}" fill="transparent" class="chart-hover"/>`;
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${grid}${guide}${hi}${smoothPath(xy)}${circles}${labelsHtml}${overlay}</svg><div class="chart-tip"></div>`;
+  const legend = useMulti
+    ? `<div class="chart-legend">${geoms.map((g) =>
+        `<span><i style="background:${seriesColor(g.k)}"></i>${esc(g.label)}</span>`).join("")}</div>`
+    : "";
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${grid}${guide}${hi}${lines}${circles}${labelsHtml}${overlay}</svg>${legend}<div class="chart-tip"></div>`;
   el.style.position = "relative";
   const svg = el.querySelector("svg");
   const tip = el.querySelector(".chart-tip");
   const guideEl = svg.querySelector("#chart-guide");
-  const hiEl = svg.querySelector("#chart-hi");
+  const hiEls = svg.querySelectorAll(".chart-hi");
   svg.addEventListener("mousemove", (e) => {
     const r = svg.getBoundingClientRect();
     const x = (e.clientX - r.left) * (W / r.width);
@@ -767,9 +797,21 @@ function svgLineChart(el, labels, seriesMap, activeKey) {
     guideEl.setAttribute("x1", px.toFixed(1));
     guideEl.setAttribute("x2", px.toFixed(1));
     guideEl.style.display = "";
-    hiEl.setAttribute("cx", px.toFixed(1));
-    hiEl.setAttribute("cy", xy[idx][1].toFixed(1));
-    hiEl.style.display = "";
+    if (useMulti) {
+      hiEls.forEach((h) => {
+        const g = geoms.find((gg) => gg.k === h.dataset.hi);
+        if (g) {
+          h.setAttribute("cx", px.toFixed(1));
+          h.setAttribute("cy", g.pts[idx][1].toFixed(1));
+          h.style.display = "";
+        }
+      });
+    } else {
+      const h = hiEls[0];
+      h.setAttribute("cx", px.toFixed(1));
+      h.setAttribute("cy", activeGeom.pts[idx][1].toFixed(1));
+      h.style.display = "";
+    }
     const rows = Object.entries(seriesMap).map(([k, ss]) => {
       const v = ss.data ? ss.data[idx] : null;
       return `<div class="chart-tip-row"><i class="tip-dot" style="background:${seriesColor(k)}"></i><span>${esc(ss.label)}</span><b>${v == null ? "—" : esc(fmtNum(v))}</b></div>`;
@@ -785,13 +827,13 @@ function svgLineChart(el, labels, seriesMap, activeKey) {
   svg.addEventListener("mouseleave", () => {
     tip.style.display = "none";
     guideEl.style.display = "none";
-    hiEl.style.display = "none";
+    hiEls.forEach((h) => { h.style.display = "none"; });
   });
 }
 
 function smoothPath(xy) {
   if (xy.length < 2) {
-    return `<polyline points="${xy.map((p) => p.join(",")).join(" ")}" class="chart-line"/>`;
+    return `M ${xy.map((p) => p.join(" ")).join(" L ")}`;
   }
   let d = `M ${xy[0][0].toFixed(1)} ${xy[0][1].toFixed(1)}`;
   for (let i = 0; i < xy.length - 1; i++) {
@@ -800,7 +842,7 @@ function smoothPath(xy) {
     const c2x = x0 + 2 * (x1 - x0) / 3;
     d += ` C ${c1x.toFixed(1)} ${y0.toFixed(1)}, ${c2x.toFixed(1)} ${y1.toFixed(1)}, ${x1.toFixed(1)} ${y1.toFixed(1)}`;
   }
-  return `<path d="${d}" class="chart-line"/>`;
+  return d;
 }
 
 function seriesColor(k) {
