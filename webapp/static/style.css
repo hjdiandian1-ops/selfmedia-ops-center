@@ -721,6 +721,21 @@ textarea {
 .chart-grid { stroke: var(--outline-variant); stroke-width: 1; stroke-dasharray: 3 3; }
 .chart-line { fill: none; stroke: var(--primary); stroke-width: 2; stroke-linejoin: round; }
 .chart-dot { fill: var(--primary); }
+.chart-guide { stroke: var(--outline); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart-hi { fill: var(--primary); stroke: var(--surface); stroke-width: 2; }
+.chart-hover { cursor: crosshair; }
+.chart-tip {
+  position: absolute; top: 6px; z-index: 5; display: none;
+  min-width: 140px; padding: 8px 10px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--outline-variant);
+  box-shadow: var(--shadow-2); font-size: 12px; line-height: 1.7;
+  pointer-events: none;
+}
+.chart-tip-title { font-weight: 700; margin-bottom: 4px; }
+.chart-tip-row { display: flex; align-items: center; gap: 6px; }
+.chart-tip-row span { flex: 1; color: var(--on-surface-variant); }
+.chart-tip-row b { font-variant-numeric: tabular-nums; }
+.tip-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .chart-axis { font-size: 10px; fill: var(--on-surface-variant); }
 .health-explain {
   margin-top: 10px; padding-top: 10px;

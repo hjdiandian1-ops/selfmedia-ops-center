@@ -741,19 +741,70 @@ function svgLineChart(el, labels, seriesMap, activeKey) {
   const W = 600, H = 190, PAD = 34;
   const maxV = Math.max(1, ...data.map((v) => Number(v || 0)));
   const step = labels.length > 1 ? (W - PAD * 2) / (labels.length - 1) : W - PAD * 2;
-  const pts = data.map((v, i) =>
-    `${(PAD + i * step).toFixed(1)},${(H - PAD - (Number(v || 0) / maxV) * (H - PAD * 2)).toFixed(1)}`);
+  const xy = data.map((v, i) => [PAD + i * step, H - PAD - (Number(v || 0) / maxV) * (H - PAD * 2)]);
   const grid = [0.25, 0.5, 0.75].map((p) => {
     const y = H - PAD - p * (H - PAD * 2);
     return `<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PAD}" y2="${y.toFixed(1)}" class="chart-grid"/>`;
   }).join("");
   const labelsHtml = labels.map((l, i) =>
     `<text x="${(PAD + i * step).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${esc(l)}</text>`).join("");
-  const circles = pts.map((pt, i) => {
-    const [x, y] = pt.split(",");
-    return `<circle cx="${x}" cy="${y}" r="3" class="chart-dot"><title>${esc(labels[i] || "")} ${fmtNum(data[i])}</title></circle>`;
-  }).join("");
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${grid}<polyline points="${pts.join(" ")}" class="chart-line"/>${circles}${labelsHtml}</svg>`;
+  const circles = xy.map((p) =>
+    `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" class="chart-dot"/>`).join("");
+  const guide = `<line id="chart-guide" x1="0" y1="8" x2="0" y2="${(H - PAD).toFixed(1)}" class="chart-guide" style="display:none"/>`;
+  const hi = `<circle id="chart-hi" r="5" class="chart-hi" style="display:none"/>`;
+  const overlay = `<rect x="${PAD}" y="6" width="${(W - PAD * 2).toFixed(1)}" height="${(H - PAD * 2).toFixed(1)}" fill="transparent" class="chart-hover"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${grid}${guide}${hi}${smoothPath(xy)}${circles}${labelsHtml}${overlay}</svg><div class="chart-tip"></div>`;
+  el.style.position = "relative";
+  const svg = el.querySelector("svg");
+  const tip = el.querySelector(".chart-tip");
+  const guideEl = svg.querySelector("#chart-guide");
+  const hiEl = svg.querySelector("#chart-hi");
+  svg.addEventListener("mousemove", (e) => {
+    const r = svg.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (W / r.width);
+    const idx = Math.max(0, Math.min(labels.length - 1, Math.round((x - PAD) / step)));
+    const px = PAD + idx * step;
+    guideEl.setAttribute("x1", px.toFixed(1));
+    guideEl.setAttribute("x2", px.toFixed(1));
+    guideEl.style.display = "";
+    hiEl.setAttribute("cx", px.toFixed(1));
+    hiEl.setAttribute("cy", xy[idx][1].toFixed(1));
+    hiEl.style.display = "";
+    const rows = Object.entries(seriesMap).map(([k, ss]) => {
+      const v = ss.data ? ss.data[idx] : null;
+      return `<div class="chart-tip-row"><i class="tip-dot" style="background:${seriesColor(k)}"></i><span>${esc(ss.label)}</span><b>${v == null ? "—" : esc(fmtNum(v))}</b></div>`;
+    }).join("");
+    tip.innerHTML = `<div class="chart-tip-title">${esc(labels[idx] || "")}</div>${rows}`;
+    tip.style.display = "block";
+    let tipX = e.clientX - r.left + 12;
+    const tw = tip.offsetWidth || 150;
+    if (tipX + tw > r.width) tipX = e.clientX - r.left - tw - 12;
+    tip.style.left = Math.max(0, tipX) + "px";
+    tip.style.top = "6px";
+  });
+  svg.addEventListener("mouseleave", () => {
+    tip.style.display = "none";
+    guideEl.style.display = "none";
+    hiEl.style.display = "none";
+  });
+}
+
+function smoothPath(xy) {
+  if (xy.length < 2) {
+    return `<polyline points="${xy.map((p) => p.join(",")).join(" ")}" class="chart-line"/>`;
+  }
+  let d = `M ${xy[0][0].toFixed(1)} ${xy[0][1].toFixed(1)}`;
+  for (let i = 0; i < xy.length - 1; i++) {
+    const [x0, y0] = xy[i], [x1, y1] = xy[i + 1];
+    const c1x = x0 + (x1 - x0) / 3;
+    const c2x = x0 + 2 * (x1 - x0) / 3;
+    d += ` C ${c1x.toFixed(1)} ${y0.toFixed(1)}, ${c2x.toFixed(1)} ${y1.toFixed(1)}, ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+  }
+  return `<path d="${d}" class="chart-line"/>`;
+}
+
+function seriesColor(k) {
+  return { publishes: "var(--primary)", reads: "var(--primary)", engagement: "var(--success)", followers: "var(--deco-accent)" }[k] || "var(--primary)";
 }
 
 function svgRadar(el, radar) {
