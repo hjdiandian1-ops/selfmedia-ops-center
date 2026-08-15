@@ -258,3 +258,31 @@ def test_xhs_total_followers_uses_account_snapshot(tmp_path):
     xhs = d["platforms"]["小红书"]
     assert xhs["totals"]["followers"] == 45
     assert xhs["totals"]["followers_gained"] == 3
+
+
+def test_watch_account_suffixed_keys(tmp_path):
+    root = str(tmp_path)
+    data = os.path.join(root, "data")
+    dash = os.path.join(data, "dashboard")
+    os.makedirs(dash, exist_ok=True)
+    with open(os.path.join(dash, "watch.json"), "w", encoding="utf-8") as f:
+        json.dump({
+            "kind": "watch",
+            "account": {
+                "曝光": 62980, "观看": 13861,
+                "封面点击率(%)": 22.4, "平均观看时长(s)": 11.7,
+                "总完播率(%)": 37.9, "总观看时长(s)": 387568,
+            },
+            "series": {},
+        }, f, ensure_ascii=False, indent=2)
+    d = DA.build_dashboard(range_days=7, jobs_dir=os.path.join(root, "jobs"),
+                           outputs_dir=os.path.join(root, "outputs"), data_dir=data)
+    w = d["tabs"]["watch"]
+    kpis = {k["key"]: k["value"] for k in w["kpis"]}
+    assert kpis["封面点击率"] == 22.4
+    assert kpis["平均观看时长"] == 11.7
+    assert w["account"]["视频完播率"] == 37.9
+    assert w["account"]["观看总时长"] == 387568
+    xhs = d["platforms"]["小红书"]
+    comp = next(m for m in xhs["metrics"] if m["key"] == "completion")
+    assert comp["value"] == 37.9

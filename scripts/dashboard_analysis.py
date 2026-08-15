@@ -188,7 +188,7 @@ def build_tabs(range_days, data_dir):
         _first_series(watch), range_days)
     exposure = nsum("exposure")
     reads = watch_s if watch_s > 0 else nsum("reads")
-    ctr = _pct_num(watch_acct.get("封面点击率"))
+    ctr = _pct_num(_acct(watch_acct, "封面点击率(%)", "封面点击率"))
     if ctr is None:
         # 笔记明细加权点击率
         exp_sum = sum(_num(n.get("exposure")) for n in notes_cur)
@@ -214,7 +214,7 @@ def build_tabs(range_days, data_dir):
             {"key": "曝光数", "value": exposure, "delta": None},
             {"key": "观看数", "value": reads or watch_s, "delta": _delta(watch_s, prev_watch_s)},
             {"key": "封面点击率", "value": ctr, "unit": "%", "delta": None},
-            {"key": "平均观看时长", "value": _num(watch_acct.get("平均观看时长"), navg("avg_watch_seconds")),
+            {"key": "平均观看时长", "value": _num(_acct(watch_acct, "平均观看时长(s)", "平均观看时长"), navg("avg_watch_seconds")),
              "unit": "秒", "delta": None},
         ],
         "trend": watch_trend,
@@ -225,9 +225,9 @@ def build_tabs(range_days, data_dir):
         "timeofday": (watch.get("breakdown") or {}).get("观看时段", [])
                      or (watch.get("breakdown") or {}).get("时段", []),
         "account": {
-            "观看总时长": watch_acct.get("观看总时长"),
-            "视频完播率": _pct_num(watch_acct.get("视频完播率")),
-            "封面点击率": _pct_num(watch_acct.get("封面点击率")),
+            "观看总时长": _acct(watch_acct, "总观看时长(s)", "观看总时长"),
+            "视频完播率": _pct_num(_acct(watch_acct, "总完播率(%)", "视频完播率", "完播率")),
+            "封面点击率": ctr,
         },
     }
 
@@ -300,6 +300,14 @@ def _first_series(doc):
         if v:
             return v
     return []
+
+
+def _acct(acct, *names):
+    """兼容带后缀与不带后缀的账号指标键名（如 总完播率(%) / 视频完播率）。"""
+    for n in names:
+        if acct.get(n) is not None:
+            return acct.get(n)
+    return None
 
 
 def _trend_from_notes(notes_cur, range_days, key="reads"):
