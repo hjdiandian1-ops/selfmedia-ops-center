@@ -2397,17 +2397,25 @@ $("#xhs-import-file").addEventListener("change", async (e) => {
 
 $("#btn-dash-import").addEventListener("click", () => $("#dash-import-file").click());
 $("#dash-import-file").addEventListener("change", async (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
   try {
-    const d = await api(`/api/stats/import-dashboard?filename=${encodeURIComponent(file.name)}`, {
-      method: "POST",
-      body: file,
-    });
-    const series = Object.entries(d.series || {}).map(([k, v]) => `${k} ${v}条`).join("、");
-    toast(`已导入「${d.kind}」看板：指标 ${(d.account_keys || []).length} 个${series ? "，" + series : ""}`);
+    const ok = [], fail = [];
+    for (const file of files) {
+      try {
+        const d = await api(`/api/stats/import-dashboard?filename=${encodeURIComponent(file.name)}`, {
+          method: "POST",
+          body: file,
+        });
+        ok.push(d.kind || file.name);
+      } catch (err) {
+        fail.push(`${file.name}（${err.message}）`);
+      }
+    }
+    if (ok.length) toast(`已导入看板 ${ok.length}/${files.length}：${ok.join("、")}`);
+    if (fail.length) toast(`导入失败 ${fail.length} 项：${fail.join("；")}`, false);
     loadData();
-    loadDashboard();
+    loadOverview();
   } catch (err) {
     toast("导入失败: " + err.message, false);
   }
