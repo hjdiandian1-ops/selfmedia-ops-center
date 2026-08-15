@@ -488,7 +488,7 @@ function fillOverviewModule(id, stats, d, noteParts) {
   const ov = d.overview || {};
   if (id === "compare") {
     body.innerHTML = `
-      <div class="card-head"><h3>平台细分对比</h3><span class="muted">${esc((noteParts || []).join(" · "))}</span></div>
+      ${noteParts.length ? `<div class="muted" style="margin-bottom:8px">${esc(noteParts.join(" · "))}</div>` : ""}
       <div id="ov-compare" class="compare-chart"></div>
       <div id="ov-platform-cards" class="agent-grid" style="margin-top:14px"></div>`;
     renderPlatformCompareChart(d.platforms || {});
@@ -499,33 +499,30 @@ function fillOverviewModule(id, stats, d, noteParts) {
     const states = Object.entries(stats.by_state || {});
     const total = stats.jobs_total || 1;
     body.innerHTML = `
-      <details class="card" style="padding:14px 18px">
-        <summary style="cursor:pointer;font-weight:600">生产与发布汇总（任务状态 + 发布趋势）</summary>
-        <div class="grid-2" style="margin-top:12px">
-          <div>
-            <h4 class="pool-title">任务状态分布</h4>
-            <div id="state-bars" class="state-bars">
-              ${states.length
-                ? states.map(([s, n]) => `
-                  <div class="sbar">
-                    <span class="name">${esc(STATE_LABELS[s] || s)}</span>
-                    <div class="track"><div class="fill" style="width:${(n / total * 100).toFixed(0)}%"></div></div>
-                    <span class="cnt">${n}</span>
-                  </div>`).join("")
-                : '<span class="muted">暂无任务</span>'}
-            </div>
-          </div>
-          <div>
-            <h4 class="pool-title">发布趋势</h4>
-            <div id="ov-trend" class="line-chart-wrap"></div>
-            <div class="series-tabs" id="ov-series"></div>
+      <div class="grid-2">
+        <div>
+          <h4 class="pool-title">任务状态分布</h4>
+          <div id="state-bars" class="state-bars">
+            ${states.length
+              ? states.map(([s, n]) => `
+                <div class="sbar">
+                  <span class="name">${esc(STATE_LABELS[s] || s)}</span>
+                  <div class="track"><div class="fill" style="width:${(n / total * 100).toFixed(0)}%"></div></div>
+                  <span class="cnt">${n}</span>
+                </div>`).join("")
+              : '<span class="muted">暂无任务</span>'}
           </div>
         </div>
-      </details>`;
+        <div>
+          <h4 class="pool-title">发布趋势</h4>
+          <div id="ov-trend" class="line-chart-wrap"></div>
+          <div class="series-tabs" id="ov-series"></div>
+        </div>
+      </div>`;
     renderOverviewTrend();
   } else if (id === "recent") {
     body.innerHTML = `
-      <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 10 条 · 自动快评</span></div>
+      <div class="muted" style="margin-bottom:8px">最新 10 条 · 自动快评</div>
       <div class="table-wrap">
         <table class="table">
           <thead><tr><th>时间</th><th>标题</th><th>平台</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th><th>快评</th></tr></thead>
