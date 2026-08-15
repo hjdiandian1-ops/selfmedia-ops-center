@@ -1374,8 +1374,9 @@ class AdoptTopic(BaseModel):
 def api_adopt(payload: AdoptTopic):
     _license_guard("production")
     title = payload.title.strip()
-    if not title or len(title) > 60:
-        raise HTTPException(status_code=400, detail="标题为空或过长")
+    if not title:
+        raise HTTPException(status_code=400, detail="标题为空")
+    title = title[:60]  # 超长标题自动截断，避免长选题无法建任务
     if len(payload.link) > 500 or len(payload.notes) > 500:
         raise HTTPException(status_code=400, detail="link/notes 过长")
     safe_slug = re.sub(r"[^A-Za-z0-9_\-\u4e00-\u9fa5]", "", title[:12]) or "未命名选题"

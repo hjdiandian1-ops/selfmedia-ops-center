@@ -1391,12 +1391,19 @@ function renderAdoptHistory(jobs, queue) {
 }
 
 async function adopt(btn, title) {
-  if (!confirm("采纳选题并开始自动生产：\n" + title + "\n\n将创建任务并调用本机 Codex 后台跑完整流水线（素材→初稿→视觉→质检→归档）。")) return;
+  let useTitle = String(title || "").trim();
+  const chars = [...useTitle];
+  if (chars.length > 60) {
+    useTitle = chars.slice(0, 60).join("");
+    toast("选题标题过长，已自动截断为 60 字", true);
+  }
+  if (!useTitle) return toast("选题标题为空，无法建任务", false);
+  if (!confirm("采纳选题并开始自动生产：\n" + useTitle + "\n\n将创建任务并调用本机 Codex 后台跑完整流水线（素材→初稿→视觉→质检→归档）。")) return;
   await runWithSpin(btn, async () => {
     try {
       const d = await api("/api/topics/adopt", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify({ title: useTitle }),
       });
       toast("已创建任务并开始生产: " + d.job_id + (d.production_started ? "" : "（排队中）"));
       loadTopics();

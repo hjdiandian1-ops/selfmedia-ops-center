@@ -297,6 +297,25 @@ def test_retention_api_roundtrip(isolated_dirs, tmp_path, monkeypatch):
     assert st2["last_run"] and st2["last_run"]["ran_at"] == ap["ran_at"]
 
 
+def test_adopt_truncates_long_title(isolated_dirs, monkeypatch):
+    def fake_run(args, timeout=60):
+        if args and args[0].endswith("job_state.py") and args[1] == "init":
+            jdir = os.path.join(server.JOBS_DIR, args[2])
+            os.makedirs(jdir, exist_ok=True)
+            with open(os.path.join(jdir, "state.json"), "w", encoding="utf-8") as f:
+                json.dump({"job_id": args[2]}, f, ensure_ascii=False)
+        return {"ok": True, "stdout": "ok", "stderr": ""}
+    monkeypatch.setattr(server, "run_script", fake_run)
+    monkeypatch.setattr(server, "_enqueue_job", lambda job_id: [])
+    monkeypatch.setattr(server, "_kick_production", lambda: False)
+    long_title = "超长选题标题" * 20
+    r = server.api_adopt(server.AdoptTopic(title=long_title))
+    assert r["production_started"] is False
+    brief = open(os.path.join(server.JOBS_DIR, r["job_id"], "brief.md"), encoding="utf-8").read()
+    assert f"- 主题：{long_title[:60]}" in brief
+    assert len(long_title[:60]) == 60
+
+
 def test_flywheel_regenerate(isolated_dirs, isolated_flywheel):
     r = server.api_flywheel_regenerate()
     assert r["ok"] is True
