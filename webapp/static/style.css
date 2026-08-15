@@ -228,8 +228,8 @@ code { background: var(--code-bg); border-radius: 6px; padding: 2px 6px; font-si
 .nav-item.active { background: var(--primary-container); color: var(--primary-strong); font-weight: 700; }
 .sidebar-footer { padding: 16px 18px; font-size: 11px; color: var(--on-surface-variant); border-top: 1px solid var(--outline-variant); }
 .sidebar-footer .toolbar { margin-bottom: 0; }
-.sidebar-footer .btn { padding: 5px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
-.sidebar-footer .btn svg { flex: 0 0 auto; }
+.sidebar-footer .btn.small { padding: 5px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.sidebar-footer .btn svg { flex: 0 0 auto; width: 14px; height: 14px; }
 
 /* 主区 */
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
