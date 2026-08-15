@@ -800,7 +800,19 @@ function svgLineChart(el, labels, seriesMap, selectedKeys) {
     ? `<div class="chart-legend">${geoms.map((g) =>
         `<span><i style="background:${seriesColor(g.k)}"></i>${esc(g.label)}</span>`).join("")}</div>`
     : "";
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${grid}${guide}${hi}${lines}${circles}${labelsHtml}${overlay}</svg>${legend}<div class="chart-tip"></div>`;
+  const defs = `<defs>${geoms.map((g) => `
+    <linearGradient id="grad-${g.k}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${seriesColor(g.k)}" stop-opacity=".28"/>
+      <stop offset="100%" stop-color="${seriesColor(g.k)}" stop-opacity="0"/>
+    </linearGradient>`).join("")}</defs>`;
+  const areas = geoms.map((g) => {
+    const d = smoothPath(g.pts);
+    const last = g.pts[g.pts.length - 1];
+    const first = g.pts[0];
+    const base = H - PAD;
+    return `<path d="${d} L ${last[0].toFixed(1)} ${base} L ${first[0].toFixed(1)} ${base} Z" fill="url(#grad-${g.k})" class="chart-area"/>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${defs}${grid}${guide}${hi}${areas}${lines}${circles}${labelsHtml}${overlay}</svg>${legend}<div class="chart-tip"></div>`;
   el.style.position = "relative";
   const svg = el.querySelector("svg");
   const tip = el.querySelector(".chart-tip");
@@ -864,7 +876,10 @@ function smoothPath(xy) {
 }
 
 function seriesColor(k) {
-  return { publishes: "var(--primary)", reads: "var(--primary)", engagement: "var(--success)", followers: "var(--deco-accent)" }[k] || "var(--primary)";
+  return {
+    publishes: "#f59e0b", reads: "#1a73e8",
+    engagement: "#0f9d58", followers: "#9c27b0",
+  }[k] || "#1a73e8";
 }
 
 function svgRadar(el, radar) {

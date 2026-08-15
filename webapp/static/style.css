@@ -720,6 +720,7 @@ textarea {
 .line-chart-wrap { display: block; height: auto; min-height: 170px; padding: 0; }
 .chart-grid { stroke: var(--outline-variant); stroke-width: 1; stroke-dasharray: 3 3; }
 .chart-line { fill: none; stroke: var(--primary); stroke-width: 2; stroke-linejoin: round; }
+.chart-area { pointer-events: none; }
 .chart-dot { fill: var(--primary); }
 .chart-guide { stroke: var(--outline); stroke-width: 1; stroke-dasharray: 3 3; }
 .chart-hi { fill: var(--primary); stroke: var(--surface); stroke-width: 2; }
