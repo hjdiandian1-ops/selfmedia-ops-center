@@ -808,7 +808,7 @@ function svgLineChart(el, labels, seriesMap, selectedKeys) {
   }).join("");
   const ticks = tickVals.map((t) => {
     const y = H - PAD - (t / globalMax) * (H - PAD * 2);
-    return `<text x="${PAD - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="chart-axis">${esc(Math.round(t).toLocaleString("zh-CN"))}</text>`;
+    return `<text x="${PAD - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="chart-axis">${esc(fmtNum(Math.round(t)))}</text>`;
   }).join("");
   const labelsHtml = labels.map((l, i) =>
     `<text x="${(PAD + i * step).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${esc(l)}</text>`).join("");
