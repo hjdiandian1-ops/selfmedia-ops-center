@@ -413,6 +413,15 @@ textarea {
 .set-panel > .set-hint:last-child { margin: 12px 0 0; }
 .set-panel .field-label { margin: 14px 0 6px; }
 .set-panel .select { width: 100%; min-width: 0; }
+.set-avatar-preview {
+  width: 56px; height: 56px; border-radius: 50%;
+  object-fit: cover; margin: 10px 0 2px;
+  border: 1px solid var(--outline-variant);
+  background: var(--hover-bg);
+}
+.set-panel input[type="file"] {
+  padding: 8px 10px; font-size: 13px; cursor: pointer;
+}
 .set-panel details.set-card {
   margin-top: 14px; padding: 12px 14px;
   border-radius: var(--radius-md); background: var(--surface);

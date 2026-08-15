@@ -2936,6 +2936,60 @@ function applyProfile() {
 }
 window.applyProfile = applyProfile;
 
+function avatarDataUrl(file, maxSize) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("读取文件失败"));
+    reader.readAsDataURL(file);
+  }).then(async (raw) => {
+    if (typeof createImageBitmap !== "function") return raw;
+    try {
+      const bmp = await createImageBitmap(file);
+      const scale = Math.min(1, maxSize / Math.max(bmp.width, bmp.height));
+      const w = Math.max(1, Math.round(bmp.width * scale));
+      const h = Math.max(1, Math.round(bmp.height * scale));
+      const cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext("2d");
+      ctx.drawImage(bmp, 0, 0, w, h);
+      if (bmp.close) bmp.close();
+      return cv.toDataURL("image/jpeg", 0.9);
+    } catch (e) {
+      return raw;
+    }
+  });
+}
+
+async function handleAvatarUpload(input) {
+  const file = input && input.files && input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    toast("请选择图片文件", false);
+    input.value = "";
+    return;
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    toast("图片过大（≤8MB）", false);
+    input.value = "";
+    return;
+  }
+  try {
+    const dataUrl = await avatarDataUrl(file, 256);
+    const inp = $("#set-avatar");
+    if (inp) inp.value = dataUrl;
+    const pv = $("#set-avatar-preview");
+    if (pv) {
+      pv.src = dataUrl;
+      pv.classList.remove("hidden");
+    }
+    toast("已选择本地头像，点「保存配置」生效");
+  } catch (e) {
+    toast("头像上传失败: " + e.message, false);
+  }
+}
+window.handleAvatarUpload = handleAvatarUpload;
+
 function switchSettingsPanel(name) {
   $$("#settings-menu .set-menu-item").forEach((b) => b.classList.toggle("active", b.dataset.panel === name));
   $$("#settings-modal .set-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + name));
@@ -3098,6 +3152,18 @@ async function loadSettings() {
     try { prof = JSON.parse(localStorage.getItem("selfmedia_profile") || "{}"); } catch (e) { /* ignore */ }
     if ($("#set-nickname")) $("#set-nickname").value = prof.nickname || "";
     if ($("#set-avatar")) $("#set-avatar").value = prof.avatar || "";
+    const pv = $("#set-avatar-preview");
+    if (pv) {
+      if (prof.avatar) {
+        pv.src = prof.avatar;
+        pv.classList.remove("hidden");
+      } else {
+        pv.classList.add("hidden");
+        pv.removeAttribute("src");
+      }
+    }
+    const fv = $("#set-avatar-file");
+    if (fv) fv.value = "";
     const th = document.documentElement.dataset.theme || "default";
     const themeSel = $("#set-theme");
     if (themeSel) themeSel.value = THEME_NAMES[th] ? th : "default";
