@@ -788,23 +788,27 @@ function svgLineChart(el, labels, seriesMap, selectedKeys) {
   const W = 600, H = 190, PAD = 34;
   const step = labels.length > 1 ? (W - PAD * 2) / (labels.length - 1) : W - PAD * 2;
   const useMulti = keys.length > 1;
-  const geoms = keys.map((k) => {
-    const arr = seriesMap[k].data || [];
-    const max = Math.max(1, ...arr.map((v) => Number(v || 0)));
-    return {
-      k, label: seriesMap[k].label, arr, max,
-      pts: arr.map((v, i) => [PAD + i * step, H - PAD - (Number(v || 0) / max) * (H - PAD * 2)]),
-    };
-  });
+  const raw = keys.map((k) => ({
+    k, label: seriesMap[k].label,
+    arr: seriesMap[k].data || [],
+    max: Math.max(1, ...(seriesMap[k].data || []).map((v) => Number(v || 0))),
+  }));
+  const globalMax = Math.max(...raw.map((g) => g.max));
+  const geoms = raw.map((g) => ({
+    ...g,
+    pts: g.arr.map((v, i) => [PAD + i * step, H - PAD - (Number(v || 0) / globalMax) * (H - PAD * 2)]),
+  }));
   const activeGeom = geoms[0];
-  const gridAll = [0, 0.25, 0.5, 0.75, 1].map((p) => {
-    const y = H - PAD - p * (H - PAD * 2);
+  const stepV = niceStep(globalMax / 4);
+  const tickVals = [0, 1, 2, 3, 4].map((i) => i * stepV).filter((t) => t <= globalMax);
+  if (tickVals[tickVals.length - 1] < globalMax - stepV / 2) tickVals.push(globalMax);
+  const gridAll = tickVals.map((t) => {
+    const y = H - PAD - (t / globalMax) * (H - PAD * 2);
     return `<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PAD}" y2="${y.toFixed(1)}" class="chart-grid"/>`;
   }).join("");
-  const ticks = [1, 0.75, 0.5, 0.25, 0].map((p) => {
-    const y = H - PAD - p * (H - PAD * 2);
-    const label = useMulti ? (p === 0 ? "0" : Math.round(p * 100) + "%") : fmtNum(activeGeom.max * p);
-    return `<text x="${PAD - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="chart-axis">${esc(label)}</text>`;
+  const ticks = tickVals.map((t) => {
+    const y = H - PAD - (t / globalMax) * (H - PAD * 2);
+    return `<text x="${PAD - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="chart-axis">${esc(Math.round(t).toLocaleString("zh-CN"))}</text>`;
   }).join("");
   const labelsHtml = labels.map((l, i) =>
     `<text x="${(PAD + i * step).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${esc(l)}</text>`).join("");
@@ -902,6 +906,14 @@ function seriesColor(k) {
     publishes: "#f59e0b", reads: "#1a73e8",
     engagement: "#0f9d58", followers: "#9c27b0",
   }[k] || "#1a73e8";
+}
+
+function niceStep(v) {
+  v = Math.max(1, v);
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const r = v / p;
+  const s = r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10;
+  return s * p;
 }
 
 function svgRadar(el, radar) {
