@@ -181,6 +181,7 @@ let ovStatsCache = null;
 let currentOvTab = "overview";
 let lastStatsTrend = [];
 let dashPeriod = "day";
+let panelEditMode = false;
 const ovSeriesSel = { overview: "reads", 小红书: "reads", 公众号: "reads", 短视频: "reads" };
 
 async function loadOverview() {
@@ -494,29 +495,40 @@ function renderPlatformPane(name) {
   const layout = panelLayout(name);
   const missing = Object.keys(PANEL_TITLES).filter((id) => !layout.includes(id));
   $("#ov-platform").innerHTML = `
+    <div class="panel-toolbar">
+      <button class="btn small tonal" onclick="togglePanelEdit()">${panelEditMode ? "✓ 完成" : "编辑组件"}</button>
+    </div>
     <div id="pf-modules">
       ${layout.map((id) => `
-        <div class="pf-module" data-module="${esc(id)}" draggable="true">
+        <div class="pf-module" data-module="${esc(id)}" ${panelEditMode ? 'draggable="true"' : ""}>
           <div class="pf-module-head">
-            <span class="pf-drag" title="按住拖动排序">⠿</span>
             <b>${esc(PANEL_TITLES[id])}</b>
-            <span class="muted">拖动排序</span>
-            <button class="btn tiny tonal" onclick="removePanelModule('${esc(name)}','${esc(id)}')">删除</button>
+            ${panelEditMode ? `
+              <span class="pf-drag" title="按住拖动排序">⠿</span>
+              <span class="muted">拖动排序</span>
+              <button class="btn tiny tonal" onclick="removePanelModule('${esc(name)}','${esc(id)}')">删除</button>` : ""}
           </div>
           <div class="pf-module-body" data-body="${esc(id)}"></div>
         </div>`).join("")}
     </div>
-    <details class="card" style="padding:12px 16px">
-      <summary style="cursor:pointer;font-weight:600">＋ 添加组件</summary>
-      <div class="add-modules">
-        ${missing.length ? missing.map((id) =>
-          `<button class="btn tiny tonal" onclick="addPanelModule('${esc(name)}','${esc(id)}')">${esc(PANEL_TITLES[id])}</button>`).join("")
-          : '<span class="muted">全部组件都已显示</span>'}
-      </div>
-    </details>`;
+    ${panelEditMode ? `
+      <details class="card" style="padding:12px 16px">
+        <summary style="cursor:pointer;font-weight:600">＋ 添加组件</summary>
+        <div class="add-modules">
+          ${missing.length ? missing.map((id) =>
+            `<button class="btn tiny tonal" onclick="addPanelModule('${esc(name)}','${esc(id)}')">${esc(PANEL_TITLES[id])}</button>`).join("")
+            : '<span class="muted">全部组件都已显示</span>'}
+        </div>
+      </details>` : ""}`;
   layout.forEach((id) => fillPanelModule(name, id, p));
   bindPanelDrag(name);
 }
+
+function togglePanelEdit() {
+  panelEditMode = !panelEditMode;
+  if (currentOvTab !== "overview") renderPlatformPane(currentOvTab);
+}
+window.togglePanelEdit = togglePanelEdit;
 
 const PANEL_TITLES = {
   tri: "诊断（做得好的 / 存在的问题 / 下一步）",
