@@ -36,13 +36,15 @@ def contrast(fg, bg):
 def check_theme(theme, pairs):
     tokens = theme["tokens"]
     results = []
-    for fg_key, bg_key in pairs:
+    for pair in pairs:
+        fg_key, bg_key = pair[0], pair[1]
+        threshold = float(pair[2]) if len(pair) > 2 else 4.5
         fg, bg = tokens.get(fg_key), tokens.get(bg_key)
         if not fg or not bg:
             results.append((fg_key, bg_key, None, "缺少 token"))
             continue
         ratio = contrast(fg, bg)
-        results.append((fg_key, bg_key, round(ratio, 2), "PASS" if ratio >= 4.5 else "FAIL"))
+        results.append((fg_key, bg_key, round(ratio, 2), "PASS" if ratio >= threshold else "FAIL"))
     return results
 
 
@@ -67,7 +69,8 @@ def main():
         for fg, bg, ratio, status in check_theme(t, pairs):
             line = f"  {fg} / {bg}: {ratio} → {status}"
             print(line)
-            if ratio is None or ratio < 4.5:
+            threshold = next((float(p[2]) for p in pairs if p[0] == fg and p[1] == bg), 4.5)
+            if ratio is None or ratio < threshold:
                 failed = True
     sys.exit(1 if failed else 0)
 

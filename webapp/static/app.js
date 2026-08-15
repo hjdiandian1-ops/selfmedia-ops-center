@@ -1658,12 +1658,12 @@ async function renderMd(file, box) {
           <button class="btn small tonal" onclick="copyXhs('body')">复制正文（${bodyLen}/1000）</button>
         </div>
         <div class="kv"><b>标题：</b>${esc(title)}</div>
-        <pre style="white-space:pre-wrap;font-size:13px;font-family:inherit;color:#3c4043;max-height:420px;overflow:auto;margin-top:10px">${esc(body)}</pre>`;
+        <pre style="white-space:pre-wrap;font-size:13px;font-family:inherit;color:var(--preview-text);max-height:420px;overflow:auto;margin-top:10px">${esc(body)}</pre>`;
     } else {
       const content = stripFrontmatter(d.content || "");
       div.style.maxHeight = "480px";
       div.style.overflow = "auto";
-      div.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;font-family:inherit;color:#3c4043">${esc(content)}</pre>`;
+      div.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;font-family:inherit;color:var(--preview-text)">${esc(content)}</pre>`;
     }
     box.appendChild(div);
   } catch (e) {
@@ -1944,6 +1944,9 @@ async function loadSettings() {
   const st = $("#settings-status");
   try {
     const d = await api("/api/settings");
+    const th = document.documentElement.dataset.theme || "default";
+    const themeSel = $("#set-theme");
+    if (themeSel) themeSel.value = THEME_NAMES[th] ? th : "default";
     $("#set-llm-key").value = "";
     $("#set-llm-base").value = d.llm.base_url || "";
     $("#set-llm-model").value = d.llm.model || "";
@@ -1959,6 +1962,18 @@ async function loadSettings() {
   }
 }
 window.loadSettings = loadSettings;
+
+const THEME_NAMES = { default: "蓝白默认", "brand-red": "红白小吴聊", midnight: "深空暗黑" };
+
+function applyTheme(name) {
+  name = THEME_NAMES[name] ? name : "default";
+  document.documentElement.dataset.theme = name;
+  localStorage.setItem("selfmedia_theme", name);
+  const sel = $("#set-theme");
+  if (sel) sel.value = name;
+  toast("已切换主题：" + THEME_NAMES[name]);
+}
+window.applyTheme = applyTheme;
 
 const RETENTION_LABELS = {
   candidates: "过期候选", logs: "过期日志", platform_days: "过期榜单快照",
