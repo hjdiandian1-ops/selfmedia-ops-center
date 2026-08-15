@@ -1,0 +1,16 @@
+{
+  "verdict": "PASSED",
+  "checks": [],
+  "summary": {
+    "high": 0,
+    "medium": 0,
+    "warn": 0,
+    "platforms": [
+      "小红书",
+      "公众号",
+      "短视频"
+    ]
+  },
+  "generated_at": "2026-08-16 02:48:43",
+  "rules_note": "机器初筛，高风险项禁止发布；中风险人工复核；词库见 data/compliance/words/"
+}

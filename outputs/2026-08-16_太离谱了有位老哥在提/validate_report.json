@@ -1,0 +1,80 @@
+{
+  "output_dir": "outputs/2026-08-16_太离谱了有位老哥在提/",
+  "materials": "materials/2026-08/2026-08-16_太离谱了有位老哥在提素材包.md",
+  "validated_at": "2026-08-16 02:48:43",
+  "verdict": "PASSED",
+  "fails": 0,
+  "warns": 0,
+  "results": [
+    {
+      "level": "PASS",
+      "code": "C0-pack",
+      "message": "素材包 schema 完整：materials/2026-08/2026-08-16_太离谱了有位老哥在提素材包.md（6 条标注素材）"
+    },
+    {
+      "level": "PASS",
+      "code": "C1-core-count",
+      "message": "核心素材数量 5 条（要求 3-5）"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[小红书] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[公众号] 文案.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C2-frontmatter",
+      "message": "[短视频] 120s黄金分镜脚本.md frontmatter 完整"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M1「M1｜美国法院首例提示词注入：自诉原告 Matthew Elliott 在康涅狄格州安索尼亚/米尔福德高等法院 Elli…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M2「M2｜被警告后继续藏 3 次：7-31 法院签发 Show Cause 令明确警告隐藏文字问题并定 8-4 听证；Ell…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M3「M3｜巴西先例：2026-05-12 巴西北部帕劳阿佩巴斯第三劳动法院（ATOrd No. 0001062-55.202…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M4「M4｜机制：PDF 文本提取会把每个字符不分字号颜色全部读入模型上下文，模型把操作者指令与文件内容当作同一段文本流处理；…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-consumed",
+      "message": "核心素材 M5「M5｜不是孤例：日经发现 arXiv 上 17 篇论文预印本藏有 positive review only、no cri…」已被引用"
+    },
+    {
+      "level": "PASS",
+      "code": "C3-rate",
+      "message": "核心素材引用率 5/5 = 100%（要求 100%）"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[小红书] 文案.md 具体数字 6 处（要求 ≥2）：['2个', '3次', '10%', '1.6万', '17篇', '3条']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[公众号] 文案.md 具体数字 11 处（要求 ≥2）：['2个', '2个', '3次', '10%', '1.6万', '17篇']"
+    },
+    {
+      "level": "PASS",
+      "code": "C5-density",
+      "message": "[短视频] 120s黄金分镜脚本.md 具体数字 11 处（要求 ≥1）：['2次', '2个', '10%', '1.6万', '17篇', '2倍']"
+    }
+  ]
+}
