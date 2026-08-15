@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- 原创蓝胖机器人猫 · 哆啦A梦风格配色（蓝/白/红/黄） -->
+  <circle cx="100" cy="96" r="78" fill="#1296DB"/>
+  <ellipse cx="100" cy="112" rx="50" ry="46" fill="#FFFFFF"/>
+  <ellipse cx="75" cy="96" rx="12" ry="16" fill="#1A1A2E"/>
+  <ellipse cx="125" cy="96" rx="12" ry="16" fill="#1A1A2E"/>
+  <circle cx="100" cy="117" r="9" fill="#E8403F"/>
+  <path d="M88 133 Q100 146 112 133" stroke="#1A1A2E" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g stroke="#8ECDF2" stroke-width="3" stroke-linecap="round">
+    <line x1="50" y1="104" x2="70" y2="112"/>
+    <line x1="50" y1="122" x2="70" y2="122"/>
+    <line x1="50" y1="140" x2="70" y2="132"/>
+    <line x1="150" y1="104" x2="130" y2="112"/>
+    <line x1="150" y1="122" x2="130" y2="122"/>
+    <line x1="150" y1="140" x2="130" y2="132"/>
+  </g>
+  <rect x="44" y="156" width="112" height="15" rx="7.5" fill="#E8403F"/>
+  <circle cx="100" cy="174" r="17" fill="#F7C948" stroke="#E8B60B" stroke-width="2"/>
+  <line x1="100" y1="162" x2="100" y2="180" stroke="#B8860B" stroke-width="3" stroke-linecap="round"/>
+  <line x1="90" y1="178" x2="110" y2="178" stroke="#B8860B" stroke-width="2" stroke-linecap="round"/>
+</svg>

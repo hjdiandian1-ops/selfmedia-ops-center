@@ -1963,7 +1963,10 @@ async function loadSettings() {
 }
 window.loadSettings = loadSettings;
 
-const THEME_NAMES = { default: "蓝白默认", "brand-red": "红白小吴聊", midnight: "深空暗黑" };
+const THEME_NAMES = {
+  default: "蓝白默认", "brand-red": "红白小吴聊", midnight: "深空暗黑",
+  pink: "粉漾少女", doraemon: "哆啦A梦（蓝胖）",
+};
 
 function applyTheme(name) {
   name = THEME_NAMES[name] ? name : "default";

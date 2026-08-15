@@ -41,6 +41,7 @@
   --applied-bg: #f6fdf8;
   --scrim: rgba(32, 33, 36, .55);
   --brand-gradient: linear-gradient(135deg, #1a73e8, #66a4f5);
+  --brand-logo-bg: var(--brand-gradient);
 }
 
 :root[data-theme="brand-red"] {
@@ -99,6 +100,89 @@
   --scrim: rgba(0, 0, 0, .62);
   --brand-gradient: linear-gradient(135deg, #7aa2f7, #3d59a1);
 }
+
+:root[data-theme="pink"] {
+  --primary: #d81b60;
+  --primary-strong: #ad1457;
+  --on-primary: #ffffff;
+  --primary-container: #fce4ec;
+  --on-primary-container: #6d1138;
+  --surface: #fff7fa;
+  --surface-dim: #fdf1f6;
+  --on-surface: #3b2430;
+  --on-surface-variant: #795767;
+  --outline: #f3d9e4;
+  --outline-variant: #f9e8ef;
+  --error: #b3261e;
+  --success: #188038;
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --shadow-1: 0 2px 6px rgba(219, 39, 119, .12), 0 1px 2px rgba(219, 39, 119, .08);
+  --shadow-2: 0 4px 14px rgba(219, 39, 119, .16), 0 2px 4px rgba(219, 39, 119, .08);
+  --hover-bg: #fbeef4;
+  --surface-hover: #fdf5f9;
+  --code-bg: #fbeef4;
+  --primary-hover: #f8d7e4;
+  --focus-ring: #f9a8c8;
+  --step-ring: #fce4ec;
+  --success-container: #e6f4ea;
+  --error-container: #fce8e6;
+  --hit-container: #fff3d6;
+  --deco-accent: #b06000;
+  --score-text: #6b5500;
+  --score-bg: #fff8dc;
+  --preview-text: #4a3540;
+  --toast-text: #ffffff;
+  --toast-ok: #188038;
+  --toast-err: #b3261e;
+  --applied-border: rgba(52, 83, 168, .4);
+  --applied-bg: #f6fdf8;
+  --scrim: rgba(59, 36, 48, .55);
+  --brand-gradient: linear-gradient(135deg, #ec4899, #f9a8d4);
+}
+
+:root[data-theme="doraemon"] {
+  --primary: #0b72b9;
+  --primary-strong: #0a5f9e;
+  --on-primary: #ffffff;
+  --primary-container: #dff1ff;
+  --on-primary-container: #083f63;
+  --surface: #ffffff;
+  --surface-dim: #f0f8ff;
+  --on-surface: #16324a;
+  --on-surface-variant: #52728c;
+  --outline: #cfe3f2;
+  --outline-variant: #e3f0fa;
+  --error: #d93025;
+  --success: #188038;
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --shadow-1: 0 2px 6px rgba(11, 114, 185, .14), 0 1px 2px rgba(11, 114, 185, .08);
+  --shadow-2: 0 4px 14px rgba(11, 114, 185, .18), 0 2px 4px rgba(11, 114, 185, .1);
+  --hover-bg: #e8f4fc;
+  --surface-hover: #f2f9ff;
+  --code-bg: #e8f4fc;
+  --primary-hover: #c9e8fb;
+  --focus-ring: #7cc4f2;
+  --step-ring: #dff1ff;
+  --success-container: #e6f4ea;
+  --error-container: #fce8e6;
+  --hit-container: #fff3d6;
+  --deco-accent: #a16207;
+  --score-text: #6b5500;
+  --score-bg: #fff8dc;
+  --preview-text: #2b4659;
+  --toast-text: #ffffff;
+  --toast-ok: #188038;
+  --toast-err: #d93025;
+  --applied-border: rgba(11, 114, 185, .4);
+  --applied-bg: #f0f8ff;
+  --scrim: rgba(22, 50, 74, .55);
+  --brand-gradient: linear-gradient(135deg, #1296db, #4fc3f7);
+  --brand-logo-bg: url("/static/themes/doraemon-mascot.svg") center/cover no-repeat, linear-gradient(135deg, #1296db, #4fc3f7);
+}
 html, body { height: 100%; }
 body {
   font-family: var(--font-stack);
@@ -122,7 +206,7 @@ code { background: var(--code-bg); border-radius: 6px; padding: 2px 6px; font-si
 .brand { display: flex; align-items: center; gap: 12px; padding: 20px 18px 16px; }
 .brand-logo {
   width: 40px; height: 40px; border-radius: 12px;
-  background: var(--brand-gradient);
+  background: var(--brand-logo-bg);
   color: var(--on-primary); font-weight: 800; font-size: 20px;
   display: inline-flex; align-items: center; justify-content: center;
   box-shadow: var(--shadow-1);
