@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";</script>
-<link rel="stylesheet" href="/static/style.css?v=3.37">
+<link rel="stylesheet" href="/static/style.css?v=3.38">
 </head>
 <body>
 <div class="app">
@@ -69,56 +69,52 @@
       <!-- 概览 -->
       <section id="view-overview" class="view active">
         <div class="kpi-grid" id="kpi-cards"></div>
-        <div class="card">
-          <div class="card-head">
-            <h3>小红书式数据分析</h3>
-            <div class="dash-controls">
-              <div class="tabs" id="dash-tabs">
-                <button class="tab active" data-dash="watch" onclick="switchDashTab('watch')">观看</button>
-                <button class="tab" data-dash="interact" onclick="switchDashTab('interact')">互动</button>
-                <button class="tab" data-dash="follower" onclick="switchDashTab('follower')">涨粉</button>
-                <button class="tab" data-dash="publish" onclick="switchDashTab('publish')">发布</button>
-              </div>
-              <div class="range-toggle">
-                <button class="tab active" data-range="7" onclick="setDashRange(7)">近7日</button>
-                <button class="tab" data-range="30" onclick="setDashRange(30)">近30日</button>
-              </div>
-            </div>
-          </div>
-          <div class="kpi-grid" id="dash-kpis"></div>
+        <div class="ov-tabs" id="ov-tabs">
+          <button class="tab active" data-ov="overview" onclick="switchOverviewTab('overview')">总览</button>
+          <button class="tab" data-ov="小红书" onclick="switchOverviewTab('小红书')">小红书</button>
+          <button class="tab" data-ov="公众号" onclick="switchOverviewTab('公众号')">公众号</button>
+          <button class="tab" data-ov="短视频" onclick="switchOverviewTab('短视频')">短视频</button>
+        </div>
+        <div id="ov-overview" class="ov-pane">
           <div class="grid-2">
-            <div id="dash-funnel" class="dash-panel"></div>
-            <div id="dash-trend" class="dash-panel">
-              <div class="card-head"><h3>趋势</h3></div>
-              <div class="trend-chart" id="dash-trend-chart"></div>
+            <div class="card">
+              <div class="card-head"><h3>账号健康度</h3><span class="muted" id="ov-health-note"></span></div>
+              <div class="health-score" id="ov-health">—</div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>整体雷达（三平台健康度）</h3></div>
+              <div id="ov-radar" class="radar-box"></div>
             </div>
           </div>
-          <div id="dash-extra" class="grid-2" style="margin-top:18px"></div>
-          <div class="card-head" style="margin-top:20px">
-            <h3>薄弱点诊断 · 提升方向</h3>
-            <span class="muted" id="dash-note"></span>
-          </div>
-          <div id="weak-points" class="stack"></div>
-        </div>
-        <div class="grid-2">
           <div class="card">
-            <div class="card-head"><h3>任务状态分布</h3></div>
-            <div id="state-bars" class="state-bars"></div>
+            <div class="card-head"><h3>本周最重要的一件事</h3></div>
+            <div id="ov-focus" class="focus-card">—</div>
           </div>
+          <details class="card" style="padding:14px 18px">
+            <summary style="cursor:pointer;font-weight:600">生产与发布汇总（任务状态 + 发布趋势）</summary>
+            <div class="grid-2" style="margin-top:12px">
+              <div>
+                <h4 class="pool-title">任务状态分布</h4>
+                <div id="state-bars" class="state-bars"></div>
+              </div>
+              <div>
+                <h4 class="pool-title">发布趋势</h4>
+                <div id="ov-trend" class="trend-chart"></div>
+                <div class="series-tabs" id="ov-series"></div>
+              </div>
+            </div>
+          </details>
           <div class="card">
-            <div class="card-head"><h3>近 7 天发布趋势</h3><span class="muted">发布动作 + 回填阅读</span></div>
-            <div id="trend-chart" class="trend-chart"></div>
+            <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 10 条 · 自动快评</span></div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>时间</th><th>任务</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th><th>快评</th></tr></thead>
+                <tbody id="recent-table"></tbody>
+              </table>
+            </div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 20 条回填记录</span></div>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>时间</th><th>任务</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">涨粉</th><th class="num">互动率</th><th>状态</th></tr></thead>
-              <tbody id="recent-table"></tbody>
-            </table>
-          </div>
-        </div>
+        <div id="ov-platform" class="ov-pane hidden"></div>
       </section>
 
       <!-- 选题 -->
@@ -597,6 +593,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.37"></script>
+    <script src="/static/app.js?v=3.38"></script>
 </body>
 </html>

@@ -176,45 +176,347 @@ $$(".nav-item").forEach((btn) => btn.addEventListener("click", () => switchView(
 $("#btn-refresh-topics").addEventListener("click", (e) => runWithSpin(e.currentTarget, loadTopics));
 
 // ---------- 概览 ----------
+let ovCache = null;
+let currentOvTab = "overview";
+let lastStatsTrend = [];
+const ovSeriesSel = { overview: "reads", 小红书: "reads", 公众号: "reads", 短视频: "reads" };
+
 async function loadOverview() {
   try {
-    const d = await api("/api/stats");
-    $("#topbar-meta").textContent = "更新于 " + (d.generated_at || "");
-    const kpis = [
-      ["任务总数", d.jobs_total], ["已发布任务", d.published_jobs],
-      ["爆款数", d.hits], ["总阅读", fmtNum(d.total_reads)],
-      ["平均互动率", d.total_reads ? pct(d.avg_engagement) : "—"],
-      ["待回收", d.pending_recycle],
-    ];
-    $("#kpi-cards").innerHTML = kpis.map(([lbl, num]) =>
-      `<div class="kpi"><div class="num ${String(num).length > 5 ? "small" : ""}">${esc(num)}</div><div class="lbl">${esc(lbl)}</div></div>`).join("");
-
-    const states = Object.entries(d.by_state);
-    const total = d.jobs_total || 1;
-    $("#state-bars").innerHTML = states.length
-      ? states.map(([s, n]) => `
-        <div class="sbar">
-          <span class="name">${esc(STATE_LABELS[s] || s)}</span>
-          <div class="track"><div class="fill" style="width:${(n / total * 100).toFixed(0)}%"></div></div>
-          <span class="cnt">${n}</span>
-        </div>`).join("")
-      : '<span class="muted">暂无任务</span>';
-
-    const maxPubs = Math.max(1, ...d.trend.map((t) => t.publish_count || 0));
-    $("#trend-chart").innerHTML = d.trend.map((t) => `
-      <div class="tcol" title="${t.reads ? `阅读 ${fmtNum(t.reads)}` : "暂无回填阅读"}">
-        <span class="val">${t.publish_count ? t.publish_count + " 篇" : ""}</span>
-        <div class="bar" style="height:${Math.max(4, Math.round((t.publish_count || 0) / maxPubs * 92))}%">
-          ${t.hits ? '<span class="hits" title="爆款"></span>' : ""}
-        </div>
-        <span class="day">${esc(t.label)}</span>
-      </div>`).join("");
-
-    $("#recent-table").innerHTML = renderRows(d.recent);
-    loadDashboard();
+    const [stats, dash] = await Promise.all([
+      api("/api/stats"),
+      api("/api/dashboard?range=" + dashState.range),
+    ]);
+    ovCache = dash;
+    lastStatsTrend = stats.trend || [];
+    $("#topbar-meta").textContent = "更新于 " + (dash.generated_at || stats.generated_at || "");
+    renderGlobalKpis(stats);
+    renderOverviewPane(stats, dash);
+    if (currentOvTab !== "overview") renderPlatformPane(currentOvTab);
   } catch (e) {
     toast("概览加载失败: " + e.message, false);
   }
+}
+
+function renderGlobalKpis(d) {
+  const kpis = [
+    ["任务总数", d.jobs_total], ["已发布任务", d.published_jobs],
+    ["爆款数", d.hits], ["总阅读", fmtNum(d.total_reads)],
+    ["平均互动率", d.total_reads ? pct(d.avg_engagement) : "—"],
+    ["待回收", d.pending_recycle],
+  ];
+  $("#kpi-cards").innerHTML = kpis.map(([lbl, num]) =>
+    `<div class="kpi"><div class="num ${String(num).length > 5 ? "small" : ""}">${esc(num)}</div><div class="lbl">${esc(lbl)}</div></div>`).join("");
+}
+
+function renderOverviewPane(stats, d) {
+  const ov = d.overview || {};
+  const dx = d.diagnostics || {};
+  $("#ov-health").innerHTML = ov.health_score == null
+    ? "—"
+    : `${esc(ov.health_score)}<small> / 100</small>`;
+  const noteParts = [];
+  if (dx.generated_at) noteParts.push("诊断更新于 " + dx.generated_at.slice(5, 16));
+  if (dx.previous_at) noteParts.push("上次 " + dx.previous_at.slice(5, 16));
+  $("#ov-health-note").textContent = noteParts.join(" · ");
+  svgRadar($("#ov-radar"), ov.radar);
+  $("#ov-focus").textContent = ov.focus || "先回填/导入数据后开始诊断。";
+
+  const states = Object.entries(stats.by_state || {});
+  const total = stats.jobs_total || 1;
+  $("#state-bars").innerHTML = states.length
+    ? states.map(([s, n]) => `
+      <div class="sbar">
+        <span class="name">${esc(STATE_LABELS[s] || s)}</span>
+        <div class="track"><div class="fill" style="width:${(n / total * 100).toFixed(0)}%"></div></div>
+        <span class="cnt">${n}</span>
+      </div>`).join("")
+    : '<span class="muted">暂无任务</span>';
+
+  renderOverviewTrend();
+  renderRecentRows($("#recent-table"), ov.recent || []);
+}
+
+function renderOverviewTrend() {
+  const key = ovSeriesSel.overview;
+  const series = {
+    publishes: { label: "发布数", data: lastStatsTrend.map((t) => t.publish_count || 0) },
+    reads: { label: "阅读", data: lastStatsTrend.map((t) => t.reads || 0) },
+  };
+  $("#ov-series").innerHTML = Object.entries(series).map(([k, s]) =>
+    `<button class="tab ${k === key ? "active" : ""}" onclick="setOverviewSeries('${k}')">${s.label}</button>`).join("");
+  svgLineChart($("#ov-trend"), lastStatsTrend.map((t) => t.label), series, key);
+}
+
+function setOverviewSeries(k) {
+  ovSeriesSel.overview = k;
+  renderOverviewTrend();
+}
+window.setOverviewSeries = setOverviewSeries;
+
+function switchOverviewTab(name) {
+  currentOvTab = name;
+  $$("#ov-tabs .tab").forEach((b) => b.classList.toggle("active", b.dataset.ov === name));
+  $("#ov-overview").classList.toggle("hidden", name !== "overview");
+  $("#ov-platform").classList.toggle("hidden", name === "overview");
+  if (name !== "overview") renderPlatformPane(name);
+}
+window.switchOverviewTab = switchOverviewTab;
+
+function renderPlatformPane(name) {
+  const p = ovCache && ovCache.platforms && ovCache.platforms[name];
+  if (!p) {
+    $("#ov-platform").innerHTML = '<div class="card"><span class="muted">暂无数据，先采集/回填。</span></div>';
+    return;
+  }
+  const dx = (ovCache.diagnostics || {}).deltas || {};
+  const delta = dx[name];
+  const deltaHtml = delta == null ? "" : `<span class="delta ${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "↑" : "↓"}${Math.abs(delta)}</span>`;
+  const metrics = (p.metrics || []).map((m) => `
+    <div class="kpi">
+      <div class="num small">${m.value == null ? "—" : esc(fmtNum(m.value)) + (m.unit ? `<small class="unit">${esc(m.unit)}</small>` : "")}</div>
+      <div class="lbl">${esc(m.label)} <span class="muted">基准 ${esc(m.benchmark_text)}</span></div>
+    </div>`).join("");
+  const t = p.totals || {};
+  const funnel = [
+    ["发布", t.publish_count ?? 0], ["回填", t.backfill_count ?? 0],
+    ["阅读/播放", t.total_reads ?? 0],
+    ["互动率", t.engagement == null ? "—" : (t.engagement * 100).toFixed(2) + "%"],
+    ["爆款", t.hits ?? 0],
+  ];
+  const funnelHtml = funnel.map(([l, v]) =>
+    `<div class="fstep"><div class="fnum">${esc(String(v))}</div><div class="flbl">${esc(l)}</div></div>`).join('<div class="farrow">→</div>');
+  const xhsExtra = name === "小红书" ? xhsDashCardHtml() : "";
+  $("#ov-platform").innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h3>${esc(name)} 健康度</h3></div>
+        <div class="health-score">${p.health_score == null ? "—" : esc(p.health_score)}<small> / 100</small> ${deltaHtml}</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>${esc(name)} 雷达（相对基准）</h3></div>
+        <div id="pf-radar" class="radar-box"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>本周最重要的一件事</h3></div>
+      <div class="focus-card">${esc(p.focus || "—")}</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>核心指标</h3><span class="muted">缺失指标需回填/导入</span></div>
+      <div class="kpi-grid">${metrics}</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>转化链路</h3></div>
+      <div class="funnel">${funnelHtml}</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>趋势</h3></div>
+      <div id="pf-trend" class="trend-chart"></div>
+      <div class="series-tabs" id="pf-series"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>薄弱点诊断 · 提升方向</h3></div>
+      <div id="pf-weak" class="stack"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 10 条 · 自动快评</span></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>时间</th><th>任务</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th><th>快评</th></tr></thead>
+          <tbody id="pf-recent"></tbody>
+        </table>
+      </div>
+    </div>
+    ${xhsExtra}`;
+  svgRadar($("#pf-radar"), p.radar);
+  renderPlatformTrend(name, p.trend);
+  renderWeakList($("#pf-weak"), p.weak_points || [], name);
+  renderRecentRows($("#pf-recent"), p.recent || []);
+  if (name === "小红书") {
+    dashState.data = ovCache;
+    dashState.weakPoints = ovCache.weak_points || [];
+    renderDash();
+    renderWeakPoints();
+    const files = (ovCache.sources || {}).dashboard_files || {};
+    $("#dash-note").textContent =
+      `更新于 ${ovCache.generated_at || ""} · 看板导出 ${Object.values(files).filter(Boolean).length}/4 · 笔记明细 ${(ovCache.sources || {}).notes_in_range || 0} 条`;
+  }
+}
+
+function xhsDashCardHtml() {
+  return `
+    <div class="card">
+      <div class="card-head">
+        <h3>小红书式数据分析（导出明细）</h3>
+        <div class="dash-controls">
+          <div class="tabs" id="dash-tabs">
+            <button class="tab active" data-dash="watch" onclick="switchDashTab('watch')">观看</button>
+            <button class="tab" data-dash="interact" onclick="switchDashTab('interact')">互动</button>
+            <button class="tab" data-dash="follower" onclick="switchDashTab('follower')">涨粉</button>
+            <button class="tab" data-dash="publish" onclick="switchDashTab('publish')">发布</button>
+          </div>
+          <div class="range-toggle">
+            <button class="tab active" data-range="7" onclick="setDashRange(7)">近7日</button>
+            <button class="tab" data-range="30" onclick="setDashRange(30)">近30日</button>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-grid" id="dash-kpis"></div>
+      <div class="grid-2">
+        <div id="dash-funnel" class="dash-panel"></div>
+        <div id="dash-trend" class="dash-panel">
+          <div class="card-head"><h3>趋势</h3></div>
+          <div class="trend-chart" id="dash-trend-chart"></div>
+        </div>
+      </div>
+      <div id="dash-extra" class="grid-2" style="margin-top:18px"></div>
+      <div class="card-head" style="margin-top:20px">
+        <h3>薄弱点诊断 · 提升方向</h3>
+        <span class="muted" id="dash-note"></span>
+      </div>
+      <div id="weak-points" class="stack"></div>
+    </div>`;
+}
+
+function renderPlatformTrend(name, trend) {
+  const key = ovSeriesSel[name] || "reads";
+  const seriesMap = {
+    publishes: { label: "发布数", data: trend.publishes || [] },
+    reads: { label: "阅读/播放", data: trend.reads || [] },
+    engagement: { label: "互动率%", data: (trend.engagement || []).map((v) => v == null ? null : +(v * 100).toFixed(2)) },
+    followers: { label: "涨粉", data: trend.followers || [] },
+  };
+  $("#pf-series").innerHTML = Object.entries(seriesMap).map(([k, s]) =>
+    `<button class="tab ${k === key ? "active" : ""}" onclick="setPlatformSeries('${esc(name)}','${k}')">${s.label}</button>`).join("");
+  svgLineChart($("#pf-trend"), trend.labels || [], seriesMap, key);
+}
+
+function setPlatformSeries(platform, key) {
+  ovSeriesSel[platform] = key;
+  if (ovCache && ovCache.platforms && ovCache.platforms[platform]) {
+    renderPlatformTrend(platform, ovCache.platforms[platform].trend);
+  }
+}
+window.setPlatformSeries = setPlatformSeries;
+
+function svgLineChart(el, labels, seriesMap, activeKey) {
+  if (!el) return;
+  const s = seriesMap[activeKey] || {};
+  const data = s.data || [];
+  if (!data.length || !data.some((v) => v != null && v > 0)) {
+    el.innerHTML = '<span class="muted">暂无趋势数据</span>';
+    return;
+  }
+  const W = 600, H = 190, PAD = 34;
+  const maxV = Math.max(1, ...data.map((v) => Number(v || 0)));
+  const step = labels.length > 1 ? (W - PAD * 2) / (labels.length - 1) : W - PAD * 2;
+  const pts = data.map((v, i) =>
+    `${(PAD + i * step).toFixed(1)},${(H - PAD - (Number(v || 0) / maxV) * (H - PAD * 2)).toFixed(1)}`);
+  const grid = [0.25, 0.5, 0.75].map((p) => {
+    const y = H - PAD - p * (H - PAD * 2);
+    return `<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PAD}" y2="${y.toFixed(1)}" class="chart-grid"/>`;
+  }).join("");
+  const labelsHtml = labels.map((l, i) =>
+    `<text x="${(PAD + i * step).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${esc(l)}</text>`).join("");
+  const circles = pts.map((pt, i) => {
+    const [x, y] = pt.split(",");
+    return `<circle cx="${x}" cy="${y}" r="3" class="chart-dot"><title>${esc(labels[i] || "")} ${fmtNum(data[i])}</title></circle>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${grid}<polyline points="${pts.join(" ")}" class="chart-line"/>${circles}${labelsHtml}</svg>`;
+}
+
+function svgRadar(el, radar) {
+  if (!el) return;
+  const axes = (radar && radar.axes) || [];
+  if (!axes.length) {
+    el.innerHTML = '<span class="muted">暂无雷达数据</span>';
+    return;
+  }
+  const N = axes.length, W = 280, H = 280, cx = W / 2, cy = H / 2, R = 92;
+  const ang = (i) => -Math.PI / 2 + i * 2 * Math.PI / N;
+  const xy = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
+  const ring = (ratio) => axes.map((_, i) => xy(i, R * ratio).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const valuePts = axes.map((a, i) => {
+    const v = a.available && a.value != null ? Math.min(100, a.value) / 100 : 0;
+    return xy(i, R * v).map((x) => x.toFixed(1)).join(",");
+  }).join(" ");
+  const labels = axes.map((a, i) => {
+    const [x, y] = xy(i, R + 24);
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" class="radar-label">${esc(a.label)}${a.available ? "" : "（缺数据）"}</text>`;
+  }).join("");
+  const dots = axes.map((a, i) => {
+    const r = a.available && a.value != null ? Math.min(100, a.value) / 100 : 0;
+    const [x, y] = xy(i, R * r);
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" class="chart-dot"/>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}">${[0.25, 0.5, 0.75, 1].map((r) => `<polygon points="${ring(r)}" class="radar-grid"/>`).join("")}<polygon points="${valuePts}" class="radar-value"/>${dots}${labels}</svg>`;
+}
+
+function renderWeakList(box, weakList, platform) {
+  if (!weakList.length) {
+    return box.innerHTML = '<span class="muted">当前没有命中规则；继续回填/导入数据后自动诊断。</span>';
+  }
+  box.innerHTML = weakList.map((w) => `
+    <div class="wp-item">
+      <div class="wp-head">
+        <b>${esc(w.title)}</b>
+        <span class="badge error">现状 ${esc(w.current)}</span>
+        <span class="muted">基准 ${esc(w.benchmark)}</span>
+      </div>
+      <div class="meta">${esc(w.suggestion)}</div>
+      <div class="meta muted">适用：${esc(w.apply_to)}</div>
+      <div class="actions">
+        <button class="btn small filled" onclick="savePlatformWeakLesson('${esc(platform)}','${esc(w.id)}')">沉淀为经验</button>
+      </div>
+    </div>`).join("");
+}
+
+async function savePlatformWeakLesson(platform, id) {
+  const w = ovCache && ovCache.platforms[platform] &&
+    ovCache.platforms[platform].weak_points.find((x) => x.id === id);
+  if (!w) return;
+  try {
+    await api("/api/flywheel/lessons", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: w.title,
+        conclusion: w.suggestion,
+        evidence: `现状 ${w.current} vs 基准 ${w.benchmark}（${platform} 看板诊断）`,
+        apply_to: w.apply_to,
+        source: "dashboard",
+      }),
+    });
+    toast("已沉淀为经验，可在数据飞轮查看并标记应用");
+  } catch (e) {
+    toast("沉淀失败: " + e.message, false);
+  }
+}
+window.savePlatformWeakLesson = savePlatformWeakLesson;
+
+function quickClass(q) {
+  if (q && q.includes("爆款")) return "hit";
+  if (q && q.includes("互动强")) return "success";
+  if (q && q.includes("流量达标")) return "primary";
+  if (q && q.includes("需优化")) return "error";
+  return "";
+}
+
+function renderRecentRows(box, records) {
+  if (!records.length) return box.innerHTML = '<tr><td colspan="10" class="muted">暂无回填数据</td></tr>';
+  box.innerHTML = records.map((r) => `
+    <tr>
+      <td>${esc((r.collected_at || "").slice(0, 16))}</td>
+      <td title="${esc(r.theme || "")}">${esc(r.job_id)}</td>
+      <td>${esc(r.platform || "—")}</td>
+      <td class="num">${fmtNum(r.reads)}</td>
+      <td class="num">${fmtNum(r.likes)}</td>
+      <td class="num">${fmtNum(r.collects)}</td>
+      <td class="num">${fmtNum(r.comments)}</td>
+      <td class="num">${pct(r.engagement)}</td>
+      <td>${r.hit ? '<span class="badge hit">🔥 爆款</span>' : '<span class="badge">常规</span>'}</td>
+      <td>${r.quick ? `<span class="badge ${quickClass(r.quick)}">${esc(r.quick)}</span>` : "—"}</td>
+    </tr>`).join("");
 }
 
 // ---------- 小红书式数据分析（四页签 + 薄弱点诊断） ----------
@@ -230,7 +532,7 @@ window.switchDashTab = switchDashTab;
 function setDashRange(n) {
   dashState.range = n;
   $$(".range-toggle .tab").forEach((b) => b.classList.toggle("active", Number(b.dataset.range) === n));
-  loadDashboard();
+  loadOverview();
 }
 window.setDashRange = setDashRange;
 

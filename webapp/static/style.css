@@ -663,6 +663,34 @@ textarea {
 .toast.hidden { display: none; }
 .hidden { display: none !important; }
 
+/* 概览两级看板 */
+.ov-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.ov-pane { display: block; }
+.ov-pane.hidden { display: none; }
+.health-score {
+  font-size: 42px; font-weight: 800; color: var(--primary);
+  line-height: 1.15; padding: 8px 4px;
+}
+.health-score small { font-size: 14px; font-weight: 600; color: var(--on-surface-variant); margin-left: 4px; }
+.health-score .delta { font-size: 14px; margin-left: 8px; }
+.focus-card {
+  padding: 12px 14px; border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md); background: var(--surface-dim);
+  font-size: 14px; line-height: 1.7;
+}
+.radar-box svg { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto; }
+.radar-grid { fill: none; stroke: var(--outline-variant); stroke-width: 1; }
+.radar-value { fill: var(--primary-container); stroke: var(--primary); stroke-width: 2; stroke-linejoin: round; }
+.radar-label { font-size: 11px; fill: var(--on-surface-variant); }
+.line-chart { width: 100%; height: auto; display: block; }
+.chart-grid { stroke: var(--outline-variant); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart-line { fill: none; stroke: var(--primary); stroke-width: 2; stroke-linejoin: round; }
+.chart-dot { fill: var(--primary); }
+.chart-axis { font-size: 10px; fill: var(--on-surface-variant); }
+.series-tabs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.series-tabs .tab { padding: 3px 10px; font-size: 12px; }
+.ov-pane details.card summary { font-size: 13px; }
+
 /* 响应式 */
 @media (max-width: 1180px) {
   .topics-layout { grid-template-columns: 1fr; }
