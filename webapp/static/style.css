@@ -191,7 +191,7 @@ textarea {
 }
 .form-section-title {
   display: flex; align-items: center; gap: 8px;
-  margin: 20px 0 8px; padding-top: 16px;
+  margin: 40px 0 12px; padding-top: 30px;
   border-top: 1px solid var(--outline-variant);
   font-size: 13px; font-weight: 700; color: var(--on-surface);
 }
@@ -205,6 +205,14 @@ textarea {
 #settings-modal .modal-box { width: min(620px, 94vw); }
 #settings-modal .form { padding: 6px 22px 20px; }
 #settings-modal .form .field-label { margin: 12px 0 5px; }
+#settings-modal .form .muted { margin: 8px 0 4px; }
+#settings-modal .form .toolbar { flex-wrap: nowrap; }
+#settings-modal .toolbar .btn {
+  height: 42px; padding-top: 0; padding-bottom: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 0;
+}
+#settings-modal .toolbar input { flex: 1 1 120px; min-width: 0; margin-bottom: 0; }
 #settings-modal .toolbar { margin-bottom: 0; }
 
 /* 选题 */
