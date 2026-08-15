@@ -440,7 +440,7 @@ def _backfill_records(jobs_dir, range_days):
                     out.append({
                         **r,
                         "job_id": d,
-                        "title": data.get("title") or r.get("title") or d,
+                        "title": r.get("title") or data.get("title") or d,
                     })
     out.sort(key=lambda r: str(r.get("collected_at") or ""), reverse=True)
     return out
@@ -554,6 +554,20 @@ def _xhs_note_records(data_dir, range_days):
             "avg_watch_seconds": note.get("avg_watch_seconds", 0),
         })
     return out
+
+
+def _xhs_note_keys(data_dir):
+    """返回已导入笔记的标题与匹配 Job 集合，用于回填去重（导入优先）。"""
+    store = read_json(os.path.join(data_dir, "xhs_notes.json")) or {}
+    titles = set()
+    jobs = set()
+    for note in (store.get("notes") or {}).values():
+        t = str(note.get("title") or "").strip()
+        if t:
+            titles.add(t)
+        if note.get("matched_job"):
+            jobs.add(note["matched_job"])
+    return titles, jobs
 
 
 def _apply_xhs_publish_export(s, data_dir, range_days):
@@ -813,6 +827,12 @@ def build_dashboard(range_days=None, period="day", platforms=None,
     records = _backfill_records(jobs_dir, range_days)
     publishes = _publish_events(jobs_dir, range_days)
     xhs_notes = _xhs_note_records(data_dir, range_days)
+    note_titles, note_jobs = _xhs_note_keys(data_dir)
+    # 导入优先：小红书回填记录若与已导入笔记同标题/同 Job，则忽略该回填
+    if note_titles or note_jobs:
+        records = [r for r in records if r.get("platform") != "小红书"
+                   or (str(r.get("title") or "").strip() not in note_titles
+                       and r.get("job_id") not in note_jobs)]
     platform_data = {}
     for p in PLATFORM_ORDER:
         recs = records + xhs_notes if p == "小红书" else records

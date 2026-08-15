@@ -1,30 +1,8 @@
 {
   "job_id": "2026-08-15_免费开源AI模型推荐",
-  "records": [
-    {
-      "platform": "小红书",
-      "collected_at": "2026-08-15 12:29:56",
-      "reads": 3200,
-      "likes": 186,
-      "collects": 95,
-      "comments": 32,
-      "url": "https://www.xiaohongshu.com/explore/acceptance-sample",
-      "engagement": 0.0978,
-      "hit": false
-    }
-  ],
-  "publish": [
-    {
-      "platform": "小红书",
-      "status": "success",
-      "mode": "manual",
-      "at": "2026-08-15 12:29:53",
-      "note": "端到端验收·已人工发布"
-    }
-  ],
-  "platforms": [
-    "小红书"
-  ],
+  "records": [],
+  "publish": [],
+  "platforms": [],
   "title": "免费开源AI模型推荐",
-  "published_at": "2026-08-15 12:29:53"
+  "published_at": ""
 }

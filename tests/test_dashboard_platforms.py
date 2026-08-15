@@ -213,3 +213,30 @@ def test_xhs_notes_feed_platform_stats(tmp_path):
     assert xhs["totals"]["engagement"] == 0.065
     assert sum(xhs["trend"]["reads"]) == 1000
     assert xhs["recent"][0]["title"] == "笔记A"
+
+
+def test_xhs_import_prefers_notes_over_backfill(tmp_path):
+    root = str(tmp_path)
+    _write_job(root, "job_xhs", "小红书", records=[
+        {"platform": "小红书", "collected_at": _days_ago_str(1), "reads": 9999,
+         "likes": 500, "collects": 50, "comments": 20, "engagement": 0.057,
+         "hit": True, "title": "笔记A"},
+        {"platform": "小红书", "collected_at": _days_ago_str(1), "reads": 500,
+         "likes": 10, "collects": 2, "comments": 1, "engagement": 0.026,
+         "hit": False, "title": "未发布测试"},
+    ], publishes=[])
+    data = os.path.join(root, "data")
+    os.makedirs(data, exist_ok=True)
+    with open(os.path.join(data, "xhs_notes.json"), "w", encoding="utf-8") as f:
+        json.dump({"notes": {
+            "n1": {
+                "title": "笔记A",
+                "first_published_at": datetime.now().strftime("%Y年%m月%d日%H时%M分%S秒"),
+                "reads": 1000, "likes": 50, "collects": 10, "comments": 5,
+            },
+        }}, f, ensure_ascii=False, indent=2)
+    d = DA.build_dashboard(range_days=7, jobs_dir=os.path.join(root, "jobs"),
+                           outputs_dir=os.path.join(root, "outputs"), data_dir=data)
+    xhs = d["platforms"]["小红书"]
+    assert xhs["totals"]["total_reads"] == 1500  # 导入笔记 1000 + 未匹配回填 500
+    assert xhs["totals"]["engagement"] == 0.052  # (65+13)/1500
