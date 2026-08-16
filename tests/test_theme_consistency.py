@@ -51,7 +51,7 @@ def test_theme_switcher_present():
     assert 'id="set-theme"' in html
     assert 'localStorage.setItem("selfmedia_theme"' in js
     assert "function applyTheme" in js
-    for theme_id in ("default", "midnight", "doraemon", "cyberpunk", "hermes", "chanel"):
+    for theme_id in ("default", "midnight", "doraemon", "cyberpunk", "hermes", "chanel", "lv"):
         assert f'value="{theme_id}"' in html
 
 

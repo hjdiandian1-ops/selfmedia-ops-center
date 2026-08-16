@@ -361,6 +361,67 @@
   box-shadow: 0 2px 12px rgba(11, 30, 63, .30), 0 0 0 1px rgba(176, 141, 79, .35);
 }
 
+:root[data-theme="lv"] {
+  --primary: #5d3a1a;
+  --primary-strong: #4a2d12;
+  --on-primary: #ffffff;
+  --primary-container: #ead9bd;
+  --on-primary-container: #4a2d12;
+  --surface: #f3ead9;
+  --surface-dim: #eadfc8;
+  --on-surface: #2b2117;
+  --on-surface-variant: #77654c;
+  --outline: #d4c3a5;
+  --outline-variant: #e3d7be;
+  --error: #b3261e;
+  --success: #1a7f37;
+  --radius-lg: 14px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+  --border-width: 1px;
+  --font-stack: Roboto, "Google Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, sans-serif;
+  --shadow-1: 0 1px 2px rgba(90, 58, 26, .12), 0 2px 8px rgba(90, 58, 26, .07);
+  --shadow-2: 0 2px 6px rgba(90, 58, 26, .14), 0 8px 24px rgba(90, 58, 26, .09);
+  --hover-bg: #eadfc8;
+  --surface-hover: #f0e7d3;
+  --code-bg: #eadfc8;
+  --primary-hover: #ddc9a6;
+  --focus-ring: #c8a76a;
+  --step-ring: #ead9bd;
+  --success-container: #e6f4ea;
+  --error-container: #fce8e6;
+  --hit-container: #f0e3c8;
+  --deco-accent: #8a6426;
+  --score-text: #7a5a1e;
+  --score-bg: #f7eed9;
+  --preview-text: #443627;
+  --toast-text: #ffffff;
+  --toast-ok: #1a7f37;
+  --toast-err: #b3261e;
+  --applied-border: rgba(26, 127, 55, .35);
+  --applied-bg: #f1f8f2;
+  --scrim: rgba(43, 33, 23, .55);
+  --brand-gradient: linear-gradient(135deg, #3d2814, #b08d4f);
+  --brand-logo-bg: var(--brand-gradient);
+  --aurora-1: rgba(176, 141, 79, .16);
+  --aurora-2: rgba(90, 58, 26, .08);
+  --aurora-3: rgba(218, 195, 155, .35);
+  --palette-1: #5d3a1a;
+  --palette-2: #b08d4f;
+  --palette-3: #5f7d8f;
+  --palette-4: #8c1c2f;
+}
+:root[data-theme="lv"] body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    repeating-conic-gradient(rgba(90, 58, 26, .05) 0% 25%, transparent 0% 50%) 0 0 / 44px 44px,
+    radial-gradient(560px 420px at 12% 16%, rgba(176, 141, 79, .18), transparent 62%),
+    radial-gradient(680px 480px at 86% 26%, rgba(93, 58, 26, .08), transparent 62%);
+}
+:root[data-theme="lv"] .brand-logo {
+  box-shadow: 0 2px 12px rgba(176, 141, 79, .38), 0 0 0 1px rgba(90, 58, 26, .20);
+}
+
 /* 质感档位（与颜色主题正交）：圆角 / 阴影 / 光晕 / 玻璃 */
 :root[data-style="sharp-flat"] {
   --radius-lg: 4px; --radius-md: 2px; --radius-sm: 0px;
