@@ -5,10 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
 <script>
-  document.documentElement.dataset.theme = localStorage.getItem("selfmedia_theme") || "default";
-  document.documentElement.dataset.style = localStorage.getItem("selfmedia_style") || "google-rounded";
+  (function () {
+    var themes = ["default", "midnight", "doraemon", "cyberpunk", "hermes", "chanel"];
+    var styles = ["google-rounded", "sharp-flat", "paper-layered", "neon-glow"];
+    var t = localStorage.getItem("selfmedia_theme") || "default";
+    var s = localStorage.getItem("selfmedia_style") || "google-rounded";
+    if (themes.indexOf(t) < 0) t = "default";
+    if (styles.indexOf(s) < 0) s = "google-rounded";
+    document.documentElement.dataset.theme = t;
+    document.documentElement.dataset.style = s;
+  })();
 </script>
-    <link rel="stylesheet" href="/static/style.css?v=3.89">
+    <link rel="stylesheet" href="/static/style.css?v=3.90">
 </head>
 <body>
 <div class="app">
@@ -568,14 +576,11 @@
               <label class="field-label">外观主题</label>
               <select id="set-theme" class="select" onchange="applyTheme(this.value)" title="切换工作台皮肤">
                 <option value="default">蓝白默认</option>
-                <option value="brand-red">红白小吴聊</option>
                 <option value="midnight">深空暗黑</option>
-                <option value="pink">粉漾少女</option>
                 <option value="doraemon">哆啦A梦（蓝胖）</option>
                 <option value="cyberpunk">赛博朋克·霓虹风暴</option>
                 <option value="hermes">爱马仕橙奢侈风</option>
                 <option value="chanel">香奈儿小香风</option>
-                <option value="cream">日系奶油风</option>
               </select>
               <label class="field-label">质感档位（与颜色主题独立组合）</label>
               <select id="set-style" class="select" onchange="applyStyle(this.value)" title="切换卡片质感">
@@ -712,6 +717,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.87"></script>
+    <script src="/static/app.js?v=3.90"></script>
 </body>
 </html>
