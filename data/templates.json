@@ -1,0 +1,51 @@
+{
+  "categories": [
+    {
+      "id": "xhs_card",
+      "name": "小红书图文卡片",
+      "source": "guizang-social-card-skill",
+      "items": [
+        {"id": "ink-classic", "name": "墨色经典", "desc": "商业评论/AI 随笔，中性编辑风", "colors": ["#f3f0e8", "#0a0a0b", "#111111"]},
+        {"id": "indigo-porcelain", "name": "靛蓝青瓷", "desc": "科技/研究/数据，冷静分析风", "colors": ["#f2f4f5", "#0a1f3d", "#315d93"]},
+        {"id": "forest-ink", "name": "墨绿森林", "desc": "户外/自然/生活笔记", "colors": ["#f5f1e8", "#16251b", "#2e6b4f"]},
+        {"id": "kraft-paper", "name": "牛皮纸", "desc": "回忆/手作/个人随笔，温暖低科技", "colors": ["#eedfc7", "#2a1e13", "#9b5a2e"]},
+        {"id": "dune", "name": "沙丘", "desc": "设计/物件/画廊感封面", "colors": ["#f0e6d2", "#1e1a14", "#a4763c"]},
+        {"id": "midnight-ink", "name": "午夜墨", "desc": "暗色深色场景，游戏/夜拍", "colors": ["#101114", "#e8e6e3", "#7aa2f7"]},
+        {"id": "ikb-blue", "name": "IKB 蓝", "desc": "瑞士强调色，冷静克制", "colors": ["#f4f5f7", "#0a0f1c", "#0033aa"]},
+        {"id": "lemon-yellow", "name": "柠檬黄", "desc": "瑞士强调色，活泼醒目", "colors": ["#faf6ec", "#1a1a1a", "#f2c200"]},
+        {"id": "lemon-green", "name": "柠檬绿", "desc": "瑞士强调色，清爽能量", "colors": ["#f4f8f0", "#101510", "#7cb518"]},
+        {"id": "safety-orange", "name": "安全橙", "desc": "瑞士强调色，强冲击", "colors": ["#faf5f0", "#14100c", "#e8590c"]}
+      ]
+    },
+    {
+      "id": "gzh_layout",
+      "name": "公众号排版",
+      "source": "gzh-design-skill",
+      "items": [
+        {"id": "graphite-minimal", "name": "石墨极简", "desc": "克制极简，重内容", "colors": ["#ffffff", "#1f1f23", "#52525b"]},
+        {"id": "moyu-green", "name": "墨鱼绿", "desc": "绿色杂志风，信息密度高", "colors": ["#f7faf8", "#0f241a", "#059669"]},
+        {"id": "moyu-ticket", "name": "墨鱼票根", "desc": "票根式卡片，清单盘点", "colors": ["#fbf9f3", "#14231c", "#059669"]},
+        {"id": "olive-journal", "name": "橄榄杂志", "desc": "杂志叙事，栏目感强", "colors": ["#f4f2ea", "#1e241c", "#5f6b3d"]},
+        {"id": "red-white", "name": "红白", "desc": "品牌红白，高对比", "colors": ["#ffffff", "#201a17", "#dc2626"]},
+        {"id": "zen-whitespace", "name": "禅意留白", "desc": "大留白，少装饰", "colors": ["#fafaf8", "#20261f", "#4a5d52"]}
+      ]
+    },
+    {
+      "id": "cover_style",
+      "name": "封面构图风格",
+      "source": "cover-design-skill",
+      "items": [
+        {"id": "dark-gradient", "name": "深色渐变风", "desc": "高对比强冲击", "colors": ["#14141c", "#f5f5f7", "#b91c1c"]},
+        {"id": "flat-solid", "name": "纯色扁平风", "desc": "简单纯色无渐变", "colors": ["#faf5f0", "#1a1a1a", "#dc2626"]},
+        {"id": "product-hero", "name": "产品主视觉风", "desc": "UI/产品截图为主", "colors": ["#ffffff", "#111111", "#1a73e8"]},
+        {"id": "compare-cards", "name": "对比卡片风", "desc": "前后/好坏对比", "colors": ["#1b1b26", "#f5f5f7", "#7aa2f7"]},
+        {"id": "minimal-whitespace", "name": "极简留白风", "desc": "大字留白", "colors": ["#faf7f2", "#202020", "#b91c1c"]},
+        {"id": "poster-collage", "name": "海报拼贴风", "desc": "杂志海报拼贴", "colors": ["#17171e", "#f5f5f7", "#e8590c"]},
+        {"id": "side-profile", "name": "人物侧置留白风", "desc": "人物偏侧留白", "colors": ["#faf7f2", "#202020", "#b91c1c"]},
+        {"id": "back-view", "name": "背影构图风", "desc": "背影动势", "colors": ["#10151f", "#f5f5f7", "#7aa2f7"]},
+        {"id": "partial-closeup", "name": "局部出镜风", "desc": "局部特写", "colors": ["#f4efe8", "#201a17", "#9b5a2e"]},
+        {"id": "front-face", "name": "正面对视风", "desc": "人物正对镜头", "colors": ["#1b1b26", "#f5f5f7", "#dc2626"]}
+      ]
+    }
+  ]
+}
