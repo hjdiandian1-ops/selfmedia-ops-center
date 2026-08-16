@@ -38,7 +38,10 @@ def main():
         return 1
     print(f"✅ Python {sys.version.split()[0]}")
 
-    venv_python = os.path.join(VENV, "bin", "python")
+    if sys.platform == "win32":
+        venv_python = os.path.join(VENV, "Scripts", "python.exe")
+    else:
+        venv_python = os.path.join(VENV, "bin", "python")
     if not os.path.isfile(venv_python):
         step("创建虚拟环境 .venv")
         subprocess.run([sys.executable, "-m", "venv", VENV], check=True)  # nosec B603  # 固定命令
