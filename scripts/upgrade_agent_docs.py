@@ -16,6 +16,7 @@ import json
 import os
 import re
 import sys
+import uuid
 from collections import Counter
 from datetime import datetime
 
@@ -58,6 +59,14 @@ def read_json(path):
             return json.load(f)
     except Exception:
         return None
+
+
+def write_json(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
 
 
 def read_text(path):
@@ -153,8 +162,18 @@ def _patch_unchanged(text, lessons_for_file, formulas):
 
 
 def upgrade_agents(agents_dir=DEFAULT_AGENTS_DIR, flywheel_dir=FLYWHEEL_DIR):
-    lessons = (read_json(os.path.join(flywheel_dir, "lessons.json")) or {}).get("lessons", [])
+    lessons_path = os.path.join(flywheel_dir, "lessons.json")
+    store = read_json(lessons_path) or {"lessons": []}
+    lessons = store.get("lessons", [])
+    meta_changed = False
+    for l in lessons:
+        if not l.get("id"):
+            l["id"] = f"l_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:6]}"
+            meta_changed = True
+    if meta_changed:
+        write_json(lessons_path, store)
     videos = (read_json(os.path.join(flywheel_dir, "viral_videos.json")) or {}).get("videos", [])
+    pending_ids = {l.get("id") for l in lessons if l.get("id") and not l.get("applied")}
     formulas = Counter()
     for v in videos:
         if v.get("status") in ("analyzed", "applied"):
@@ -164,6 +183,7 @@ def upgrade_agents(agents_dir=DEFAULT_AGENTS_DIR, flywheel_dir=FLYWHEEL_DIR):
                     formulas[f] += 1
 
     results = []
+    applied_ids = set()
     for path in sorted(glob.glob(os.path.join(agents_dir, "*.md"))):
         fname = os.path.basename(path)
         lessons_for_file = []
@@ -178,18 +198,36 @@ def upgrade_agents(agents_dir=DEFAULT_AGENTS_DIR, flywheel_dir=FLYWHEEL_DIR):
             continue
         has_section = "## 🧬 经验补丁" in text
         if has_section and _patch_unchanged(text, lessons_for_file, formulas):
+            # 补丁区已包含这些经验（此前已写入）→ 视为已应用，标记状态并跳过升级
+            applied_ids.update(l["id"] for l in lessons_for_file if l.get("id") in pending_ids)
             continue  # 无新经验/公式，不重复升版本
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         new_text = apply_patch_to_doc(text, lessons_for_file, formulas, now)
         write_text(path, new_text)
+        applied_ids.update(l["id"] for l in lessons_for_file if l.get("id") in pending_ids)
         results.append({
             "file": fname,
             "version": re.search(r"- version:\s*(\S+)", new_text).group(1),
             "patches": len(lessons_for_file),
             "formulas": len(formulas),
         })
+
+    # 本次已写入 SOP 的经验标记为「已应用」，让 KPI 与真实状态一致
+    if applied_ids:
+        store = read_json(lessons_path) or {"lessons": []}
+        changed = False
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        for l in store.get("lessons", []):
+            if l.get("id") in applied_ids and not l.get("applied"):
+                l["applied"] = True
+                l["updated_at"] = now_str
+                changed = True
+        if changed:
+            store["updated_at"] = now_str
+            write_json(lessons_path, store)
+
     return {"ok": True, "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "agents": results}
+            "agents": results, "applied_lessons": len(applied_ids)}
 
 
 def main():

@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-NAS 连接配置共享模块（scripts/ 下所有脚本统一从这里读凭据，禁止硬编码）
-
-用法：
-    from nas_config import NAS_IP, NAS_SSH_PORT, NAS_USER, NAS_PASS, NAS_SHARED_DIR
-
-凭据来源优先级：环境变量 > nas-n8n/.env > 项目根 .env
+NAS / 公众号连接配置共享模块（从根 .env 或环境变量读凭据，禁止硬编码）
 """
 import os
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 _CANDIDATES = [
-    os.path.normpath(os.path.join(_DIR, "..", "nas-n8n", ".env")),
     os.path.normpath(os.path.join(_DIR, "..", ".env")),
 ]
 

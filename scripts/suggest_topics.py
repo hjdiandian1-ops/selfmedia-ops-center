@@ -33,15 +33,17 @@ from email.utils import parsedate_to_datetime
 MATERIALS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "materials"))
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 LEXICON_FILE = os.path.join(ROOT, "data", "topics", "lexicon.json")
+PREF_FILE = os.path.join(ROOT, "data", "topics", "preferences.json")
+NICHES_FILE = os.path.join(ROOT, "data", "topics", "niches.json")
 
 # 公开仓库兜底词库（完整精选词库在私有 data/topics/lexicon.json，不进公开仓库）
 GENERIC_LEXICON = {
-    "ip": {"AI": 1, "工具": 1, "创业": 1, "效率": 1},
-    "emotion": ["暴涨", "暴跌", "震惊", "突破", "新高"],
-    "search": ["教程", "怎么", "如何", "对比", "价格"],
-    "durable": ["清单", "步骤", "案例", "指南", "报告"],
-    "unique": ["风险", "争议", "警告", "真相", "没想到"],
-    "identity": ["普通人", "年轻人", "创业者", "打工人", "学生"],
+    "ip": {"AI": 2, "智能体": 3, "Agent": 3, "大模型": 3, "工具": 1, "创业": 1, "效率": 1, "自媒体": 1, "商业": 1, "副业": 1},
+    "emotion": ["暴涨", "暴跌", "震惊", "突破", "新高", "炸裂", "爆发", "横空出世"],
+    "search": ["教程", "怎么", "如何", "对比", "价格", "发布", "评测", "上手", "体验"],
+    "durable": ["清单", "步骤", "案例", "指南", "报告", "模型", "框架", "方法论", "避坑", "评测"],
+    "unique": ["风险", "争议", "警告", "真相", "没想到", "内幕", "避坑"],
+    "identity": ["普通人", "年轻人", "创业者", "打工人", "学生", "新手", "博主"],
 }
 
 
@@ -58,6 +60,35 @@ def _load_lexicon():
 
 
 _LEXICON = _load_lexicon()
+
+
+def _read_json(path, default):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def load_prefs():
+    return _read_json(PREF_FILE, {}) or {}
+
+
+def load_niches():
+    return _read_json(NICHES_FILE, {}) or {}
+
+
+def match_niches(title, summary, prefs, niches):
+    """按用户偏好的「平台·赛道」关键词匹配标题+摘要，返回命中的赛道名。"""
+    text = (str(title or "") + " " + str(summary or "")).lower()
+    hits = []
+    for platform, names in (prefs.get("platforms") or {}).items():
+        for name in names:
+            for kw in (niches.get(platform) or {}).get(name, []):
+                if str(kw).lower() in text:
+                    hits.append(f"{platform}·{name}")
+                    break
+    return hits
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
@@ -416,6 +447,7 @@ def _candidate_lines(pool_name, picks, score_key, score_label, formula_note):
             f"### 候选 {i} ⭐{score_label} {it[score_key]:.1f}",
             f"- 主题方向：{it['title']}",
             f"- 命中热点：{it['source']}（rank {it['rank']}，{it['source_count']} 源印证）",
+            f"- 命中赛道：{'、'.join(it.get('niches') or []) or '默认推荐（未设置偏好）'}",
             f"- 热度：{it['heat_score']:.1f}/10{heat_desc}",
             f"- 评分构成：{breakdown}",
             f"- 池内排序：日 {it['daily_score']} ｜ 周 {it['weekly_score']}",
@@ -468,13 +500,32 @@ def main():
         print(f"⚠️ 合规初筛剔除 {before - len(rows)} 条", file=sys.stderr)
 
     scored = [it for it in score_rows(rows) if it["dims"]["ip"] >= IP_GATE]
+    scored_all = list(scored)
     if len(scored) < len(rows):
         print(f"⚠️ IP 垂直度门槛（≥{IP_GATE}）剔除 {len(rows) - len(scored)} 条", file=sys.stderr)
+    prefs = load_prefs()
+    niches = load_niches()
+    selected = prefs.get("platforms") or {}
+    prefs_active = False
+    if selected:
+        for it in scored:
+            it["niches"] = match_niches(it["title"], it.get("summary"), prefs, niches)
+        filtered = [it for it in scored if it["niches"]]
+        total_sel = sum(len(v) for v in selected.values())
+        print(f"🎯 偏好赛道过滤：{total_sel} 个赛道 → 保留 {len(filtered)}/{len(scored)} 条")
+        if filtered:
+            scored = filtered
+            prefs_active = True
+        else:
+            print("⚠️ 偏好过滤后无候选，回退默认推荐", file=sys.stderr)
     deduped = dedupe_and_rank(scored)
     daily, weekly = build_pools(deduped, args.daily_top, args.weekly_top)
+    if prefs_active and not daily and not weekly:
+        print("⚠️ 偏好赛道命中不足以构成日/周池，回退默认推荐", file=sys.stderr)
+        deduped = dedupe_and_rank(scored_all)
+        daily, weekly = build_pools(deduped, args.daily_top, args.weekly_top)
     if not daily and not weekly:
-        print("❌ 合规/IP 门槛后无候选，请先检查热点雷达数据。", file=sys.stderr)
-        sys.exit(1)
+        print("⚠️ 当前无候选：时效/热度/IP/偏好过滤后无可用选题，将写入空推荐文件。", file=sys.stderr)
     today = datetime.now().strftime("%Y-%m-%d")
     month = today[:7]
 
@@ -497,6 +548,9 @@ def main():
         "> 📕 封面套路观察由采编在创作前按 `guizang-social-card-skill`/小红书对标补充。",
         "",
     ]
+    if not daily and not weekly:
+        lines.append("> ⚠️ 当前无候选：时效/热度/IP/偏好过滤后无可用选题；可放宽赛道偏好或等下一轮热点。")
+        lines.append("")
     lines += _candidate_lines("日选题", daily, "daily_score", "日分",
                               "时效×1.2 + 热度×1.2 + 质量×0.4 排序")
     lines += _candidate_lines("周选题", weekly, "weekly_score", "周分",

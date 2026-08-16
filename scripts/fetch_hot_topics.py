@@ -30,6 +30,7 @@
 退出码：0 = 至少一个源成功；1 = 全部失败（此时采编应降级用 WebSearch 搜集热点）。
 """
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import re
@@ -77,7 +78,7 @@ HT_NS = "{https://trends.google.com/trending/rss}"
 # 国内 RSSHub 热榜路由（按需增删；不可用的源会自动跳过）
 SOURCES = {
     "微博热搜": "/weibo/search/hot",
-    "知乎热榜": "/zhihu/hotlist",
+    "知乎热榜": ["/zhihu/hotlist", "/zhihu/hot"],
     "36氪快讯": "/36kr/newsflashes",
     "华尔街见闻": "/wallstreetcn/live",
     "金十数据": "/jin10/major",
@@ -115,12 +116,15 @@ PROXY_URL = resolve_proxy()
 
 def fetch_http(url, proxy=None, timeout=20, ua="selfmedia-hot-radar/1.0", allow_private=False):
     """带代理的 HTTP GET，返回 bytes。默认拒绝内网/元数据地址（防 SSRF）。"""
-    if not allow_private and not safe_http_url(url):
+    if not allow_private and not safe_http_url(url, resolve_dns=False):
         raise ValueError(f"URL 不满足安全策略（仅 http/https 且非内网地址）: {url[:120]}")
     handlers = []
     if proxy:
         handlers.append(urllib.request.ProxyHandler({
             "http": proxy, "https": proxy}))
+    else:
+        # 显式禁用环境代理（http_proxy/https_proxy），避免内网 RSSHub 被误送到死代理
+        handlers.append(urllib.request.ProxyHandler({}))
     opener = urllib.request.build_opener(*handlers)
     req = urllib.request.Request(url, headers={"User-Agent": ua})
     with opener.open(req, timeout=timeout) as resp:
@@ -129,7 +133,17 @@ def fetch_http(url, proxy=None, timeout=20, ua="selfmedia-hot-radar/1.0", allow_
 
 def fetch_source(name, route, top):
     """RSSHub 源（RSS 2.0 / Atom）。"""
-    raw = fetch_http(f"{BASE}{route}", proxy=None, timeout=15, allow_private=True)
+    routes = route if isinstance(route, list) else [route]
+    last_err = None
+    raw = None
+    for r in routes:
+        try:
+            raw = fetch_http(f"{BASE}{r}", proxy=None, timeout=15, allow_private=True)
+            break
+        except Exception as e:  # 单路由失败，尝试备选路由
+            last_err = e
+    if raw is None:
+        raise last_err
     root = ET.fromstring(raw)  # nosec B314  # 固定源 RSS，见 B405 说明
     items = []
     for it in root.iter("item"):
@@ -454,89 +468,59 @@ def main():
     month = datetime.now().strftime("%Y-%m")
     results, failed, blocked = {}, [], []
 
-    for name, route in SOURCES.items():
+    # 所有信息源并发抓取：串行会让超时源逐个拖慢（8×20s ≈ 160s），
+    # 并发后总耗时≈最慢单源（约 20~45s），避免前端长时间转圈。
+    def fetch_one(label, fn):
         try:
-            items = fetch_source(name, route, args.top)
-            if items:
-                results[name] = items
-                print(f"✅ {name}: {len(items)} 条", file=sys.stderr)
+            return label, fn(args.top), None
+        except Exception as e:  # 单源失败隔离，不影响整体
+            return label, None, e
+
+    tasks = []
+    for name, route in SOURCES.items():
+        tasks.append((name, lambda top, n=name, r=route: fetch_source(n, r, top)))
+    tasks += [
+        ("谷歌趋势", fetch_google_trends),   # 海外源，走代理
+        ("X热点", fetch_x_trends),           # 复用 NAS x_scraper；失败自动跳过
+        ("今日热榜AI", fetch_tophub),        # 国内聚合源
+        ("推楼1号小时热点", fetch_tl1),      # X 中文区，海外源需人工复核
+        ("hex2077日报", fetch_hex2077),      # AI 日报，按栏目分组
+    ]
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        futs = {ex.submit(fetch_one, label, fn): label for label, fn in tasks}
+        for fut in as_completed(futs):
+            label, items, err = fut.result()
+            if err is not None:
+                failed.append(label)
+                print(f"❌ {label}: {err}", file=sys.stderr)
+                continue
+            if not items:
+                failed.append(f"{label}(空)")
+                print(f"⚠️ {label}: 返回为空", file=sys.stderr)
+                continue
+            if label == "hex2077日报":
+                grouped = {}
+                for it in items:
+                    sec = it.pop("section", "") or "日报"
+                    grouped.setdefault(f"hex2077·{sec}", []).append(it)
+                for name, its in grouped.items():
+                    its, blocked_its = compliance_pass(its)
+                    blocked += blocked_its
+                    if its:
+                        results[name] = its
+                        print(f"✅ {name}: {len(its)} 条", file=sys.stderr)
+                    else:
+                        failed.append(f"{name}(空)")
+                continue
+            ok, blk = compliance_pass(items)
+            blocked += blk
+            if ok:
+                results[label] = ok
+                extra = f"（代理 {PROXY_URL}）" if label == "谷歌趋势" else ""
+                print(f"✅ {label}: {len(ok)} 条{extra}", file=sys.stderr)
             else:
-                failed.append(f"{name}(空)")
-                print(f"⚠️ {name}: 返回为空", file=sys.stderr)
-        except Exception as e:
-            failed.append(name)
-            print(f"❌ {name}: {e}", file=sys.stderr)
-
-    # 谷歌趋势（海外源，走代理）
-    try:
-        items = compliance_pass(fetch_google_trends(args.top))
-        blocked += items[1]
-        if items[0]:
-            results["谷歌趋势"] = items[0]
-            print(f"✅ 谷歌趋势: {len(items[0])} 条（代理 {PROXY_URL}）", file=sys.stderr)
-        else:
-            failed.append("谷歌趋势(空)")
-    except Exception as e:
-        failed.append("谷歌趋势")
-        print(f"❌ 谷歌趋势: {e}", file=sys.stderr)
-
-    # X 热点（复用 NAS x_scraper；失败自动跳过，不影响整体）
-    try:
-        items = compliance_pass(fetch_x_trends(args.top))
-        blocked += items[1]
-        if items[0]:
-            results["X热点"] = items[0]
-            print(f"✅ X热点: {len(items[0])} 条", file=sys.stderr)
-        else:
-            failed.append("X热点(空)")
-    except Exception as e:
-        failed.append("X热点")
-        print(f"⚠️ X热点: {e}（已跳过，不影响其他源）", file=sys.stderr)
-
-    # 今日热榜 AI 频道（国内聚合源）
-    try:
-        items = compliance_pass(fetch_tophub(args.top))
-        blocked += items[1]
-        if items[0]:
-            results["今日热榜AI"] = items[0]
-            print(f"✅ 今日热榜AI: {len(items[0])} 条", file=sys.stderr)
-        else:
-            failed.append("今日热榜AI(空)")
-    except Exception as e:
-        failed.append("今日热榜AI")
-        print(f"❌ 今日热榜AI: {e}", file=sys.stderr)
-
-    # 推楼1号小时热点（X 中文区，海外源需人工复核）
-    try:
-        items = compliance_pass(fetch_tl1(args.top))
-        blocked += items[1]
-        if items[0]:
-            results["推楼1号小时热点"] = items[0]
-            print(f"✅ 推楼1号小时热点: {len(items[0])} 条", file=sys.stderr)
-        else:
-            failed.append("推楼1号小时热点(空)")
-    except Exception as e:
-        failed.append("推楼1号小时热点")
-        print(f"❌ 推楼1号小时热点: {e}", file=sys.stderr)
-
-    # 何夕2077 AI 日报（按栏目分组）
-    try:
-        hex_items = fetch_hex2077(args.top)
-        grouped = {}
-        for it in hex_items:
-            sec = it.pop("section", "") or "日报"
-            grouped.setdefault(f"hex2077·{sec}", []).append(it)
-        for name, its in grouped.items():
-            its, blocked_its = compliance_pass(its)
-            blocked += blocked_its
-            if its:
-                results[name] = its
-                print(f"✅ {name}: {len(its)} 条", file=sys.stderr)
-            else:
-                failed.append(f"{name}(空)")
-    except Exception as e:
-        failed.append("hex2077日报")
-        print(f"❌ hex2077日报: {e}", file=sys.stderr)
+                failed.append(f"{label}(空)")
 
     if not results:
         print("\n🛑 所有热点源均失败。请检查：1) NAS/RSSHub 是否在线 2) 海外代理是否可用 3) X x_scraper 容器状态。", file=sys.stderr)

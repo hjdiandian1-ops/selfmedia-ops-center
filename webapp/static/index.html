@@ -4,22 +4,46 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>自媒体运营中心</title>
-<link rel="stylesheet" href="/static/style.css?v=3.25">
+<script>
+  (function () {
+    var themes = ["default", "midnight", "doraemon", "fuji", "cyberpunk", "hermes", "chanel", "lv"];
+    var styles = ["google-rounded", "sharp-flat", "paper-layered", "neon-glow"];
+    var t = localStorage.getItem("selfmedia_theme") || "default";
+    var s = localStorage.getItem("selfmedia_style") || "google-rounded";
+    var g = localStorage.getItem("selfmedia_glass") || "follow";
+    if (themes.indexOf(t) < 0) t = "default";
+    if (styles.indexOf(s) < 0) s = "google-rounded";
+    document.documentElement.dataset.theme = t;
+    document.documentElement.dataset.style = s;
+    if (g !== "follow" && g !== "on" && g !== "off") {
+      var gn = Math.max(0, Math.min(100, parseInt(g, 10) || 0));
+      document.documentElement.style.setProperty("--style-glass-alpha", (100 - gn * 0.35).toFixed(1) + "%");
+      document.documentElement.style.setProperty("--style-glass-blur", (gn * 0.25).toFixed(1) + "px");
+    } else if (g === "on") {
+      document.documentElement.style.setProperty("--style-glass-alpha", "79%");
+      document.documentElement.style.setProperty("--style-glass-blur", "15px");
+    } else if (g === "off") {
+      document.documentElement.style.setProperty("--style-glass-alpha", "100%");
+      document.documentElement.style.setProperty("--style-glass-blur", "0px");
+    }
+  })();
+</script>
+    <link rel="stylesheet" href="/static/style.css?v=3.92">
 </head>
 <body>
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-      <span class="brand-logo">吴</span>
+      <span class="brand-logo" id="brand-avatar">自</span>
       <span class="brand-text">
         <b>自媒体运营中心</b>
-        <small>小吴聊 · 运营工作台</small>
+        <small id="brand-nickname">自媒体 · 运营工作台</small>
       </span>
     </div>
     <nav class="nav" id="nav">
       <button class="nav-item active" data-view="overview">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-        概览
+        运营中台
       </button>
       <button class="nav-item" data-view="topics">
         <svg viewBox="0 0 24 24"><path d="M5 3v18M5 5h12l-2 4 2 4H5"/></svg>
@@ -48,14 +72,23 @@
     </nav>
     <div class="sidebar-footer" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
       <span id="license-badge">授权状态加载中…</span>
-      <button class="btn small tonal" onclick="openSettings()" title="API 与公众号配置">⚙ 设置</button>
+      <span class="toolbar" style="gap:6px">
+        <button class="btn small tonal" onclick="showOnboarding(true)" title="新手指引">🚀</button>
+        <button class="btn small tonal" onclick="openSettings()" title="API 与公众号配置">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          设置
+        </button>
+      </span>
     </div>
   </aside>
 
   <div class="main">
     <header class="topbar">
       <div>
-        <h1 class="page-title" id="page-title">概览</h1>
+        <h1 class="page-title" id="page-title">运营中台</h1>
         <p class="page-sub" id="page-sub">数据大盘 · 结果优先</p>
       </div>
       <div class="topbar-meta" id="topbar-meta"></div>
@@ -64,64 +97,36 @@
     <main class="content">
       <!-- 概览 -->
       <section id="view-overview" class="view active">
+        <div class="ov-toolbar">
+          <div class="tabs" id="ov-tabs" style="margin-bottom:0">
+            <button class="tab active" data-ov="overview" onclick="switchOverviewTab('overview')">总览</button>
+            <button class="tab" data-ov="小红书" onclick="switchOverviewTab('小红书')">小红书</button>
+            <button class="tab" data-ov="公众号" onclick="switchOverviewTab('公众号')">公众号</button>
+            <button class="tab" data-ov="短视频" onclick="switchOverviewTab('短视频')">短视频</button>
+          </div>
+          <div class="range-toggle" id="period-tabs">
+            <button class="tab active" data-period="day" onclick="setDashPeriod('day')">日</button>
+            <button class="tab" data-period="week" onclick="setDashPeriod('week')">周</button>
+            <button class="tab" data-period="month" onclick="setDashPeriod('month')">月</button>
+          </div>
+          <button class="btn small tonal" onclick="openPlatformPrefs()" title="选择要统计显示的平台">平台管理</button>
+        </div>
         <div class="kpi-grid" id="kpi-cards"></div>
-        <div class="card">
-          <div class="card-head">
-            <h3>小红书式数据分析</h3>
-            <div class="dash-controls">
-              <div class="tabs" id="dash-tabs">
-                <button class="tab active" data-dash="watch" onclick="switchDashTab('watch')">观看</button>
-                <button class="tab" data-dash="interact" onclick="switchDashTab('interact')">互动</button>
-                <button class="tab" data-dash="follower" onclick="switchDashTab('follower')">涨粉</button>
-                <button class="tab" data-dash="publish" onclick="switchDashTab('publish')">发布</button>
-              </div>
-              <div class="range-toggle">
-                <button class="tab active" data-range="7" onclick="setDashRange(7)">近7日</button>
-                <button class="tab" data-range="30" onclick="setDashRange(30)">近30日</button>
-              </div>
-            </div>
-          </div>
-          <div class="kpi-grid" id="dash-kpis"></div>
-          <div class="grid-2">
-            <div id="dash-funnel" class="dash-panel"></div>
-            <div id="dash-trend" class="dash-panel">
-              <div class="card-head"><h3>趋势</h3></div>
-              <div class="trend-chart" id="dash-trend-chart"></div>
-            </div>
-          </div>
-          <div id="dash-extra" class="grid-2" style="margin-top:18px"></div>
-          <div class="card-head" style="margin-top:20px">
-            <h3>薄弱点诊断 · 提升方向</h3>
-            <span class="muted" id="dash-note"></span>
-          </div>
-          <div id="weak-points" class="stack"></div>
-        </div>
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-head"><h3>任务状态分布</h3></div>
-            <div id="state-bars" class="state-bars"></div>
-          </div>
-          <div class="card">
-            <div class="card-head"><h3>近 7 天发布趋势</h3><span class="muted">发布动作 + 回填阅读</span></div>
-            <div id="trend-chart" class="trend-chart"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-head"><h3>最近发布表现</h3><span class="muted">最新 20 条回填记录</span></div>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>时间</th><th>任务</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">涨粉</th><th class="num">互动率</th><th>状态</th></tr></thead>
-              <tbody id="recent-table"></tbody>
-            </table>
-          </div>
-        </div>
+        <div id="ov-overview" class="ov-pane"></div>
+        <div id="ov-platform" class="ov-pane hidden"></div>
       </section>
 
       <!-- 选题 -->
       <section id="view-topics" class="view">
         <div class="toolbar">
-          <button class="btn tonal" id="btn-fetch-topics" onclick="runPipeline('topics')">采集热点 + 推荐</button>
-          <button class="btn" id="btn-refresh-topics">刷新</button>
+          <button class="btn tonal" id="btn-fetch-topics" onclick="fetchHotTopics(this)" title="抓取多个信息源热点 → 清洗评分 → 生成日/周选题推荐">热点采集</button>
+          <button class="btn" id="btn-refresh-topics" title="重新读取已生成的选题推荐文件（不重新采集）">刷新列表</button>
+          <button class="btn tonal" id="btn-prefs" onclick="openPrefModal()" title="选择平台赛道，热点采集与选题推荐将按偏好过滤">偏好设置</button>
+          <span class="muted" id="pref-chip"></span>
+        </div>
+        <div id="topics-progress" class="topics-progress hidden">
+          <span class="tp-spinner"></span>
+          <span id="topics-progress-text">准备采集…</span>
         </div>
         <div class="topics-layout">
           <div class="card">
@@ -176,8 +181,8 @@
         <div class="toolbar">
           <button class="btn tonal" id="btn-toggle-viral-form" onclick="toggleViralForm()">＋ 添加爆款</button>
           <button class="btn tonal" id="btn-collect-platform" onclick="runWithSpin(this, collectPlatformVirals)">采集今日榜单</button>
-          <button class="btn tonal" id="btn-breakdown-top" onclick="breakdownTop()">自动拆解 Top5</button>
-          <button class="btn tonal" id="btn-aggregate-viral" onclick="aggregateViralWeekly()">生成本周经验包</button>
+          <button class="btn tonal" id="btn-breakdown-top" onclick="runWithSpin(this, breakdownTop)">自动拆解 Top5</button>
+          <button class="btn tonal" id="btn-aggregate-viral" onclick="runWithSpin(this, aggregateViralWeekly)">生成本周经验包</button>
           <button class="btn" id="btn-refresh-viral" onclick="runWithSpin(this, loadViral)">刷新</button>
           <input type="date" id="viral-date" class="select" onchange="setViralDate(this.value)" title="查看历史某天的榜单快照">
           <button class="btn tonal" onclick="resetViralDate()">回到今日</button>
@@ -267,8 +272,8 @@
       <!-- 数据飞轮 -->
       <section id="view-flywheel" class="view">
         <div class="toolbar">
-          <button class="btn tonal" id="btn-flywheel-regenerate" onclick="runRegenerate()">重新生成反哺指令包</button>
-          <button class="btn tonal" onclick="runFlywheelWeekly()">生成周报</button>
+          <button class="btn tonal" id="btn-flywheel-regenerate" onclick="runWithSpin(this, runRegenerate)">重新生成反哺指令包</button>
+          <button class="btn tonal" onclick="runWithSpin(this, runFlywheelWeekly)">生成周报</button>
           <button class="btn" id="btn-refresh-flywheel" onclick="runWithSpin(this, loadFlywheel)">刷新</button>
           <span class="muted" id="flywheel-updated-at"></span>
         </div>
@@ -306,7 +311,7 @@
             </div>
             <div class="toolbar" style="margin-bottom:10px">
               <button class="btn small filled" onclick="copyFeedback()">复制全部</button>
-              <button class="btn small tonal" onclick="runRegenerate()">重新生成</button>
+              <button class="btn small tonal" onclick="runWithSpin(this, runRegenerate)">重新生成</button>
             </div>
             <pre id="feedback-preview" class="feedback-pre"></pre>
           </div>
@@ -336,60 +341,6 @@
         <div class="card">
           <div class="card-head"><h3>Agent 流水线</h3><span class="muted">角色职责与当前产出</span></div>
           <div id="agent-cards" class="agent-grid"></div>
-        </div>
-        <div id="agent-doc-modal" class="modal hidden" onclick="if(event.target===this)closeAgentDoc()">
-          <div class="modal-box">
-            <div class="modal-head">
-              <h3 id="agent-doc-title">Agent SOP</h3>
-              <button class="btn small tonal" onclick="closeAgentDoc()">关闭</button>
-            </div>
-            <div id="agent-doc-body" class="markdown-body"></div>
-          </div>
-        </div>
-        <div id="settings-modal" class="modal hidden" onclick="if(event.target===this)closeSettings()">
-          <div class="modal-box">
-            <div class="modal-head">
-              <h3>⚙ 配置</h3>
-              <button class="btn small tonal" onclick="closeSettings()">关闭</button>
-            </div>
-            <div class="form">
-              <p class="muted" style="margin-top:0">配置保存在本机 .env，不会上传。留空的输入框表示保持原值。</p>
-              <label class="field-label">LLM API Key（DeepSeek / OpenAI 等）</label>
-              <input id="set-llm-key" type="password" placeholder="sk-..." autocomplete="off">
-              <span class="muted" id="set-key-mask"></span>
-              <label class="field-label">API 地址</label>
-              <input id="set-llm-base" placeholder="https://api.deepseek.com/v1">
-              <label class="field-label">模型名</label>
-              <input id="set-llm-model" placeholder="deepseek-chat">
-              <label class="field-label">公众号 AppID（可选，认证号自动推草稿用）</label>
-              <input id="set-gzh-id" placeholder="wx..." autocomplete="off">
-              <label class="field-label">公众号 AppSecret（可选）</label>
-              <input id="set-gzh-secret" type="password" placeholder="..." autocomplete="off">
-              <label class="field-label" style="margin-top:14px">Pro 授权 token（付款后由卖家发放）</label>
-              <div class="toolbar" style="gap:8px">
-                <input id="set-license-token" type="password" placeholder="粘贴 token 即可激活为会员" autocomplete="off" style="flex:1">
-                <button class="btn filled" onclick="activateLicense()">激活授权</button>
-              </div>
-              <span class="muted">激活后立即生效：左下角会显示「Pro 已激活 · 到期日期」；到期后自动拦截，续费后粘贴新 token 即可恢复。</span>
-              <details class="card" style="margin-top:10px;padding:10px">
-                <summary style="cursor:pointer;font-weight:600">💡 公众号配置温馨提示（需要你手动操作）</summary>
-                <div class="stack" style="margin-top:8px;font-size:13px;line-height:1.7">
-                  <div>1. 只有<b>已认证</b>的公众号才能用 API 推草稿；个人订阅号不支持，只能手动发布。</div>
-                  <div>2. 登录公众号后台：<a href="https://mp.weixin.qq.com" target="_blank" rel="noopener">mp.weixin.qq.com</a> → 设置与开发 → 基本配置。</div>
-                  <div>3. 开发者ID(AppID) 直接复制；开发者密码(AppSecret) 需点「重置」后才会完整显示一次，务必当场保存。</div>
-                  <div>4. 同一页面把「IP白名单」改成你电脑的<b>公网 IP</b>（浏览器搜索"我的IP"即可查到），保存后 1-5 分钟生效。</div>
-                  <div>5. 平台无法代替你完成以上操作；配好后保存，再到成品库点「推送到公众号草稿箱」。</div>
-                  <div>6. 详细图文步骤见「发布指引」（成品库页）。</div>
-                </div>
-              </details>
-              <div class="toolbar" style="margin-top:12px">
-                <button class="btn filled" onclick="saveSettings()">保存配置</button>
-                <button class="btn tonal" onclick="testLlm()">测试 AI 连接</button>
-                <button class="btn tonal" onclick="refreshLicense()">刷新授权状态</button>
-              </div>
-              <p class="muted" id="settings-status"></p>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -444,19 +395,12 @@
       <section id="view-data" class="view">
         <div class="toolbar">
           <button class="btn tonal" id="btn-stats-refresh">刷新统计</button>
-          <button class="btn tonal" id="btn-xhs-import">导入小红书明细表</button>
-          <button class="btn tonal" id="btn-dash-import">导入看板导出表</button>
-          <input type="file" id="xhs-import-file" accept=".xlsx" style="display:none">
-          <input type="file" id="dash-import-file" accept=".xlsx" style="display:none">
+          <button class="btn tonal" id="btn-dash-import" title="可一次选择：发布 / 观看 / 互动 / 涨粉 / 笔记明细（自动识别路由）">导入小红书数据表（可多选）</button>
+          <input type="file" id="dash-import-file" accept=".xlsx" multiple style="display:none">
           <span class="muted" id="stats-updated-at"></span>
         </div>
 
         <div class="kpi-grid" id="stats-kpi"></div>
-
-        <div class="card">
-          <div class="card-head"><h3>平台对比</h3><span class="muted">发布动作 / 回填 / 阅读 / 互动率</span></div>
-          <div id="platform-compare" class="agent-grid"></div>
-        </div>
 
         <div class="grid-2">
           <div class="card">
@@ -508,10 +452,22 @@
         </div>
 
         <div class="card">
+          <div class="card-head"><h3>账号快照（粉丝总数）</h3><span class="muted">小红书导出表不含总粉丝，请每周/每月手动更新一次</span></div>
+          <div class="form-grid">
+            <div><label class="field-label">当前粉丝数</label><input id="snap-followers" type="number" min="0" value="0"></div>
+            <div><label class="field-label">关注数</label><input id="snap-following" type="number" min="0" value="0"></div>
+            <div><label class="field-label">赞藏数</label><input id="snap-likes-collects" type="number" min="0" value="0"></div>
+            <div style="display:flex;align-items:flex-end"><button class="btn filled" onclick="saveAccountSnapshot()">保存快照</button></div>
+          </div>
+          <p class="muted" id="snap-note" style="margin-top:8px"></p>
+          <p class="muted" style="margin-top:4px">哪里看：小红书 App「我」页顶部粉丝数，或创作者中心 → 粉丝数据分析。</p>
+        </div>
+
+        <div class="card">
           <div class="card-head"><h3>发布表现明细</h3><span class="muted">全部回填记录</span></div>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>时间</th><th>任务</th><th>平台</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">互动率</th><th>状态</th></tr></thead>
+              <thead><tr><th>时间</th><th>标题</th><th>平台</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th></tr></thead>
               <tbody id="perf-table"></tbody>
             </table>
           </div>
@@ -521,7 +477,305 @@
   </div>
 </div>
 
+<div id="agent-doc-modal" class="modal hidden" onclick="if(event.target===this)closeAgentDoc()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="agent-doc-title">Agent SOP</h3>
+      <button class="btn small tonal" onclick="closeAgentDoc()">关闭</button>
+    </div>
+    <div id="agent-doc-body" class="markdown-body"></div>
+  </div>
+</div>
+<div id="onboard-modal" class="modal hidden" onclick="if(event.target===this)dismissOnboarding()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>🚀 快速开始 · 3 分钟跑通</h3>
+      <button class="btn small tonal" onclick="dismissOnboarding()">跳过</button>
+    </div>
+    <div class="stack" style="margin-top:8px">
+      <div class="onboard-step">
+        <span class="badge primary">1</span>
+        <div class="onboard-txt">
+          <b>配置 AI 引擎</b>
+          <div class="muted">左下角「⚙ 设置」→ 粘贴 DeepSeek / OpenAI Key → 测试连接。免费功能不需要 Key。</div>
+        </div>
+        <button class="btn small tonal" onclick="onboardGo('settings')">去设置</button>
+      </div>
+      <div class="onboard-step">
+        <span class="badge primary">2</span>
+        <div class="onboard-txt">
+          <b>看今日选题</b>
+          <div class="muted">选题页有「日选题」与「周选题」两个推荐池，评分明细已展开。</div>
+        </div>
+        <button class="btn small tonal" onclick="onboardGo('topics')">看选题</button>
+      </div>
+      <div class="onboard-step">
+        <span class="badge primary">3</span>
+        <div class="onboard-txt">
+          <b>采纳 → 自动生产</b>
+          <div class="muted">点「采纳生产」会创建真实任务，流水线页 3 秒自动刷新进度。</div>
+        </div>
+        <button class="btn small tonal" onclick="onboardGo('topics')">去选题</button>
+      </div>
+      <div class="onboard-step">
+        <span class="badge primary">4</span>
+        <div class="onboard-txt">
+          <b>查看成品并发布</b>
+          <div class="muted">成品库按平台预览；小红书手动发布后标记，公众号可推草稿（需认证号）。</div>
+        </div>
+        <button class="btn small tonal" onclick="onboardGo('outputs')">去成品库</button>
+      </div>
+    </div>
+    <button class="btn filled" style="margin-top:14px" onclick="dismissOnboarding()">我知道了，开始使用</button>
+  </div>
+</div>
+
+<div id="crop-modal" class="modal hidden" onclick="if(event.target===this)closeCrop()">
+  <div class="modal-box crop-box">
+    <div class="modal-head">
+      <h3>裁剪头像</h3>
+      <button class="btn small tonal" onclick="closeCrop()">取消</button>
+    </div>
+    <div class="crop-wrap">
+      <div class="crop-stage" id="crop-stage">
+        <img id="crop-img" alt="待裁剪头像" draggable="false">
+        <div class="crop-frame" id="crop-frame"></div>
+      </div>
+      <div class="crop-controls">
+        <div class="crop-zoom-row">
+          <span class="muted">缩放</span>
+          <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1">
+        </div>
+        <div class="set-toolbar">
+          <button class="btn filled" onclick="confirmCrop()">使用此头像</button>
+          <span class="muted">拖动圆圈选择头像区域</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="settings-modal" class="modal hidden" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>⚙ 配置</h3>
+    </div>
+        <div class="settings-layout">
+          <div class="settings-menu" id="settings-menu">
+            <button class="set-back" onclick="closeSettings()">← 返回</button>
+            <button class="set-menu-item active" data-panel="profile" onclick="switchSettingsPanel('profile')">个人资料</button>
+            <button class="set-menu-item" data-panel="theme" onclick="switchSettingsPanel('theme')">外观主题</button>
+            <button class="set-menu-item" data-panel="templates" onclick="switchSettingsPanel('templates')">模板选择</button>
+            <button class="set-menu-item" data-panel="style" onclick="switchSettingsPanel('style')">文风设置</button>
+            <button class="set-menu-item" data-panel="llm" onclick="switchSettingsPanel('llm')">AI 引擎</button>
+            <button class="set-menu-item" data-panel="gzh" onclick="switchSettingsPanel('gzh')">公众号</button>
+            <button class="set-menu-item" data-panel="license" onclick="switchSettingsPanel('license')">Pro 授权</button>
+            <button class="set-menu-item" data-panel="data" onclick="switchSettingsPanel('data')">数据管理</button>
+          </div>
+          <div class="settings-content">
+            <div class="set-panel active" id="panel-profile">
+              <p class="muted set-hint">显示在左上角的头像与昵称，保存后即时生效。</p>
+              <label class="field-label">昵称（显示在左上角）</label>
+              <input id="set-nickname" placeholder="例如：我的自媒体">
+              <label class="field-label">头像图片（本地上传，≤2MB，可裁剪）</label>
+              <input type="file" id="set-avatar-file" accept="image/*" onchange="handleAvatarUpload(this)">
+              <img id="set-avatar-preview" class="set-avatar-preview hidden" alt="头像预览">
+              <label class="field-label">或使用图片 URL（可选，网络图片）</label>
+              <input id="set-avatar" placeholder="https://example.com/avatar.png">
+            </div>
+            <div class="set-panel" id="panel-theme">
+              <p class="muted set-hint">选择工作台皮肤（免费版提供默认皮肤，Pro 会员解锁全部高级主题与质感）。</p>
+              <label class="field-label">外观主题</label>
+              <select id="set-theme" class="select" onchange="applyTheme(this.value)" title="切换工作台皮肤">
+                <option value="default">蓝白默认</option>
+                <option value="midnight">深空暗黑（Pro）</option>
+                <option value="doraemon">哆啦A梦（Pro）</option>
+                <option value="fuji">和风·藤菫紫（Pro）</option>
+                <option value="cyberpunk">赛博朋克·霓虹风暴（Pro）</option>
+                <option value="hermes">爱马仕橙奢侈风（Pro）</option>
+                <option value="chanel">香奈儿可可闪蜜（Pro）</option>
+                <option value="lv">LV奢华风（Pro）</option>
+              </select>
+              <label class="field-label">质感档位（与颜色主题独立组合）</label>
+              <select id="set-style" class="select" onchange="applyStyle(this.value)" title="切换卡片质感">
+                <option value="google-rounded">谷歌圆润（默认）</option>
+                <option value="sharp-flat">极简直角（Pro）</option>
+                <option value="paper-layered">纸张叠影（Pro）</option>
+                <option value="neon-glow">霓虹光晕（Pro）</option>
+              </select>
+              <label class="field-label">透明毛玻璃强度（无极调档）</label>
+              <div class="glass-row">
+                <label class="glass-follow"><input type="checkbox" id="set-glass-follow" checked onchange="onGlassFollowChange(this)"> 跟随质感档位（默认）</label>
+                <span class="muted" id="set-glass-val">跟随质感档位</span>
+              </div>
+              <input type="range" id="set-glass" class="range" min="0" max="100" step="1" value="60" disabled oninput="applyGlassStrength(this.value)" title="0=不透明关闭，100=最强毛玻璃">
+              <label class="field-label">质感预览</label>
+              <div class="style-preview">
+                <div class="sp-sample">
+                  <div class="sp-title"></div>
+                  <div class="sp-line"></div>
+                  <div class="sp-line short"></div>
+                  <div class="sp-actions"><span class="sp-btn filled"></span><span class="sp-btn tonal"></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="set-panel" id="panel-templates">
+              <p class="muted set-hint">选择初始化默认模板：小红书图文卡片 / 公众号排版 / 封面构图风格。</p>
+              <div class="tpl-cats" id="tpl-cats"></div>
+              <div class="tpl-grid" id="tpl-grid"></div>
+              <div class="set-toolbar">
+                <button class="btn filled" onclick="saveTemplates()">保存模板选择</button>
+                <span class="muted" id="tpl-save-status"></span>
+              </div>
+            </div>
+            <div class="set-panel" id="panel-style">
+              <p class="muted set-hint">可个性化设置的 md 文档（文风、SOP、工作流、去 AI 味规则）。</p>
+              <label class="field-label">选择文档</label>
+              <select id="style-doc-select" class="select" onchange="loadStyleDoc()"></select>
+              <div class="style-doc-toolbar">
+                <span class="badge" id="style-doc-badge">默认模板</span>
+                <select id="style-preset-select" class="select small" onchange="applyStylePreset(this.value)" title="套用预设文风模板">
+                  <option value="">-- 套用预设文风模板 --</option>
+                </select>
+                <button class="btn small tonal" onclick="openStyleGuide()" title="回答几个问题，自动生成个人文风指南">AI 初始化向导</button>
+                <button class="btn small" id="btn-style-reset" onclick="resetStyleDoc()" title="恢复默认模板（当前内容会备份）">恢复默认模板</button>
+              </div>
+              <textarea id="style-doc-text" class="style-doc-text" spellcheck="false"></textarea>
+              <div class="set-toolbar">
+                <button class="btn filled" onclick="saveStyleDoc()">保存文风文档</button>
+                <span class="muted" id="style-doc-status"></span>
+              </div>
+            </div>
+            <div class="set-panel" id="panel-llm">
+              <p class="muted set-hint">LLM API Key 保存到本机 .env，留空表示保持原值。</p>
+              <label class="field-label">LLM API Key（DeepSeek / OpenAI 等）</label>
+              <input id="set-llm-key" type="password" placeholder="sk-..." autocomplete="off">
+              <span class="muted" id="set-key-mask"></span>
+              <label class="field-label">API 地址</label>
+              <input id="set-llm-base" placeholder="https://api.deepseek.com/v1">
+              <label class="field-label">模型名</label>
+              <input id="set-llm-model" placeholder="deepseek-chat">
+            </div>
+            <div class="set-panel" id="panel-gzh">
+              <p class="muted set-hint">公众号凭据（可选，认证号自动推草稿用）。</p>
+              <label class="field-label">公众号 AppID（可选）</label>
+              <input id="set-gzh-id" placeholder="wx..." autocomplete="off">
+              <label class="field-label">公众号 AppSecret（可选）</label>
+              <input id="set-gzh-secret" type="password" placeholder="..." autocomplete="off">
+              <details class="card set-card">
+                <summary style="cursor:pointer;font-weight:600">💡 公众号配置温馨提示（需要你手动操作）</summary>
+                <div class="stack">
+                  <div>1. 只有<b>已认证</b>的公众号才能用 API 推草稿；个人订阅号不支持，只能手动发布。</div>
+                  <div>2. 登录公众号后台：<a href="https://mp.weixin.qq.com" target="_blank" rel="noopener">mp.weixin.qq.com</a> → 设置与开发 → 基本配置。</div>
+                  <div>3. 开发者ID(AppID) 直接复制；开发者密码(AppSecret) 需点「重置」后才会完整显示一次，务必当场保存。</div>
+                  <div>4. 同一页面把「IP白名单」改成你电脑的<b>公网 IP</b>（浏览器搜索"我的IP"即可查到），保存后 1-5 分钟生效。</div>
+                  <div>5. 平台无法代替你完成以上操作；配好后保存，再到成品库点「推送到公众号草稿箱」。</div>
+                  <div>6. 详细图文步骤见「发布指引」（成品库页）。</div>
+                </div>
+              </details>
+            </div>
+            <div class="set-panel" id="panel-license">
+              <p class="muted set-hint">粘贴 Pro 授权 token 即可激活会员。</p>
+              <label class="field-label">Pro 授权 token（付款后由卖家发放）</label>
+              <div class="set-toolbar set-toolbar-input">
+                <input id="set-license-token" type="password" placeholder="粘贴 token 即可激活为会员" autocomplete="off">
+                <button class="btn tonal" onclick="runWithSpin(this, activateLicense)">激活授权</button>
+              </div>
+              <span class="muted set-hint">激活后立即生效：左下角显示「Pro 已激活 · 到期日期」；续费后粘贴新 token 即可恢复。</span>
+            </div>
+            <div class="set-panel" id="panel-data">
+              <p class="muted set-hint">数据保留与清理：呈现占用 → 预览 → 一键清理。</p>
+              <div class="muted" id="retention-summary">点击「体检存储」查看各模块占用与可清理项。</div>
+              <div class="set-toolbar">
+                <button class="btn tonal" onclick="runWithSpin(this, loadRetention)">体检存储</button>
+                <button class="btn tonal" onclick="runWithSpin(this, applyRetention)">清理过期数据</button>
+              </div>
+              <div class="muted" id="retention-last"></div>
+              <div class="muted" style="margin-top:8px">规则：日志 7 天、榜单快照 90 天、旧任务 30 天归档、未出爆款图片 90 天清理；文案与报告永久保留。周日自动执行清理。</div>
+            </div>
+            <div class="set-actions">
+              <button class="btn filled" onclick="runWithSpin(this, saveSettings)">保存配置</button>
+              <button class="btn tonal" onclick="runWithSpin(this, testLlm)">测试 AI 连接</button>
+              <button class="btn tonal" onclick="runWithSpin(this, refreshLicense)">刷新授权状态</button>
+              <span class="muted" id="settings-status"></span>
+            </div>
+          </div>
+        </div>
+  </div>
+</div>
+
+<div id="platform-prefs-modal" class="modal hidden" onclick="if(event.target===this)closePlatformPrefs()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>平台管理</h3>
+      <button class="btn small tonal" onclick="closePlatformPrefs()">关闭</button>
+    </div>
+    <div class="form" style="padding:8px 22px 18px">
+      <p class="muted" style="margin-top:0">选择你要运营的平台；未勾选的平台会隐藏，且不参与统计。</p>
+      <label class="field-label" style="margin-top:12px"><input type="checkbox" id="pfp-xhs" checked> 小红书</label>
+      <label class="field-label"><input type="checkbox" id="pfp-gzh" checked> 公众号</label>
+      <label class="field-label"><input type="checkbox" id="pfp-video" checked> 短视频</label>
+      <button class="btn filled" style="margin-top:14px" onclick="savePlatformPrefs()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="pref-modal" class="modal hidden" onclick="if(event.target===this)closePrefModal()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>选题偏好设置</h3>
+      <button class="btn small tonal" onclick="closePrefModal()">关闭</button>
+    </div>
+    <div class="form" style="padding:8px 22px 18px">
+      <p class="muted" style="margin-top:0">先选平台，再勾选赛道；不勾选任何赛道 = 默认模式（当前行为）。热点采集与选题推荐将按偏好过滤。</p>
+      <div class="pref-split">
+        <div class="pref-plats" id="pref-plats">
+          <button type="button" class="pref-plat active" data-platform="小红书" onclick="selectPrefPlatform('小红书')">小红书<span class="pref-count"></span></button>
+          <button type="button" class="pref-plat" data-platform="公众号" onclick="selectPrefPlatform('公众号')">公众号<span class="pref-count"></span></button>
+          <button type="button" class="pref-plat" data-platform="短视频" onclick="selectPrefPlatform('短视频')">短视频<span class="pref-count"></span></button>
+        </div>
+        <div class="pref-panel">
+          <p class="muted pref-limit">采集赛道（单平台最多 5 个赛道）</p>
+          <div id="pref-niches" class="pref-niche-list"></div>
+        </div>
+      </div>
+      <div class="toolbar" style="margin-top:14px">
+        <button class="btn filled" onclick="savePrefs()">保存偏好</button>
+        <button class="btn tonal" onclick="clearPrefs()">清除偏好（默认模式）</button>
+      </div>
+      <p class="muted" id="pref-status" style="margin-top:8px"></p>
+    </div>
+  </div>
+</div>
+
+<div id="style-guide-modal" class="modal hidden" onclick="if(event.target===this)closeStyleGuide()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>文风初始化引导</h3>
+      <button class="btn small tonal" onclick="closeStyleGuide()">取消</button>
+    </div>
+    <div class="form" style="padding:8px 22px 18px">
+      <p class="muted" style="margin-top:0">回答下面几个问题（可留空），生成后会填入文风文档，记得点「保存文风文档」生效。</p>
+      <label class="field-label">你的目标读者是谁？</label>
+      <input id="sg-audience" placeholder="例如：想学 AI 但没时间研究的上班族">
+      <label class="field-label">主要在哪些平台发？</label>
+      <input id="sg-platforms" placeholder="例如：小红书、公众号、短视频">
+      <label class="field-label">你希望是什么说话风格？</label>
+      <input id="sg-tone" placeholder="例如：口语化、直接、不端着">
+      <label class="field-label">一定要避免的表达？</label>
+      <input id="sg-avoid" placeholder="例如：月入过万、躺赚、首先其次最后">
+      <label class="field-label">你常用的术语/黑话？</label>
+      <input id="sg-keywords" placeholder="例如：Agent、工作流、AIGC">
+      <label class="field-label">你的硬红线？</label>
+      <input id="sg-redlines" placeholder="例如：不虚构案例、不承诺收益、不搬运洗稿">
+      <div class="toolbar" style="margin-top:14px">
+        <button class="btn filled" onclick="submitStyleGuide()">生成文风指南</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.25"></script>
+    <script src="/static/app.js?v=3.92"></script>
 </body>
 </html>

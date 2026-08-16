@@ -10,7 +10,7 @@ payload = {ver, uid, tier, exp, bind, features[], iat}
 - bind: 设备指纹（可空=未绑定，安装时按卖家签发为准）
 - features: 允许的功能清单（pro 未列明时视为全部 Pro 功能）
 
-私钥只存在于本机 ~/.xiaowuliao-license/，公钥随付费包分发（public_key.pem）。
+私钥只存在于本机 ~/.selfmedia-license/，公钥随付费包分发（public_key.pem）。
 """
 import base64
 import hashlib
@@ -26,7 +26,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
-LICENSE_DIR = os.path.expanduser("~/.xiaowuliao-license")
+LICENSE_DIR = os.path.expanduser(os.environ.get("SELFMEDIA_LICENSE_DIR", "~/.selfmedia-license"))
 PRIVATE_KEY_FILE = os.path.join(LICENSE_DIR, "license_private.pem")
 PUBLIC_KEY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public_key.pem")
 TOKEN_VERSION = 1
