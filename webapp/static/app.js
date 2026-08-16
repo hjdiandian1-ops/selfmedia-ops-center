@@ -3413,7 +3413,7 @@ window.loadSettings = loadSettings;
 const THEME_NAMES = {
   default: "蓝白默认", midnight: "深空暗黑",
   doraemon: "哆啦A梦（蓝胖）", cyberpunk: "赛博朋克·霓虹风暴",
-  hermes: "爱马仕橙奢侈风", chanel: "香奈儿小香风",
+  hermes: "爱马仕橙奢侈风", chanel: "香奈儿蔚蓝香精风",
 };
 
 function applyTheme(name) {
