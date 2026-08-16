@@ -127,7 +127,7 @@ function stateBadge(state) {
 
 // ---------- 视图切换 ----------
 const PAGE_META = {
-  overview: ["概览", "数据大盘 · 结果优先"],
+  overview: ["运营中台", "生产 + 分析 + 学习闭环 · 平台数据一眼掌握"],
   topics: ["选题", "热点雷达 → 选题推荐 → 采纳建任务"],
   themes: ["爆款跟踪", "小红书/抖音/公众号每日爆款 · AI 拆解 + 周经验包反哺流水线"],
   flywheel: ["数据飞轮", "写稿发布 → 账户反馈 → 市场学习 → 总结经验 → 反哺 Agent"],
@@ -152,49 +152,1207 @@ function switchView(name) {
 }
 window.switchView = switchView;
 
+// ---------- 首启引导 ----------
+function showOnboarding(force) {
+  if (!force && localStorage.getItem("selfmedia_onboarded")) return;
+  $("#onboard-modal").classList.remove("hidden");
+}
+window.showOnboarding = showOnboarding;
+
+function dismissOnboarding() {
+  localStorage.setItem("selfmedia_onboarded", "1");
+  $("#onboard-modal").classList.add("hidden");
+}
+window.dismissOnboarding = dismissOnboarding;
+
+function onboardGo(view) {
+  if (view === "settings") openSettings();
+  else switchView(view);
+  dismissOnboarding();
+}
+window.onboardGo = onboardGo;
+
 $$(".nav-item").forEach((btn) => btn.addEventListener("click", () => switchView(btn.dataset.view)));
 $("#btn-refresh-topics").addEventListener("click", (e) => runWithSpin(e.currentTarget, loadTopics));
 
+const TOPICS_STEPS = [
+  "正在抓取今日热榜…",
+  "正在抓取谷歌趋势…",
+  "正在抓取 X / 推楼热点…",
+  "正在清洗去重…",
+  "正在计算时效/热度/质量评分…",
+  "正在生成日选题与周选题…",
+];
+
+async function fetchHotTopics(btn) {
+  const box = $("#topics-progress");
+  const txt = $("#topics-progress-text");
+  box.classList.remove("hidden");
+  let i = 0;
+  txt.textContent = TOPICS_STEPS[0];
+  const timer = setInterval(() => {
+    i = (i + 1) % TOPICS_STEPS.length;
+    txt.textContent = TOPICS_STEPS[i];
+    txt.classList.remove("tp-pulse");
+    void txt.offsetWidth;
+    txt.classList.add("tp-pulse");
+  }, 1200);
+  try {
+    const d = await api("/api/pipeline/run", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "topics" }),
+    });
+    clearInterval(timer);
+    txt.classList.remove("tp-pulse");
+    if (d.ok) {
+      txt.textContent = "✅ 采集完成，已生成最新选题推荐";
+      toast("热点采集完成，选题推荐已更新");
+      loadTopics();
+    } else {
+      txt.textContent = "⚠️ 采集有阻塞项，见浏览器控制台";
+      toast("热点采集有阻塞项", false);
+      console.log((d.stdout || "") + (d.stderr || ""));
+    }
+  } catch (e) {
+    clearInterval(timer);
+    txt.classList.remove("tp-pulse");
+    txt.textContent = "❌ 采集失败：" + e.message;
+    toast("采集失败: " + e.message, false);
+  } finally {
+    if (btn) { btn.classList.remove("spinning"); btn.disabled = false; }
+    setTimeout(() => box.classList.add("hidden"), 4000);
+  }
+}
+window.fetchHotTopics = fetchHotTopics;
+
+let prefData = { preferences: { platforms: {} }, niches: {} };
+
+async function loadPrefData() {
+  try {
+    prefData = await api("/api/topics/preferences");
+    loadPrefChip();
+  } catch (e) { /* 偏好非必须，失败静默 */ }
+}
+
+function loadPrefChip() {
+  const sel = (prefData.preferences && prefData.preferences.platforms) || {};
+  const n = Object.values(sel).reduce((a, b) => a + (b ? b.length : 0), 0);
+  const chip = $("#pref-chip");
+  if (chip) chip.textContent = n ? `偏好：${n} 个赛道` : "";
+}
+
+let prefDraft = null;
+
+function prefSelectionsFor(pl) {
+  if (prefDraft && prefDraft[pl]) return prefDraft[pl];
+  return ((prefData.preferences || {}).platforms || {})[pl] || [];
+}
+
+function capturePrefDraft() {
+  if (!prefDraft) prefDraft = {};
+  const pl = currentPrefPlatform();
+  prefDraft[pl] = Array.from(document.querySelectorAll("#pref-niches input:checked")).map((i) => i.value);
+}
+
+function openPrefModal() {
+  prefDraft = null;
+  renderPrefPlats();
+  renderPrefNiches();
+  $("#pref-modal").classList.remove("hidden");
+}
+window.openPrefModal = openPrefModal;
+
+function closePrefModal() {
+  $("#pref-modal").classList.add("hidden");
+}
+window.closePrefModal = closePrefModal;
+
+function currentPrefPlatform() {
+  const btn = document.querySelector("#pref-plats .pref-plat.active");
+  return btn ? btn.dataset.platform : "小红书";
+}
+
+function renderPrefPlats() {
+  const cur = currentPrefPlatform();
+  document.querySelectorAll("#pref-plats .pref-plat").forEach((b) => {
+    const pl = b.dataset.platform;
+    const count = prefSelectionsFor(pl).length;
+    b.classList.toggle("active", pl === cur);
+    const c = b.querySelector(".pref-count");
+    if (c) c.textContent = count ? `${count}/5` : "";
+  });
+}
+
+function selectPrefPlatform(pl) {
+  capturePrefDraft();
+  document.querySelectorAll("#pref-plats .pref-plat").forEach((b) => {
+    b.classList.toggle("active", b.dataset.platform === pl);
+  });
+  renderPrefNiches();
+}
+window.selectPrefPlatform = selectPrefPlatform;
+
+function renderPrefNiches() {
+  const pl = currentPrefPlatform();
+  const names = Object.keys((prefData.niches || {})[pl] || {});
+  const selected = prefSelectionsFor(pl);
+  const box = $("#pref-niches");
+  if (!box) return;
+  if (!names.length) {
+    box.innerHTML = '<span class="muted">该平台暂无赛道词库</span>';
+    return;
+  }
+  box.innerHTML = names.map((n) => {
+    const checked = selected.includes(n);
+    const disabled = !checked && selected.length >= 5;
+    return `<label class="pref-niche ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}"><input type="checkbox" value="${esc(n)}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""} onchange="onPrefNicheChange(this)"> ${esc(n)}</label>`;
+  }).join("");
+}
+window.renderPrefNiches = renderPrefNiches;
+
+function onPrefNicheChange(el) {
+  capturePrefDraft();
+  const pl = currentPrefPlatform();
+  if ((prefDraft[pl] || []).length > 5) {
+    el.checked = false;
+    prefDraft[pl] = Array.from(document.querySelectorAll("#pref-niches input:checked")).map((i) => i.value);
+    toast("单平台最多选择 5 个赛道", false);
+    return;
+  }
+  renderPrefNiches();
+  renderPrefPlats();
+}
+window.onPrefNicheChange = onPrefNicheChange;
+
+async function savePrefs() {
+  capturePrefDraft();
+  const pl = currentPrefPlatform();
+  const names = prefDraft ? (prefDraft[pl] || []) : [];
+  if (names.length > 5) {
+    toast("单平台最多选择 5 个赛道", false);
+    return;
+  }
+  const platforms = JSON.parse(JSON.stringify((prefData.preferences || {}).platforms || {}));
+  platforms[pl] = names;
+  try {
+    const d = await api("/api/topics/preferences", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platforms }),
+    });
+    prefData.preferences = d.preferences;
+    loadPrefChip();
+    toast("偏好已保存，下次热点采集按偏好过滤");
+    closePrefModal();
+  } catch (e) {
+    toast("保存偏好失败: " + e.message, false);
+  }
+}
+window.savePrefs = savePrefs;
+
+async function clearPrefs() {
+  try {
+    const d = await api("/api/topics/preferences", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platforms: {} }),
+    });
+    prefData.preferences = d.preferences;
+    loadPrefChip();
+    prefDraft = null;
+    toast("已清除偏好，恢复默认模式");
+    closePrefModal();
+  } catch (e) {
+    toast("清除失败: " + e.message, false);
+  }
+}
+window.clearPrefs = clearPrefs;
+
 // ---------- 概览 ----------
+let ovCache = null;
+let ovStatsCache = null;
+let currentOvTab = "overview";
+let lastStatsTrend = [];
+let dashPeriod = "day";
+let panelEditMode = false;
+const ovSeriesSel = { overview: "reads", 小红书: "reads", 公众号: "reads", 短视频: "reads" };
+
 async function loadOverview() {
   try {
-    const d = await api("/api/stats");
-    $("#topbar-meta").textContent = "更新于 " + (d.generated_at || "");
-    const kpis = [
-      ["任务总数", d.jobs_total], ["已发布任务", d.published_jobs],
-      ["爆款数", d.hits], ["总阅读", fmtNum(d.total_reads)],
-      ["平均互动率", d.total_reads ? pct(d.avg_engagement) : "—"],
-      ["待回收", d.pending_recycle],
-    ];
-    $("#kpi-cards").innerHTML = kpis.map(([lbl, num]) =>
-      `<div class="kpi"><div class="num ${String(num).length > 5 ? "small" : ""}">${esc(num)}</div><div class="lbl">${esc(lbl)}</div></div>`).join("");
-
-    const states = Object.entries(d.by_state);
-    const total = d.jobs_total || 1;
-    $("#state-bars").innerHTML = states.length
-      ? states.map(([s, n]) => `
-        <div class="sbar">
-          <span class="name">${esc(STATE_LABELS[s] || s)}</span>
-          <div class="track"><div class="fill" style="width:${(n / total * 100).toFixed(0)}%"></div></div>
-          <span class="cnt">${n}</span>
-        </div>`).join("")
-      : '<span class="muted">暂无任务</span>';
-
-    const maxPubs = Math.max(1, ...d.trend.map((t) => t.publish_count || 0));
-    $("#trend-chart").innerHTML = d.trend.map((t) => `
-      <div class="tcol" title="${t.reads ? `阅读 ${fmtNum(t.reads)}` : "暂无回填阅读"}">
-        <span class="val">${t.publish_count ? t.publish_count + " 篇" : ""}</span>
-        <div class="bar" style="height:${Math.max(4, Math.round((t.publish_count || 0) / maxPubs * 92))}%">
-          ${t.hits ? '<span class="hits" title="爆款"></span>' : ""}
-        </div>
-        <span class="day">${esc(t.label)}</span>
-      </div>`).join("");
-
-    $("#recent-table").innerHTML = renderRows(d.recent);
-    loadDashboard();
+    const plats = enabledPlatforms();
+    const q = "platforms=" + encodeURIComponent(plats.join(","));
+    const [stats, dash] = await Promise.all([
+      api("/api/stats?" + q),
+      api("/api/dashboard?period=" + dashPeriod + "&" + q),
+    ]);
+    ovCache = dash;
+    ovStatsCache = stats;
+    lastStatsTrend = stats.trend || [];
+    $$("#ov-tabs .tab").forEach((b) => {
+      const hidden = b.dataset.ov !== "overview" && !plats.includes(b.dataset.ov);
+      b.classList.toggle("hidden", hidden);
+    });
+    if (currentOvTab !== "overview" && !plats.includes(currentOvTab)) {
+      currentOvTab = "overview";
+      $$("#ov-tabs .tab").forEach((b) => b.classList.toggle("active", b.dataset.ov === "overview"));
+    }
+    $("#topbar-meta").textContent = "更新于 " + (dash.generated_at || stats.generated_at || "");
+    renderGlobalKpis(stats, dash);
+    renderOverviewPane(stats, dash);
+    if (currentOvTab !== "overview") renderPlatformPane(currentOvTab);
   } catch (e) {
     toast("概览加载失败: " + e.message, false);
   }
+}
+
+function enabledPlatforms() {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_platforms") || "null");
+    if (Array.isArray(v) && v.length) {
+      const all = ["小红书", "公众号", "短视频"];
+      const ok = v.filter((p) => all.includes(p));
+      if (ok.length) return ok;
+    }
+  } catch (e) { /* ignore */ }
+  return ["小红书", "公众号", "短视频"];
+}
+
+function setDashPeriod(p) {
+  dashPeriod = p;
+  $$("#period-tabs .tab").forEach((b) => b.classList.toggle("active", b.dataset.period === p));
+  loadOverview();
+}
+window.setDashPeriod = setDashPeriod;
+
+function openPlatformPrefs() {
+  const plats = enabledPlatforms();
+  $("#pfp-xhs").checked = plats.includes("小红书");
+  $("#pfp-gzh").checked = plats.includes("公众号");
+  $("#pfp-video").checked = plats.includes("短视频");
+  $("#platform-prefs-modal").classList.remove("hidden");
+}
+window.openPlatformPrefs = openPlatformPrefs;
+
+function closePlatformPrefs() {
+  $("#platform-prefs-modal").classList.add("hidden");
+}
+window.closePlatformPrefs = closePlatformPrefs;
+
+function savePlatformPrefs() {
+  const plats = [];
+  if ($("#pfp-xhs").checked) plats.push("小红书");
+  if ($("#pfp-gzh").checked) plats.push("公众号");
+  if ($("#pfp-video").checked) plats.push("短视频");
+  localStorage.setItem("selfmedia_platforms", JSON.stringify(plats));
+  closePlatformPrefs();
+  toast("平台设置已保存" + (plats.length ? "" : "，至少保留一个平台更合理"));
+  loadOverview();
+}
+window.savePlatformPrefs = savePlatformPrefs;
+
+function renderGlobalKpis(stats, dash) {
+  const isPlatform = currentOvTab !== "overview";
+  let kpis;
+  if (isPlatform) {
+    const t = ((dash.platforms || {})[currentOvTab] || {}).totals || {};
+    kpis = [
+      ["任务总数", t.publish_count ?? 0],
+      ["已发布任务", t.backfill_count ?? 0],
+      ["爆款数", t.hits ?? 0],
+      ["总阅读", fmtNum(t.total_reads ?? 0)],
+      ["平均互动率", t.engagement == null ? "—" : (t.engagement * 100).toFixed(2) + "%"],
+      ["粉丝数", t.followers ?? "—"],
+    ];
+  } else {
+    kpis = [
+      ["任务总数", stats.jobs_total], ["已发布任务", stats.published_jobs],
+      ["爆款数", stats.hits], ["总阅读", fmtNum(stats.total_reads)],
+      ["平均互动率", stats.total_reads ? pct(stats.avg_engagement) : "—"],
+      ["粉丝数", stats.followers_total ?? "—"],
+    ];
+  }
+  $("#kpi-cards").innerHTML = kpis.map(([lbl, num]) =>
+    `<div class="kpi"><div class="num ${String(num).length > 5 ? "small" : ""}">${esc(num)}</div><div class="lbl">${esc(lbl)}</div></div>`).join("");
+}
+
+const OV_TITLES = {
+  compare: "平台细分对比",
+  focus: "本周最重要的一件事",
+  summary: "生产与发布汇总",
+  recent: "最近发布表现",
+};
+
+function overviewLayout() {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_overview_panel") || "null");
+    if (Array.isArray(v) && v.length) return v.filter((id) => OV_TITLES[id]);
+  } catch (e) { /* ignore */ }
+  return ["compare", "focus", "summary", "recent"];
+}
+
+function saveOverviewLayout(layout) {
+  try {
+    localStorage.setItem("selfmedia_overview_panel", JSON.stringify(layout));
+  } catch (e) { /* ignore */ }
+}
+
+function addOverviewModule(id) {
+  const layout = overviewLayout();
+  if (!layout.includes(id)) {
+    layout.push(id);
+    saveOverviewLayout(layout);
+    renderOverviewPane(ovStatsCache || {}, ovCache || {});
+  }
+}
+window.addOverviewModule = addOverviewModule;
+
+function removeOverviewModule(id) {
+  saveOverviewLayout(overviewLayout().filter((x) => x !== id));
+  renderOverviewPane(ovStatsCache || {}, ovCache || {});
+}
+window.removeOverviewModule = removeOverviewModule;
+
+function renderOverviewPane(stats, d) {
+  const box = $("#ov-overview");
+  if (!box) return;
+  const ov = d.overview || {};
+  const dx = d.diagnostics || {};
+  const noteParts = [];
+  if (dx.generated_at) noteParts.push("诊断更新于 " + dx.generated_at.slice(5, 16));
+  if (dx.previous_at) noteParts.push("上次 " + dx.previous_at.slice(5, 16));
+  const layout = overviewLayout();
+  const missing = Object.keys(OV_TITLES).filter((id) => !layout.includes(id));
+  box.innerHTML = `
+    <div class="panel-toolbar">
+      <button class="btn small tonal" onclick="togglePanelEdit()">${panelEditMode ? "✓ 完成" : "编辑组件"}</button>
+    </div>
+    <div id="ov-modules">
+      ${layout.map((id) => `
+        <div class="pf-module" data-module="${esc(id)}" ${panelEditMode ? 'draggable="true"' : ""}>
+          <div class="pf-module-head">
+            <b>${esc(OV_TITLES[id])}</b>
+            ${panelEditMode ? `
+              <span class="pf-drag" title="按住拖动排序">⠿</span>
+              <span class="muted">拖动排序</span>
+              <button class="btn tiny tonal" onclick="removeOverviewModule('${esc(id)}')">删除</button>` : ""}
+          </div>
+          <div class="pf-module-body" data-body="${esc(id)}"></div>
+        </div>`).join("")}
+    </div>
+    ${panelEditMode ? `
+      <details class="card" style="padding:12px 16px">
+        <summary style="cursor:pointer;font-weight:600">＋ 添加组件</summary>
+        <div class="add-modules">
+          ${missing.length ? missing.map((id) =>
+            `<button class="btn tiny tonal" onclick="addOverviewModule('${esc(id)}')">${esc(OV_TITLES[id])}</button>`).join("")
+            : '<span class="muted">全部组件都已显示</span>'}
+        </div>
+      </details>` : ""}`;
+  layout.forEach((id) => fillOverviewModule(id, stats, d, noteParts));
+  bindModuleDrag("overview", "#ov-modules");
+}
+
+function fillOverviewModule(id, stats, d, noteParts) {
+  const body = $(`#ov-overview .pf-module[data-module="${id}"] .pf-module-body`);
+  if (!body) return;
+  const ov = d.overview || {};
+  if (id === "compare") {
+    body.innerHTML = `
+      ${noteParts.length ? `<div class="muted" style="margin-bottom:8px">${esc(noteParts.join(" · "))}</div>` : ""}
+      <div id="ov-compare" class="compare-chart"></div>
+      <div id="ov-platform-cards" class="agent-grid" style="margin-top:14px"></div>`;
+    renderPlatformCompareChart(d.platforms || {});
+    renderPlatformCards(d.platforms || {});
+  } else if (id === "focus") {
+    body.innerHTML = `<div class="focus-card">${esc(ov.focus || "先回填/导入数据后开始诊断。")}</div>`;
+  } else if (id === "summary") {
+    const states = Object.entries(stats.by_state || {});
+    const total = stats.jobs_total || 1;
+    body.innerHTML = `
+      <div class="grid-2">
+        <div>
+          <h4 class="pool-title">任务状态分布</h4>
+          <div id="state-bars" class="state-bars">
+            ${states.length
+              ? states.map(([s, n]) => `
+                <div class="sbar">
+                  <span class="name">${esc(STATE_LABELS[s] || s)}</span>
+                  <div class="track"><div class="fill" style="width:${(n / total * 100).toFixed(0)}%"></div></div>
+                  <span class="cnt">${n}</span>
+                </div>`).join("")
+              : '<span class="muted">暂无任务</span>'}
+          </div>
+        </div>
+        <div>
+          <h4 class="pool-title">发布趋势</h4>
+          <div id="ov-trend" class="line-chart-wrap"></div>
+          <div class="series-tabs" id="ov-series"></div>
+        </div>
+      </div>`;
+    renderOverviewTrend();
+  } else if (id === "recent") {
+    body.innerHTML = `
+      <div class="muted" style="margin-bottom:8px">最新 10 条 · 自动快评</div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>时间</th><th>标题</th><th>平台</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th><th>快评</th></tr></thead>
+          <tbody id="recent-table"></tbody>
+        </table>
+      </div>`;
+    renderRecentRows($("#recent-table"), ov.recent || []);
+  }
+}
+
+function renderOverviewTrend() {
+  const dates = new Set();
+  const byDate = {};
+  Object.values(ovCache.platforms || {}).forEach((p) => {
+    const tr = p.trend || {};
+    (tr.dates || []).forEach((dd, i) => {
+      dates.add(dd);
+      byDate[dd] = byDate[dd] || { publish: 0, reads: 0, followers: 0, readsEng: 0 };
+      byDate[dd].publish += tr.publishes?.[i] || 0;
+      byDate[dd].reads += tr.reads?.[i] || 0;
+      byDate[dd].followers += tr.followers?.[i] || 0;
+      if (tr.engagement?.[i] != null && tr.reads?.[i]) {
+        byDate[dd].readsEng += tr.engagement[i] * tr.reads[i];
+      }
+    });
+  });
+  const sorted = Array.from(dates).sort();
+  const raw = {
+    dates: sorted,
+    labels: sorted.map((dd) => dd.slice(5)),
+    publishes: sorted.map((dd) => byDate[dd].publish),
+    reads: sorted.map((dd) => byDate[dd].reads),
+    engagement: sorted.map((dd) => byDate[dd].reads ? byDate[dd].readsEng / byDate[dd].reads : null),
+    followers: sorted.map((dd) => byDate[dd].followers),
+  };
+  const bucketed = bucketTrend(raw, dashPeriod);
+  const c = cumulateTrend(bucketed);
+  const series = {
+    publishes: { label: "累计发布", data: c.publishes },
+    reads: { label: "累计阅读/播放", data: c.reads },
+    followers: { label: "累计涨粉", data: c.followers },
+  };
+  const keys = chartSeriesFor("overview");
+  $("#ov-series").innerHTML = Object.entries(series).map(([k, s]) =>
+    `<button class="tab ${keys.includes(k) ? "active" : ""}" onclick="toggleChartSeries('overview','${k}')">${s.label}</button>`).join("");
+  svgLineChart($("#ov-trend"), bucketed.labels, series, keys);
+}
+
+function setOverviewSeries(k) {
+  ovSeriesSel.overview = k;
+  renderOverviewTrend();
+}
+window.setOverviewSeries = setOverviewSeries;
+
+function bucketTrend(raw, period) {
+  const keys = [];
+  const byKey = {};
+  const engW = {};
+  const labels = [];
+  const seen = {};
+  (raw.labels || []).forEach((lbl, i) => {
+    const date = (raw.dates ? raw.dates[i] : "") || lbl;
+    const key = dateKey(date, period);
+    if (!(key in seen)) {
+      seen[key] = true;
+      keys.push(key);
+      byKey[key] = { publish: 0, reads: 0, followers: 0, readsEng: 0 };
+      labels.push(key);
+    }
+    byKey[key].publish += raw.publishes?.[i] || 0;
+    byKey[key].reads += raw.reads?.[i] || 0;
+    byKey[key].followers += raw.followers?.[i] || 0;
+    if (raw.engagement?.[i] != null && raw.reads?.[i]) {
+      byKey[key].readsEng += raw.engagement[i] * raw.reads[i];
+    }
+  });
+  return {
+    labels,
+    publishes: keys.map((k) => byKey[k].publish),
+    reads: keys.map((k) => byKey[k].reads),
+    followers: keys.map((k) => byKey[k].followers),
+    engagement: keys.map((k) => byKey[k].reads ? +(byKey[k].readsEng / byKey[k].reads * 100).toFixed(2) : null),
+    _reads: keys.map((k) => byKey[k].reads),
+    _readsEng: keys.map((k) => byKey[k].readsEng),
+  };
+}
+
+function cumulateTrend(b) {
+  let pp = 0, pr = 0, pf = 0, pw = 0, pr2 = 0;
+  return {
+    labels: b.labels,
+    publishes: b.publishes.map((v) => (pp += v)),
+    reads: b.reads.map((v) => (pr += v)),
+    followers: b.followers.map((v) => (pf += v)),
+    engagement: b._reads.map((r, i) => {
+      pw += b._readsEng[i] || 0;
+      pr2 += r || 0;
+      return pr2 ? +(pw / pr2 * 100).toFixed(2) : null;
+    }),
+  };
+}
+
+function dateKey(date, period) {
+  if (!date) return date;
+  if (period === "day") return date.slice(5);
+  if (period === "month") return date.slice(0, 7).replace("-", "年") + "月";
+  if (period === "year") return date.slice(0, 4) + "年";
+  // week：ISO 周
+  const d = new Date(date + "T00:00:00");
+  const day = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - day + 3);
+  const firstThu = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const firstDay = (firstThu.getUTCDay() + 6) % 7;
+  firstThu.setUTCDate(firstThu.getUTCDate() - firstDay + 3);
+  const week = 1 + Math.round((d - firstThu) / (7 * 86400000));
+  return d.getUTCFullYear() + "-W" + String(week).padStart(2, "0");
+}
+
+function renderPlatformCompareChart(platforms) {
+  const box = $("#ov-compare");
+  if (!box) return;
+  const order = ["小红书", "公众号", "短视频"].filter((p) => platforms[p]);
+  if (!order.length) {
+    box.innerHTML = '<span class="muted">暂无平台数据，先在「平台管理」中启用平台并回填数据。</span>';
+    return;
+  }
+  const metrics = [
+    { key: "total_reads", label: "阅读/播放", fmt: (v) => fmtNum(v) },
+    { key: "followers", label: "粉丝数", fmt: (v) => fmtNum(v) },
+    { key: "hits", label: "爆款数", fmt: (v) => v },
+    { key: "engagement", label: "互动率", fmt: (v) => v == null ? "—" : (v * 100).toFixed(1) + "%" },
+  ];
+  const W = 760, H = 300, PAD_L = 12, PAD_R = 12, PAD_T = 26, PAD_B = 46;
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+  const groupW = innerW / metrics.length;
+  const barW = Math.min(40, groupW * 0.24);
+  const maxBy = {};
+  metrics.forEach((m) => {
+    let max = 0;
+    order.forEach((pl) => {
+      const t = (platforms[pl] || {}).totals || {};
+      const v = m.key === "engagement" ? t.engagement : t[m.key] || 0;
+      if (typeof v === "number" && v > max) max = v;
+    });
+    maxBy[m.key] = max || 1;
+  });
+  const bars = metrics.map((m, gi) => {
+    const gx = PAD_L + gi * groupW + groupW / 2;
+    return order.map((pl, pi) => {
+      const t = (platforms[pl] || {}).totals || {};
+      const v = m.key === "engagement" ? t.engagement : t[m.key] || 0;
+      const h = (typeof v === "number" && v > 0) ? Math.max(3, v / maxBy[m.key] * innerH) : 0;
+      const x = gx + (pi - (order.length - 1) / 2) * (barW + 6) - barW / 2;
+      const y = PAD_T + innerH - h;
+      const val = `<text x="${(x + barW / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" class="gbar-val">${esc(m.fmt(v))}</text>`;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="4" class="gbar ${esc(pl)}"/>${h ? val : ""}`;
+    }).join("");
+  }).join("");
+  const metricLabels = metrics.map((m, gi) => {
+    const gx = PAD_L + gi * groupW + groupW / 2;
+    return `<text x="${gx.toFixed(1)}" y="${H - 14}" text-anchor="middle" class="gbar-label">${esc(m.label)}</text>`;
+  }).join("");
+  const legend = order.map((pl) =>
+    `<span class="legend-item"><i class="legend-dot ${esc(pl)}"></i>${esc(pl)}</span>`).join("");
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="compare-svg">${bars}${metricLabels}</svg><div class="legend">${legend}</div>`;
+}
+
+function renderPlatformCards(platforms) {
+  const box = $("#ov-platform-cards");
+  if (!box) return;
+  const icons = { "公众号": "📰", "小红书": "📕", "短视频": "🎬" };
+  box.innerHTML = Object.entries(platforms).map(([pl, p]) => {
+    const t = p.totals || {};
+    return `
+      <div class="agent-card">
+        <div class="head"><span class="emoji">${icons[pl] || "📊"}</span><span class="role">${esc(pl)}</span></div>
+        <div class="resp">发布 <b>${t.publish_count ?? 0}</b> ｜ 回填 <b>${t.backfill_count ?? 0}</b> ｜ 爆款 <b>${t.hits ?? 0}</b></div>
+        <div class="kv">阅读/播放 <b>${fmtNum(t.total_reads ?? 0)}</b> ｜ 互动率 <b>${t.engagement == null ? "—" : (t.engagement * 100).toFixed(2) + "%"}</b></div>
+        <div class="kv">粉丝数 <b>${t.followers ?? "—"}</b></div>
+      </div>`;
+  }).join("") || '<span class="muted">暂无平台数据</span>';
+}
+
+function switchOverviewTab(name) {
+  currentOvTab = name;
+  $$("#ov-tabs .tab").forEach((b) => b.classList.toggle("active", b.dataset.ov === name));
+  $("#ov-overview").classList.toggle("hidden", name !== "overview");
+  $("#ov-platform").classList.toggle("hidden", name === "overview");
+  renderGlobalKpis(ovStatsCache || {}, ovCache || {});
+  if (name !== "overview") renderPlatformPane(name);
+}
+window.switchOverviewTab = switchOverviewTab;
+
+function renderPlatformPane(name) {
+  const p = ovCache && ovCache.platforms && ovCache.platforms[name];
+  if (!p) {
+    $("#ov-platform").innerHTML = '<div class="card"><span class="muted">暂无数据，先采集/回填。</span></div>';
+    return;
+  }
+  const metricsHtml = (p.metrics || []).map((m) => `
+    <div class="kpi">
+      <div class="num small">${m.value == null ? "—" : esc(fmtNum(m.value)) + (m.unit ? `<small class="unit">${esc(m.unit)}</small>` : "")}</div>
+      <div class="lbl">${esc(m.label)} <span class="muted">基准 ${esc(m.benchmark_text)}</span></div>
+    </div>`).join("");
+  const t = p.totals || {};
+  const wins = (p.metrics || []).filter((m) => m.available && m.score != null && m.score >= 100);
+  const winsHtml = [
+    ...wins.map((m) => `<div class="kv">✅ ${esc(m.label)}：<b>${esc(m.value)}${esc(m.unit || "")}</b>（优于基准 ${esc(m.benchmark_text)}）</div>`),
+    ...(t.hits ? [`<div class="kv">🔥 爆款 <b>${t.hits}</b> 篇</div>`] : []),
+  ].join("") || '<span class="muted">暂无突出项，继续积累数据后自动给出。</span>';
+  const layout = panelLayout(name);
+  const missing = Object.keys(PANEL_TITLES).filter((id) => !layout.includes(id));
+  $("#ov-platform").innerHTML = `
+    <div class="panel-toolbar">
+      <button class="btn small tonal" onclick="togglePanelEdit()">${panelEditMode ? "✓ 完成" : "编辑组件"}</button>
+    </div>
+    <div id="pf-modules">
+      ${layout.map((id) => `
+        <div class="pf-module" data-module="${esc(id)}" ${panelEditMode ? 'draggable="true"' : ""}>
+          <div class="pf-module-head">
+            <b>${esc(PANEL_TITLES[id])}</b>
+            ${panelEditMode ? `
+              <span class="pf-drag" title="按住拖动排序">⠿</span>
+              <span class="muted">拖动排序</span>
+              <button class="btn tiny tonal" onclick="removePanelModule('${esc(name)}','${esc(id)}')">删除</button>` : ""}
+          </div>
+          <div class="pf-module-body" data-body="${esc(id)}"></div>
+        </div>`).join("")}
+    </div>
+    ${panelEditMode ? `
+      <details class="card" style="padding:12px 16px">
+        <summary style="cursor:pointer;font-weight:600">＋ 添加组件</summary>
+        <div class="add-modules">
+          ${missing.length ? missing.map((id) =>
+            `<button class="btn tiny tonal" onclick="addPanelModule('${esc(name)}','${esc(id)}')">${esc(PANEL_TITLES[id])}</button>`).join("")
+            : '<span class="muted">全部组件都已显示</span>'}
+        </div>
+      </details>` : ""}`;
+  layout.forEach((id) => fillPanelModule(name, id, p));
+  bindPanelDrag(name);
+}
+
+function togglePanelEdit() {
+  panelEditMode = !panelEditMode;
+  if (currentOvTab === "overview") renderOverviewPane(ovStatsCache || {}, ovCache || {});
+  else renderPlatformPane(currentOvTab);
+}
+window.togglePanelEdit = togglePanelEdit;
+
+const PANEL_TITLES = {
+  tri: "诊断",
+  kpis: "核心指标", recent: "最近发布表现", trend: "趋势",
+  xhs_detail: "小红书式数据分析（导出明细）",
+};
+
+function defaultPanelLayout(platform) {
+  if (platform === "小红书") return ["tri", "kpis", "recent", "xhs_detail"];
+  return ["tri", "kpis", "trend", "recent"];
+}
+
+function panelLayout(platform) {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_panel") || "{}");
+    if (Array.isArray(v[platform]) && v[platform].length) {
+      return v[platform].filter((id) => PANEL_TITLES[id]);
+    }
+  } catch (e) { /* ignore */ }
+  return defaultPanelLayout(platform);
+}
+
+function savePanelLayout(platform, layout) {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_panel") || "{}");
+    v[platform] = layout;
+    localStorage.setItem("selfmedia_panel", JSON.stringify(v));
+  } catch (e) { /* ignore */ }
+}
+
+function addPanelModule(platform, id) {
+  const layout = panelLayout(platform);
+  if (!layout.includes(id)) {
+    layout.push(id);
+    savePanelLayout(platform, layout);
+    renderPlatformPane(platform);
+  }
+}
+window.addPanelModule = addPanelModule;
+
+function reorderPanelModule(platform, from, to) {
+  const layout = panelLayout(platform);
+  const i = layout.indexOf(from);
+  if (i < 0) return;
+  layout.splice(i, 1);
+  const j = layout.indexOf(to);
+  layout.splice(j < 0 ? layout.length : j, 0, from);
+  savePanelLayout(platform, layout);
+  renderPlatformPane(platform);
+}
+window.reorderPanelModule = reorderPanelModule;
+
+function removePanelModule(platform, id) {
+  savePanelLayout(platform, panelLayout(platform).filter((x) => x !== id));
+  renderPlatformPane(platform);
+}
+window.removePanelModule = removePanelModule;
+
+function bindModuleDrag(platform, boxId) {
+  const box = $(boxId);
+  if (!box) return;
+  const getLayout = platform === "overview" ? overviewLayout : () => panelLayout(platform);
+  const saveLayout = platform === "overview"
+    ? saveOverviewLayout
+    : (l) => savePanelLayout(platform, l);
+  const rerender = platform === "overview"
+    ? () => renderOverviewPane(ovStatsCache || {}, ovCache || {})
+    : () => renderPlatformPane(platform);
+  box.addEventListener("dragstart", (e) => {
+    const m = e.target.closest(".pf-module");
+    if (!m) return;
+    e.dataTransfer.setData("text/plain", m.dataset.module);
+    m.classList.add("dragging");
+  });
+  box.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    const m = e.target.closest(".pf-module");
+    box.querySelectorAll(".pf-module").forEach((x) => x.classList.remove("drop-target"));
+    if (m) m.classList.add("drop-target");
+  });
+  box.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const from = e.dataTransfer.getData("text/plain");
+    const to = e.target.closest(".pf-module");
+    if (!from || !to) return;
+    const layout = getLayout();
+    const i = layout.indexOf(from);
+    if (i < 0) return;
+    layout.splice(i, 1);
+    const j = layout.indexOf(to.dataset.module);
+    layout.splice(j < 0 ? layout.length : j, 0, from);
+    saveLayout(layout);
+    rerender();
+  });
+  box.addEventListener("dragend", () => {
+    box.querySelectorAll(".pf-module").forEach((x) => x.classList.remove("dragging", "drop-target"));
+  });
+}
+
+function bindPanelDrag(platform) {
+  bindModuleDrag(platform, "#pf-modules");
+}
+
+function fillPanelModule(platform, id, p) {
+  const body = $(`#ov-platform .pf-module[data-module="${id}"] .pf-module-body`);
+  if (!body) return;
+  if (id === "tri") {
+    body.innerHTML = `
+      <div class="tri-grid">
+        <div class="card">
+          <div class="card-head"><h3>做得好的</h3></div>
+          <div class="stack">${winsHtmlFor(p)}</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>存在的问题</h3></div>
+          <div id="pf-weak" class="stack"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>下一步要做的事情</h3></div>
+          <div class="focus-card">${esc(p.focus || "—")}</div>
+        </div>
+      </div>`;
+    renderWeakCompact($("#pf-weak"), p.weak_points || [], platform);
+  } else if (id === "kpis") {
+    body.innerHTML = `<div class="kpi-grid">${metricsHtmlFor(p)}</div>`;
+  } else if (id === "trend") {
+    body.innerHTML = '<div id="pf-trend" class="line-chart-wrap"></div><div class="series-tabs" id="pf-series"></div>';
+    renderPlatformTrend(platform, p.trend);
+  } else if (id === "recent") {
+    body.innerHTML = `<div class="table-wrap"><table class="table">
+      <thead><tr><th>时间</th><th>标题</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th><th>快评</th></tr></thead>
+      <tbody id="pf-recent"></tbody></table></div>`;
+    renderRecentRows($("#pf-recent"), p.recent || [], false);
+  } else if (id === "xhs_detail") {
+    body.innerHTML = xhsDashCardHtml();
+    dashState.data = ovCache;
+    dashState.weakPoints = ovCache.weak_points || [];
+    renderDash();
+    const files = (ovCache.sources || {}).dashboard_files || {};
+    $("#dash-note").textContent =
+      `更新于 ${ovCache.generated_at || ""} · 看板导出 ${Object.values(files).filter(Boolean).length}/4 · 笔记明细 ${(ovCache.sources || {}).notes_in_range || 0} 条`;
+  }
+}
+
+function winsHtmlFor(p) {
+  const wins = (p.metrics || []).filter((m) => m.available && m.score != null && m.score >= 100);
+  const t = p.totals || {};
+  return [
+    ...wins.map((m) => `<div class="kv">✅ ${esc(m.label)}：<b>${esc(m.value)}${esc(m.unit || "")}</b>（优于基准 ${esc(m.benchmark_text)}）</div>`),
+    ...(t.hits ? [`<div class="kv">🔥 爆款 <b>${t.hits}</b> 篇</div>`] : []),
+  ].join("") || '<span class="muted">暂无突出项，继续积累数据后自动给出。</span>';
+}
+
+function metricsHtmlFor(p) {
+  return (p.metrics || []).map((m) => `
+    <div class="kpi">
+      <div class="num small">${m.value == null ? "—" : esc(fmtNum(m.value)) + (m.unit ? `<small class="unit">${esc(m.unit)}</small>` : "")}</div>
+      <div class="lbl">${esc(m.label)} <span class="muted">基准 ${esc(m.benchmark_text)}</span></div>
+    </div>`).join("");
+}
+
+function xhsDashCardHtml() {
+  return `
+    <div class="xhs-dash-head">
+      <div class="tabs" id="dash-tabs" style="margin-bottom:0">
+        <button class="tab active" data-dash="watch" onclick="switchDashTab('watch')">观看</button>
+        <button class="tab" data-dash="interact" onclick="switchDashTab('interact')">互动</button>
+        <button class="tab" data-dash="follower" onclick="switchDashTab('follower')">涨粉</button>
+        <button class="tab" data-dash="publish" onclick="switchDashTab('publish')">发布</button>
+      </div>
+      <span class="muted" id="dash-note"></span>
+    </div>
+    <div class="kpi-grid" id="dash-kpis"></div>
+    <div class="grid-2">
+      <div id="dash-funnel" class="dash-panel"></div>
+      <div id="dash-trend" class="dash-panel">
+        <div class="card-head"><h3>趋势</h3></div>
+        <div class="trend-chart" id="dash-trend-chart"></div>
+      </div>
+      <div id="dash-extra" class="grid-2" style="margin-top:18px"></div>
+    </div>`;
+}
+
+function renderPlatformTrend(name, trend) {
+  const bucketed = bucketTrend({
+    dates: trend.dates || [],
+    labels: trend.labels || [],
+    publishes: trend.publishes || [],
+    reads: trend.reads || [],
+    engagement: trend.engagement || [],
+    followers: trend.followers || [],
+  }, dashPeriod);
+  const c = cumulateTrend(bucketed);
+  const seriesMap = {
+    publishes: { label: "累计发布", data: c.publishes },
+    reads: { label: "累计阅读/播放", data: c.reads },
+    followers: { label: "累计涨粉", data: c.followers },
+  };
+  const keys = chartSeriesFor(name);
+  $("#pf-series").innerHTML = Object.entries(seriesMap).map(([k, s]) =>
+    `<button class="tab ${keys.includes(k) ? "active" : ""}" onclick="toggleChartSeries('${esc(name)}','${k}')">${s.label}</button>`).join("");
+  svgLineChart($("#pf-trend"), bucketed.labels, seriesMap, keys);
+}
+
+function setPlatformSeries(platform, key) {
+  ovSeriesSel[platform] = key;
+  if (ovCache && ovCache.platforms && ovCache.platforms[platform]) {
+    renderPlatformTrend(platform, ovCache.platforms[platform].trend);
+  }
+}
+window.setPlatformSeries = setPlatformSeries;
+
+function chartSeriesFor(scope) {
+  const all = ["publishes", "reads", "followers"];
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_chart_series") || "{}");
+    if (Array.isArray(v[scope]) && v[scope].length) {
+      return v[scope].filter((k) => all.includes(k));
+    }
+  } catch (e) { /* ignore */ }
+  return all;
+}
+
+function saveChartSeries(scope, keys) {
+  try {
+    const v = JSON.parse(localStorage.getItem("selfmedia_chart_series") || "{}");
+    v[scope] = keys;
+    localStorage.setItem("selfmedia_chart_series", JSON.stringify(v));
+  } catch (e) { /* ignore */ }
+}
+
+function toggleChartSeries(scope, key) {
+  const cur = chartSeriesFor(scope);
+  const next = cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
+  if (!next.length) return; // 至少保留一条
+  saveChartSeries(scope, next);
+  if (scope === "overview") renderOverviewTrend();
+  else if (ovCache && ovCache.platforms && ovCache.platforms[scope]) {
+    renderPlatformTrend(scope, ovCache.platforms[scope].trend);
+  }
+}
+window.toggleChartSeries = toggleChartSeries;
+
+function svgLineChart(el, labels, seriesMap, selectedKeys) {
+  if (!el) return;
+  const keys = (selectedKeys || []).filter((k) => seriesMap[k] && (seriesMap[k].data || []).some((v) => v != null && v > 0));
+  if (!keys.length) {
+    el.innerHTML = '<span class="muted">暂无趋势数据</span>';
+    return;
+  }
+  const W = 600, H = 190, PAD = 34;
+  const step = labels.length > 1 ? (W - PAD * 2) / (labels.length - 1) : W - PAD * 2;
+  const useMulti = keys.length > 1;
+  const raw = keys.map((k) => ({
+    k, label: seriesMap[k].label,
+    arr: seriesMap[k].data || [],
+    max: Math.max(1, ...(seriesMap[k].data || []).map((v) => Number(v || 0))),
+  }));
+  const globalMax = Math.max(...raw.map((g) => g.max));
+  const geoms = raw.map((g) => ({
+    ...g,
+    pts: g.arr.map((v, i) => [PAD + i * step, H - PAD - (Number(v || 0) / globalMax) * (H - PAD * 2)]),
+  }));
+  const activeGeom = geoms[0];
+  const stepV = niceStep(globalMax / 4);
+  const tickVals = [0, 1, 2, 3, 4].map((i) => i * stepV).filter((t) => t <= globalMax);
+  if (tickVals[tickVals.length - 1] < globalMax - stepV / 2) tickVals.push(globalMax);
+  const gridAll = tickVals.map((t) => {
+    const y = H - PAD - (t / globalMax) * (H - PAD * 2);
+    return `<line x1="${PAD}" y1="${y.toFixed(1)}" x2="${W - PAD}" y2="${y.toFixed(1)}" class="chart-grid"/>`;
+  }).join("");
+  const ticks = tickVals.map((t) => {
+    const y = H - PAD - (t / globalMax) * (H - PAD * 2);
+    return `<text x="${PAD - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="chart-axis">${esc(fmtNum(Math.round(t)))}</text>`;
+  }).join("");
+  const labelsHtml = labels.map((l, i) =>
+    `<text x="${(PAD + i * step).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${esc(l)}</text>`).join("");
+  const lines = useMulti
+    ? geoms.map((g) => `<path d="${smoothPath(g.pts)}" class="chart-line" style="stroke:${seriesColor(g.k)}"/>`).join("")
+    : `<path d="${smoothPath(activeGeom.pts)}" class="chart-line"/>`;
+  const circles = useMulti ? "" : activeGeom.pts.map((p) =>
+    `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" class="chart-dot"/>`).join("");
+  const guide = `<line id="chart-guide" x1="0" y1="8" x2="0" y2="${(H - PAD).toFixed(1)}" class="chart-guide" style="display:none"/>`;
+  const hi = useMulti
+    ? geoms.map((g) => `<circle data-hi="${g.k}" r="4" class="chart-hi" style="display:none;stroke:${seriesColor(g.k)}"/>`).join("")
+    : `<circle id="chart-hi" r="5" class="chart-hi" style="display:none"/>`;
+  const overlay = `<rect x="${PAD}" y="6" width="${(W - PAD * 2).toFixed(1)}" height="${(H - PAD * 2).toFixed(1)}" fill="transparent" class="chart-hover"/>`;
+  const legend = useMulti
+    ? `<div class="chart-legend">${geoms.map((g) =>
+        `<span><i style="background:${seriesColor(g.k)}"></i>${esc(g.label)}</span>`).join("")}</div>`
+    : "";
+  const defs = `<defs>${geoms.map((g) => `
+    <linearGradient id="grad-${g.k}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" style="stop-color:${seriesColor(g.k)}" stop-opacity=".28"/>
+      <stop offset="100%" style="stop-color:${seriesColor(g.k)}" stop-opacity="0"/>
+    </linearGradient>`).join("")}</defs>`;
+  const areas = geoms.map((g) => {
+    const d = smoothPath(g.pts);
+    const last = g.pts[g.pts.length - 1];
+    const first = g.pts[0];
+    const base = H - PAD;
+    return `<path d="${d} L ${last[0].toFixed(1)} ${base} L ${first[0].toFixed(1)} ${base} Z" fill="url(#grad-${g.k})" class="chart-area"/>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="line-chart">${defs}${gridAll}${ticks}${guide}${hi}${areas}${lines}${circles}${labelsHtml}${overlay}</svg>${legend}<div class="chart-tip"></div>`;
+  el.style.position = "relative";
+  const svg = el.querySelector("svg");
+  const tip = el.querySelector(".chart-tip");
+  const guideEl = svg.querySelector("#chart-guide");
+  const hiEls = svg.querySelectorAll(".chart-hi");
+  svg.addEventListener("mousemove", (e) => {
+    const r = svg.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (W / r.width);
+    const idx = Math.max(0, Math.min(labels.length - 1, Math.round((x - PAD) / step)));
+    const px = PAD + idx * step;
+    guideEl.setAttribute("x1", px.toFixed(1));
+    guideEl.setAttribute("x2", px.toFixed(1));
+    guideEl.style.display = "";
+    if (useMulti) {
+      hiEls.forEach((h) => {
+        const g = geoms.find((gg) => gg.k === h.dataset.hi);
+        if (g) {
+          h.setAttribute("cx", px.toFixed(1));
+          h.setAttribute("cy", g.pts[idx][1].toFixed(1));
+          h.style.display = "";
+        }
+      });
+    } else {
+      const h = hiEls[0];
+      h.setAttribute("cx", px.toFixed(1));
+      h.setAttribute("cy", activeGeom.pts[idx][1].toFixed(1));
+      h.style.display = "";
+    }
+    const rows = keys.map((k) => {
+      const ss = seriesMap[k];
+      const v = ss.data ? ss.data[idx] : null;
+      return `<div class="chart-tip-row"><i class="tip-dot" style="background:${seriesColor(k)}"></i><span>${esc(ss.label)}</span><b>${v == null ? "—" : esc(fmtNum(v))}</b></div>`;
+    }).join("");
+    tip.innerHTML = `<div class="chart-tip-title">${esc(labels[idx] || "")}</div>${rows}`;
+    tip.style.display = "block";
+    let tipX = e.clientX - r.left + 12;
+    const tw = tip.offsetWidth || 150;
+    if (tipX + tw > r.width) tipX = e.clientX - r.left - tw - 12;
+    tip.style.left = Math.max(0, tipX) + "px";
+    tip.style.top = "6px";
+  });
+  svg.addEventListener("mouseleave", () => {
+    tip.style.display = "none";
+    guideEl.style.display = "none";
+    hiEls.forEach((h) => { h.style.display = "none"; });
+  });
+}
+
+function smoothPath(xy) {
+  if (xy.length < 2) {
+    return `M ${xy.map((p) => p.join(" ")).join(" L ")}`;
+  }
+  let d = `M ${xy[0][0].toFixed(1)} ${xy[0][1].toFixed(1)}`;
+  for (let i = 0; i < xy.length - 1; i++) {
+    const [x0, y0] = xy[i], [x1, y1] = xy[i + 1];
+    const c1x = x0 + (x1 - x0) / 3;
+    const c2x = x0 + 2 * (x1 - x0) / 3;
+    d += ` C ${c1x.toFixed(1)} ${y0.toFixed(1)}, ${c2x.toFixed(1)} ${y1.toFixed(1)}, ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+  }
+  return d;
+}
+
+function seriesColor(k) {
+  return {
+    publishes: "var(--palette-3)", reads: "var(--palette-1)",
+    engagement: "var(--palette-2)", followers: "var(--palette-4)",
+  }[k] || "var(--palette-1)";
+}
+
+function niceStep(v) {
+  v = Math.max(1, v);
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const r = v / p;
+  const s = r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10;
+  return s * p;
+}
+
+function svgRadar(el, radar) {
+  if (!el) return;
+  const axes = (radar && radar.axes) || [];
+  if (!axes.length) {
+    el.innerHTML = '<span class="muted">暂无雷达数据</span>';
+    return;
+  }
+  const N = axes.length, W = 280, H = 280, cx = W / 2, cy = H / 2, R = 92;
+  const ang = (i) => -Math.PI / 2 + i * 2 * Math.PI / N;
+  const xy = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
+  const ring = (ratio) => axes.map((_, i) => xy(i, R * ratio).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const valuePts = axes.map((a, i) => {
+    const v = a.available && a.value != null ? Math.min(100, a.value) / 100 : 0;
+    return xy(i, R * v).map((x) => x.toFixed(1)).join(",");
+  }).join(" ");
+  const labels = axes.map((a, i) => {
+    const [x, y] = xy(i, R + 24);
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" class="radar-label">${esc(a.label)}${a.available ? "" : "（缺数据）"}</text>`;
+  }).join("");
+  const dots = axes.map((a, i) => {
+    const r = a.available && a.value != null ? Math.min(100, a.value) / 100 : 0;
+    const [x, y] = xy(i, R * r);
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" class="chart-dot"/>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}">${[0.25, 0.5, 0.75, 1].map((r) => `<polygon points="${ring(r)}" class="radar-grid"/>`).join("")}<polygon points="${valuePts}" class="radar-value"/>${dots}${labels}</svg>`;
+}
+
+function renderWeakList(box, weakList, platform) {
+  if (!weakList.length) {
+    return box.innerHTML = '<span class="muted">当前没有命中规则；继续回填/导入数据后自动诊断。</span>';
+  }
+  box.innerHTML = weakList.map((w) => `
+    <div class="wp-item">
+      <div class="wp-head">
+        <b>${esc(w.title)}</b>
+        <span class="badge error">现状 ${esc(w.current)}</span>
+        <span class="muted">基准 ${esc(w.benchmark)}</span>
+      </div>
+      <div class="meta">${esc(w.suggestion)}</div>
+      <div class="meta muted">适用：${esc(w.apply_to)}</div>
+      <div class="actions">
+        <button class="btn small filled" onclick="savePlatformWeakLesson('${esc(platform)}','${esc(w.id)}')">沉淀为经验</button>
+      </div>
+    </div>`).join("");
+}
+
+function clip(s, n) {
+  s = String(s || "");
+  return s.length > n ? s.slice(0, n - 1) + "…" : s;
+}
+
+function renderWeakCompact(box, weakList, platform) {
+  if (!weakList.length) {
+    return box.innerHTML = '<span class="muted">当前没有命中规则；继续回填/导入数据后自动诊断。</span>';
+  }
+  box.innerHTML = `<div class="weak-compact">
+    ${weakList.map((w) => `
+      <div class="weak-row" title="${esc(w.title)}｜${esc(w.suggestion)}">
+        <span class="badge error">${esc(w.current)}</span>
+        <span class="wt">${esc(w.title)}</span>
+        <span class="wm">${esc(clip(w.suggestion, 32))}</span>
+        <button class="btn tiny" onclick="savePlatformWeakLesson('${esc(platform)}','${esc(w.id)}')">沉淀</button>
+      </div>`).join("")}
+  </div>`;
+}
+
+async function savePlatformWeakLesson(platform, id) {
+  const w = ovCache && ovCache.platforms[platform] &&
+    ovCache.platforms[platform].weak_points.find((x) => x.id === id);
+  if (!w) return;
+  try {
+    await api("/api/flywheel/lessons", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: w.title,
+        conclusion: w.suggestion,
+        evidence: `现状 ${w.current} vs 基准 ${w.benchmark}（${platform} 看板诊断）`,
+        apply_to: w.apply_to,
+        source: "dashboard",
+      }),
+    });
+    toast("已沉淀为经验，可在数据飞轮查看并标记应用");
+  } catch (e) {
+    toast("沉淀失败: " + e.message, false);
+  }
+}
+window.savePlatformWeakLesson = savePlatformWeakLesson;
+
+function quickClass(q) {
+  if (q && q.includes("爆款")) return "hit";
+  if (q && q.includes("互动强")) return "success";
+  if (q && q.includes("流量达标")) return "primary";
+  if (q && q.includes("需优化")) return "error";
+  return "";
+}
+
+function noteRow(r, withPlatform) {
+  const time = fmtTime(r.first_published_at || r.collected_at);
+  const ctr = r.ctr != null && Number(r.ctr) > 0
+    ? (Number(r.ctr) <= 1 ? (Number(r.ctr) * 100).toFixed(1) + "%" : esc(r.ctr) + "%")
+    : "—";
+  return `
+    <tr>
+      <td>${esc(time)}</td>
+      <td title="${esc(r.theme || "")}">${esc(r.title || r.job_id)}</td>
+      ${withPlatform ? `<td>${esc(r.platform || "—")}</td>` : ""}
+      <td>${esc(r.format || "—")}</td>
+      <td class="num">${r.exposure ? fmtNum(r.exposure) : "—"}</td>
+      <td class="num">${fmtNum(r.reads)}</td>
+      <td class="num">${ctr}</td>
+      <td class="num">${fmtNum(r.likes)}</td>
+      <td class="num">${fmtNum(r.comments)}</td>
+      <td class="num">${fmtNum(r.collects)}</td>
+      <td class="num">${r.followers_gained ? fmtNum(r.followers_gained) : "—"}</td>
+      <td class="num">${r.shares ? fmtNum(r.shares) : "—"}</td>
+      <td class="num">${r.avg_watch_seconds ? esc(r.avg_watch_seconds) + "秒" : "—"}</td>
+      <td>${r.hit ? '<span class="badge hit">🔥 爆款</span>' : '<span class="badge">常规</span>'}</td>
+      ${r.quick ? `<td><span class="badge ${quickClass(r.quick)}">${esc(r.quick)}</span></td>` : ""}
+    </tr>`;
+}
+
+function fmtTime(s) {
+  if (!s) return "—";
+  const pad = (n) => String(n).padStart(2, "0");
+  const zh = String(s).match(/^(\d{4})年(\d{1,2})月(\d{1,2})日(\d{1,2})时(\d{1,2})分/);
+  if (zh) return `${zh[1]}-${pad(zh[2])}-${pad(zh[3])} ${pad(zh[4])}:${pad(zh[5])}`;
+  return String(s).replace("T", " ").slice(0, 16);
+}
+
+function renderRecentRows(box, records, withPlatform = true) {
+  if (!records.length) return box.innerHTML = '<tr><td colspan="15" class="muted">暂无回填数据</td></tr>';
+  box.innerHTML = records.map((r) => noteRow(r, withPlatform)).join("");
 }
 
 // ---------- 小红书式数据分析（四页签 + 薄弱点诊断） ----------
@@ -210,7 +1368,7 @@ window.switchDashTab = switchDashTab;
 function setDashRange(n) {
   dashState.range = n;
   $$(".range-toggle .tab").forEach((b) => b.classList.toggle("active", Number(b.dataset.range) === n));
-  loadDashboard();
+  loadOverview();
 }
 window.setDashRange = setDashRange;
 
@@ -281,17 +1439,32 @@ function renderDashFunnel(tab) {
 function renderDashTrend(trend) {
   const box = $("#dash-trend-chart");
   if (!trend || !trend.length) return box.innerHTML = '<span class="muted">暂无趋势数据</span>';
-  const maxV = Math.max(1, ...trend.map((t) => Number(t.value || t.total || 0)));
-  box.innerHTML = trend.map((t) => {
-    const v = Number(t.value != null ? t.value : t.total || 0);
+  const bucketed = bucketDaily(trend, dashPeriod);
+  let run = 0;
+  const cum = bucketed.map((t) => ({ ...t, value: (run += Number(t.value != null ? t.value : t.total || 0)) }));
+  const maxV = Math.max(1, ...cum.map((t) => Number(t.value || 0)));
+  box.innerHTML = cum.map((t) => {
+    const v = Number(t.value || 0);
     const extra = t.video != null ? ` 视频 ${t.video} / 图文 ${t.image}` : "";
     return `
-      <div class="tcol" title="${esc(t.date + extra)}">
+      <div class="tcol" title="累计 ${esc(t.date + extra)}">
         <span class="val">${v ? fmtNum(v) : ""}</span>
         <div class="bar" style="height:${Math.max(4, Math.round(v / maxV * 92))}%"></div>
         <span class="day">${esc(t.label)}</span>
       </div>`;
   }).join("");
+}
+
+function bucketDaily(trend, period) {
+  const map = {};
+  trend.forEach((t) => {
+    const k = dateKey(t.date || "", period);
+    map[k] = map[k] || { label: k, value: 0, video: 0, image: 0, date: t.date || "" };
+    map[k].value += Number(t.value != null ? t.value : t.total || 0);
+    map[k].video += Number(t.video || 0);
+    map[k].image += Number(t.image || 0);
+  });
+  return Object.values(map);
 }
 
 function renderDashExtra(tab) {
@@ -317,6 +1490,7 @@ function renderDashExtra(tab) {
 
 function renderWeakPoints() {
   const box = $("#weak-points");
+  if (!box) return;
   if (!dashState.weakPoints.length) {
     return box.innerHTML = '<span class="muted">当前没有命中薄弱点规则；继续导入数据后会自动诊断。</span>';
   }
@@ -357,20 +1531,8 @@ async function saveWeakLesson(id) {
 window.saveWeakLesson = saveWeakLesson;
 
 function renderRows(records) {
-  if (!records.length) return '<tr><td colspan="10" class="muted">暂无回填数据</td></tr>';
-  return records.map((r) => `
-    <tr>
-      <td>${esc((r.collected_at || "").slice(0, 16))}</td>
-      <td title="${esc(r.theme || "")}">${esc(r.job_id)}</td>
-      <td>${esc(r.platform || "—")}</td>
-      <td class="num">${fmtNum(r.reads)}</td>
-      <td class="num">${fmtNum(r.likes)}</td>
-      <td class="num">${fmtNum(r.collects)}</td>
-      <td class="num">${fmtNum(r.comments)}</td>
-      <td class="num">${r.followers_gained ? fmtNum(r.followers_gained) : "—"}</td>
-      <td class="num">${pct(r.engagement)}</td>
-      <td>${r.hit ? '<span class="badge hit">🔥 爆款</span>' : '<span class="badge">常规</span>'}</td>
-    </tr>`).join("");
+  if (!records.length) return '<tr><td colspan="15" class="muted">暂无回填数据</td></tr>';
+  return records.map((r) => noteRow(r, true)).join("");
 }
 
 // ---------- 选题 ----------
@@ -411,7 +1573,7 @@ function renderSuggestPool(tbodySel, cands, countSel, poolLabel) {
           ${SCORE_DIMS.map(([k]) => `<td class="num">${c.breakdown_parts ? c.breakdown_parts[k] ?? "—" : "—"}</td>`).join("")}
           <td class="num score-total">${c.score ?? "?"}</td>
           <td class="actions-col">
-            <button class="btn small filled" title="采纳 → 开始生产（日选题：时效×1.2+热度×1.2+质量×0.4；周选题：质量×1.2+热度×0.5+时效×0.3；IP 为准入门槛）" onclick="adopt('${esc(c.title).replace(/'/g, "\\'")}')">采纳生产</button>
+            <button class="btn small filled" title="采纳 → 开始生产（日选题：时效×1.2+热度×1.2+质量×0.4；周选题：质量×1.2+热度×0.5+时效×0.3；IP 为准入门槛）" onclick="adopt(this,'${esc(c.title).replace(/'/g, "\\'")}')">采纳生产</button>
           </td>
         </tr>`;
       }).join("")
@@ -419,6 +1581,7 @@ function renderSuggestPool(tbodySel, cands, countSel, poolLabel) {
 }
 
 async function loadTopics() {
+  loadPrefData();
   try {
     const [d, jobsRes, prodRes] = await Promise.all([
       api("/api/topics"), api("/api/jobs"), api("/api/production/status"),
@@ -483,19 +1646,28 @@ function renderAdoptHistory(jobs, queue) {
   }).join("");
 }
 
-async function adopt(title) {
-  if (!confirm("采纳选题并开始自动生产：\n" + title + "\n\n将创建任务并调用本机 Codex 后台跑完整流水线（素材→初稿→视觉→质检→归档）。")) return;
-  try {
-    const d = await api("/api/topics/adopt", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    });
-    toast("已创建任务并开始生产: " + d.job_id + (d.production_started ? "" : "（排队中）"));
-    loadTopics();
-    loadPipeline();
-  } catch (e) {
-    toast("建任务失败: " + e.message, false);
+async function adopt(btn, title) {
+  let useTitle = String(title || "").trim();
+  const chars = [...useTitle];
+  if (chars.length > 60) {
+    useTitle = chars.slice(0, 60).join("");
+    toast("选题标题过长，已自动截断为 60 字", true);
   }
+  if (!useTitle) return toast("选题标题为空，无法建任务", false);
+  if (!confirm("采纳选题并开始自动生产：\n" + useTitle + "\n\n将创建任务并调用本机 Codex 后台跑完整流水线（素材→初稿→视觉→质检→归档）。")) return;
+  await runWithSpin(btn, async () => {
+    try {
+      const d = await api("/api/topics/adopt", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: useTitle }),
+      });
+      toast("已创建任务并开始生产: " + d.job_id + (d.production_started ? "" : "（排队中）"));
+      loadTopics();
+      loadPipeline();
+    } catch (e) {
+      toast("建任务失败: " + e.message, false);
+    }
+  });
 }
 window.adopt = adopt;
 
@@ -506,7 +1678,7 @@ async function copyThemePrompt(id) {
   const t = themesCache.find((x) => x.id === id);
   if (!t) return;
   const prompt = [
-    `请用【${t.name}】主题，按「小吴聊」IP 风格创作一期引流内容。`,
+    `请用【${t.name}】主题，按个人文风指南创作一期引流内容。`,
     `定位：${t.slogan}`,
     `受众：${t.audience}`,
     `钩子参考：${(t.hooks || []).join("、")}`,
@@ -628,7 +1800,7 @@ function renderViralDaily(daily) {
     const src = (viralCache.sourceStatus || {})[p] || {};
     const rows = daily[p].map((it) => {
       const rec = viralCache.videos.find((v) => v.id === it.viral_id) || {};
-      const statusBtn = statusButton(it.status, it.viral_id, rec.has_report);
+      const statusBtn = statusButton(it.status, it.viral_id, rec.has_report, rec.notes || "");
       return `
         <tr>
           <td class="num">${it.rank ?? "—"}</td>
@@ -656,17 +1828,23 @@ function renderViralDaily(daily) {
   }).join("");
 }
 
-function statusButton(status, vid, hasReport) {
+function statusButton(status, vid, hasReport, note) {
+  const noteTip = note ? `\n最近状态：${String(note).slice(0, 120)}` : "";
   if (status === "analyzing") {
-    return '<span class="badge primary" title="拆解进行中，完成后自动更新">拆解中</span>';
+    return '<span class="badge primary" title="拆解进行中，完成后自动更新' + esc(noteTip) + '">拆解中</span>';
   }
-  if (status === "analyzed" || status === "applied") {
-    if (hasReport) {
-      return `<button class="btn small vstatus" title="点击查看拆解报告" onclick="viewBreakdown('${esc(vid)}')">已拆解</button>`;
-    }
-    return `<button class="btn small filled vstatus" title="该记录缺少报告文件，点击重新拆解" onclick="analyzeDailyItem('${esc(vid)}')">已拆解·重新拆</button>`;
+  const reportBtn = hasReport
+    ? `<button class="btn small vstatus" title="点击查看拆解报告" onclick="viewBreakdown('${esc(vid)}')">查看报告</button>`
+    : (status === "analyzed" || status === "applied")
+      ? `<button class="btn small filled vstatus" title="该记录缺少报告文件，点击重新拆解${noteTip}" onclick="analyzeDailyItem('${esc(vid)}')">已拆解·重新拆</button>`
+      : "";
+  if (status === "applied") {
+    return `<span class="badge success" title="已标记应用：该爆款已用于创作">已应用</span>${reportBtn}`;
   }
-  return `<button class="btn small filled vstatus" title="点击开始 AI 拆解" onclick="analyzeDailyItem('${esc(vid)}')">待拆解</button>`;
+  if (status === "analyzed") {
+    return `${reportBtn}<button class="btn small vstatus" title="标记该爆款已用于创作，计入已应用" onclick="setViralStatus('${esc(vid)}','applied')">标记应用</button>`;
+  }
+  return `<button class="btn small filled vstatus" title="点击开始 AI 拆解${noteTip}" onclick="analyzeDailyItem('${esc(vid)}')">待拆解</button>`;
 }
 
 async function analyzeDailyItem(vid) {
@@ -768,7 +1946,7 @@ function renderOwnHits(hits) {
       || String(x.notes || "").includes(h.job_id));
     const status = v ? v.status : "tracked";
     const btn = v
-      ? statusButton(status, v.id, v.has_report)
+      ? statusButton(status, v.id, v.has_report, v.notes || "")
       : `<button class="btn small filled" title="点击转入跟踪并启动 AI 拆解" onclick="importOwnHit('${esc(h.job_id).replace(/'/g, "\\'")}')">转入跟踪并拆解</button>`;
     return `
       <div class="topic-item">
@@ -844,7 +2022,7 @@ async function importOwnHit(jobId) {
     const saved = await api("/api/viral", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        platform, title, author: "小吴聊（自家）",
+        platform, title, author: "自家发布",
         url: h.url || "", published_at: (h.collected_at || "").slice(0, 10),
         reads: h.reads || 0, likes: h.likes || 0, collects: h.collects || 0,
         comments: h.comments || 0, theme: "", hook: "", structure: "",
@@ -1631,12 +2809,12 @@ async function renderMd(file, box) {
           <button class="btn small tonal" onclick="copyXhs('body')">复制正文（${bodyLen}/1000）</button>
         </div>
         <div class="kv"><b>标题：</b>${esc(title)}</div>
-        <pre style="white-space:pre-wrap;font-size:13px;font-family:inherit;color:#3c4043;max-height:420px;overflow:auto;margin-top:10px">${esc(body)}</pre>`;
+        <pre style="white-space:pre-wrap;font-size:13px;font-family:inherit;color:var(--preview-text);max-height:420px;overflow:auto;margin-top:10px">${esc(body)}</pre>`;
     } else {
       const content = stripFrontmatter(d.content || "");
       div.style.maxHeight = "480px";
       div.style.overflow = "auto";
-      div.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;font-family:inherit;color:#3c4043">${esc(content)}</pre>`;
+      div.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;font-family:inherit;color:var(--preview-text)">${esc(content)}</pre>`;
     }
     box.appendChild(div);
   } catch (e) {
@@ -1786,9 +2964,17 @@ async function loadData() {
   try {
     const [stats, jobs] = await Promise.all([api("/api/stats"), api("/api/jobs")]);
     statsCache = stats;
+    const acc = stats.xhs_account || {};
+    if ($("#snap-followers")) $("#snap-followers").value = acc.followers ?? 0;
+    if ($("#snap-following")) $("#snap-following").value = acc.following ?? 0;
+    if ($("#snap-likes-collects")) $("#snap-likes-collects").value = acc.likes_collects ?? 0;
+    if ($("#snap-note")) {
+      $("#snap-note").textContent = acc.updated_at
+        ? `上次更新：${acc.updated_at}${acc.period ? "（" + acc.period + "）" : ""}`
+        : "尚未保存过快照";
+    }
     $("#stats-updated-at").textContent = "更新于 " + (stats.generated_at || "");
     statKpis(stats);
-    renderPlatformCompare(stats.by_platform || []);
     renderDataStatus(stats.data_status || {}, stats);
     renderThemeTable(stats.by_theme || []);
     renderContentInsights(stats.content_insights || {});
@@ -1804,6 +2990,26 @@ async function loadData() {
     toast("数据加载失败: " + e.message, false);
   }
 }
+
+async function saveAccountSnapshot() {
+  const body = {
+    followers: Number($("#snap-followers").value) || 0,
+    following: Number($("#snap-following").value) || 0,
+    likes_collects: Number($("#snap-likes-collects").value) || 0,
+  };
+  try {
+    await api("/api/stats/account-snapshot", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    toast("账号快照已保存，粉丝数将以该数据为准");
+    loadData();
+    loadOverview();
+  } catch (e) {
+    toast("保存失败: " + e.message, false);
+  }
+}
+window.saveAccountSnapshot = saveAccountSnapshot;
 
 $("#backfill-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1837,37 +3043,29 @@ $("#btn-stats-refresh").addEventListener("click", (e) => runWithSpin(e.currentTa
   loadOverview();
 }));
 
-$("#btn-xhs-import").addEventListener("click", () => $("#xhs-import-file").click());
-$("#xhs-import-file").addEventListener("change", async (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-  try {
-    const d = await api(`/api/stats/import-xhs?filename=${encodeURIComponent(file.name)}`, {
-      method: "POST",
-      body: file,
-    });
-    toast(`导入完成：新增 ${d.new_notes ?? 0} / 更新 ${d.updated_notes ?? 0}，匹配 Job ${d.matched_jobs ?? 0} 条`);
-    loadData();
-    loadOverview();
-  } catch (err) {
-    toast("导入失败: " + err.message, false);
-  }
-  e.target.value = "";
-});
-
 $("#btn-dash-import").addEventListener("click", () => $("#dash-import-file").click());
 $("#dash-import-file").addEventListener("change", async (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
   try {
-    const d = await api(`/api/stats/import-dashboard?filename=${encodeURIComponent(file.name)}`, {
-      method: "POST",
-      body: file,
-    });
-    const series = Object.entries(d.series || {}).map(([k, v]) => `${k} ${v}条`).join("、");
-    toast(`已导入「${d.kind}」看板：指标 ${(d.account_keys || []).length} 个${series ? "，" + series : ""}`);
+    const ok = [], fail = [];
+    for (const file of files) {
+      try {
+        // 笔记明细（列表明细）走笔记导入器，其余按看板四页签自动识别
+        const isNotes = /笔记|明细/.test(file.name);
+        const path = isNotes ? "/api/stats/import-xhs" : "/api/stats/import-dashboard";
+        const d = await api(`${path}?filename=${encodeURIComponent(file.name)}`, {
+          method: "POST", body: file,
+        });
+        ok.push(isNotes ? "笔记明细" : (d.kind || file.name));
+      } catch (err) {
+        fail.push(`${file.name}（${err.message}）`);
+      }
+    }
+    if (ok.length) toast(`已导入看板 ${ok.length}/${files.length}：${ok.join("、")}`);
+    if (fail.length) toast(`导入失败 ${fail.length} 项：${fail.join("；")}`, false);
     loadData();
-    loadDashboard();
+    loadOverview();
   } catch (err) {
     toast("导入失败: " + err.message, false);
   }
@@ -1878,11 +3076,18 @@ $("#dash-import-file").addEventListener("change", async (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   switchView("overview");
   loadLicenseStatus();
+  applyProfile();
+  setTimeout(() => showOnboarding(false), 500);
 });
+
+let currentTier = "free";
+let upgradeUrl = "https://mbd.pub/";
 
 async function loadLicenseStatus() {
   try {
     const d = await api("/api/license/status");
+    currentTier = d.tier || "free";
+    upgradeUrl = d.upgrade_url || "https://mbd.pub/";
     const tierTxt = {
       owner: "Pro · 卖家模式",
       pro: "Pro 已激活" + (d.exp ? " · 到期 " + d.exp : ""),
@@ -1893,15 +3098,472 @@ async function loadLicenseStatus() {
     el.innerHTML = d.tier === "free"
       ? `<a href="${esc(d.upgrade_url || "#")}" target="_blank" rel="noopener">${tierTxt}</a> · ${eng}`
       : `${tierTxt} · ${eng}`;
+
+    // 免费版限制：仅放行默认皮肤与默认质感，若存储了 Pro 皮肤则重置为默认
+    if (currentTier === "free") {
+      const savedTheme = localStorage.getItem("selfmedia_theme") || "default";
+      if (savedTheme !== "default") {
+        document.documentElement.dataset.theme = "default";
+        localStorage.setItem("selfmedia_theme", "default");
+        const sel = $("#set-theme");
+        if (sel) sel.value = "default";
+      }
+      const savedStyle = localStorage.getItem("selfmedia_style") || "google-rounded";
+      if (savedStyle !== "google-rounded") {
+        document.documentElement.dataset.style = "google-rounded";
+        localStorage.setItem("selfmedia_style", "google-rounded");
+        const sel = $("#set-style");
+        if (sel) sel.value = "google-rounded";
+      }
+    }
   } catch (e) {
     $("#license-badge").textContent = "授权状态加载失败";
   }
 }
 window.loadLicenseStatus = loadLicenseStatus;
 
+function applyProfile() {
+  let prof = {};
+  try { prof = JSON.parse(localStorage.getItem("selfmedia_profile") || "{}"); } catch (e) { /* ignore */ }
+  const av = $("#brand-avatar");
+  if (av) {
+    if (prof.avatar) {
+      av.style.backgroundImage = 'url("' + String(prof.avatar).replace(/["\\]/g, "") + '")';
+      av.style.backgroundSize = "cover";
+      av.style.backgroundPosition = "center";
+      av.textContent = "";
+    } else {
+      av.style.backgroundImage = "";
+      av.textContent = (prof.nickname || "自").slice(0, 1);
+    }
+  }
+  const nk = $("#brand-nickname");
+  if (nk) nk.textContent = (prof.nickname || "自媒体") + " · 运营工作台";
+}
+window.applyProfile = applyProfile;
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("读取文件失败"));
+    reader.readAsDataURL(file);
+  });
+}
+
+const cropState = { imgX: 0, imgY: 0, zoom: 1, stage: 340, cropSize: 220, naturalW: 1, naturalH: 1 };
+const cropFramePos = { x: 0, y: 0 };
+let cropDrag = null;
+
+function cropBaseScale() {
+  return Math.max(cropState.stage / cropState.naturalW, cropState.stage / cropState.naturalH);
+}
+
+function renderCrop() {
+  const img = $("#crop-img");
+  if (!img) return;
+  const base = cropBaseScale();
+  const w = cropState.naturalW * base * cropState.zoom;
+  const h = cropState.naturalH * base * cropState.zoom;
+  img.style.width = w + "px";
+  img.style.height = h + "px";
+  img.style.left = cropState.imgX + "px";
+  img.style.top = cropState.imgY + "px";
+  const frame = $("#crop-frame");
+  if (frame) {
+    frame.style.left = cropFramePos.x + "px";
+    frame.style.top = cropFramePos.y + "px";
+  }
+}
+
+function centerImage() {
+  const base = cropBaseScale();
+  cropState.imgX = (cropState.stage - cropState.naturalW * base * cropState.zoom) / 2;
+  cropState.imgY = (cropState.stage - cropState.naturalH * base * cropState.zoom) / 2;
+}
+
+function openCropModal(dataUrl) {
+  const img = $("#crop-img");
+  img.onload = () => {
+    cropState.naturalW = img.naturalWidth || 1;
+    cropState.naturalH = img.naturalHeight || 1;
+    const cover = cropBaseScale();
+    cropState.zoom = 1;
+    const zoom = $("#crop-zoom");
+    if (zoom) {
+      zoom.min = "1";
+      zoom.max = Math.max(4, (cover * 3).toFixed(2));
+      zoom.value = cropState.zoom.toFixed(2);
+    }
+    centerImage();
+    cropFramePos.x = (cropState.stage - cropState.cropSize) / 2;
+    cropFramePos.y = (cropState.stage - cropState.cropSize) / 2;
+    renderCrop();
+    $("#crop-modal").classList.remove("hidden");
+  };
+  img.src = dataUrl;
+}
+
+function closeCrop() {
+  $("#crop-modal").classList.add("hidden");
+  const img = $("#crop-img");
+  img.removeAttribute("src");
+  const fv = $("#set-avatar-file");
+  if (fv) fv.value = "";
+}
+window.closeCrop = closeCrop;
+
+function confirmCrop() {
+  const img = $("#crop-img");
+  const w = parseFloat(img.style.width);
+  const h = parseFloat(img.style.height);
+  if (!w || !h) return;
+  const scale = w / cropState.naturalW;
+  const cropPx = cropState.cropSize / scale;
+  const cx = cropFramePos.x + cropState.cropSize / 2;
+  const cy = cropFramePos.y + cropState.cropSize / 2;
+  // (cx - imgX)/scale 是框中心在原图上的坐标，需再减半框宽才是左上角
+  const sx = Math.max(0, Math.min(cropState.naturalW - cropPx, (cx - cropState.imgX) / scale - cropPx / 2));
+  const sy = Math.max(0, Math.min(cropState.naturalH - cropPx, (cy - cropState.imgY) / scale - cropPx / 2));
+  const cv = document.createElement("canvas");
+  cv.width = 256;
+  cv.height = 256;
+  cv.getContext("2d").drawImage(img, sx, sy, cropPx, cropPx, 0, 0, 256, 256);
+  const dataUrl = cv.toDataURL("image/jpeg", 0.9);
+  const inp = $("#set-avatar");
+  if (inp) inp.value = dataUrl;
+  const pv = $("#set-avatar-preview");
+  if (pv) {
+    pv.src = dataUrl;
+    pv.classList.remove("hidden");
+  }
+  closeCrop();
+  toast("头像已裁剪，点「保存配置」生效");
+}
+window.confirmCrop = confirmCrop;
+
+async function handleAvatarUpload(input) {
+  const file = input && input.files && input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    toast("请选择图片文件", false);
+    input.value = "";
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    toast("图片过大（≤2MB）", false);
+    input.value = "";
+    return;
+  }
+  try {
+    const dataUrl = await readFileAsDataUrl(file);
+    openCropModal(dataUrl);
+  } catch (e) {
+    toast("头像上传失败: " + e.message, false);
+    input.value = "";
+  }
+}
+window.handleAvatarUpload = handleAvatarUpload;
+
+const cropStage = $("#crop-stage");
+const cropFrame = $("#crop-frame");
+if (cropStage && cropFrame) {
+  cropFrame.addEventListener("pointerdown", (e) => {
+    cropDrag = { sx: e.clientX, sy: e.clientY, x: cropFramePos.x, y: cropFramePos.y };
+    cropFrame.setPointerCapture(e.pointerId);
+    cropFrame.classList.add("dragging");
+  });
+  cropFrame.addEventListener("pointermove", (e) => {
+    if (!cropDrag) return;
+    cropFramePos.x = Math.max(0, Math.min(cropState.stage - cropState.cropSize, cropDrag.x + (e.clientX - cropDrag.sx)));
+    cropFramePos.y = Math.max(0, Math.min(cropState.stage - cropState.cropSize, cropDrag.y + (e.clientY - cropDrag.sy)));
+    renderCrop();
+  });
+  const endCropDrag = () => {
+    cropDrag = null;
+    cropFrame.classList.remove("dragging");
+  };
+  cropFrame.addEventListener("pointerup", endCropDrag);
+  cropFrame.addEventListener("pointercancel", endCropDrag);
+  const zoom = $("#crop-zoom");
+  if (zoom) {
+    zoom.addEventListener("input", (e) => {
+      const img = $("#crop-img");
+      const oldW = parseFloat(img.style.width) || cropState.stage;
+      const oldH = parseFloat(img.style.height) || cropState.stage;
+      const cx = cropFramePos.x + cropState.cropSize / 2;
+      const cy = cropFramePos.y + cropState.cropSize / 2;
+      const fx = (cx - cropState.imgX) / oldW;
+      const fy = (cy - cropState.imgY) / oldH;
+      cropState.zoom = parseFloat(e.target.value) || cropState.zoom;
+      renderCrop();
+      const nw = parseFloat(img.style.width) || oldW;
+      const nh = parseFloat(img.style.height) || oldH;
+      cropState.imgX = cx - fx * nw;
+      cropState.imgY = cy - fy * nh;
+      renderCrop();
+    });
+  }
+}
+
+function switchSettingsPanel(name) {
+  $$("#settings-menu .set-menu-item").forEach((b) => b.classList.toggle("active", b.dataset.panel === name));
+  $$("#settings-modal .set-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + name));
+}
+window.switchSettingsPanel = switchSettingsPanel;
+
+let tplData = { categories: [] };
+let tplSel = {};
+let tplActiveCat = "";
+let styleDocs = [];
+let styleDocMeta = {};
+
+async function loadTemplates() {
+  try {
+    const [td, prefs] = await Promise.all([
+      api("/api/templates"),
+      api("/api/user-preferences"),
+    ]);
+    tplData = td;
+    tplSel = (prefs.templates || {});
+    tplActiveCat = (td.categories[0] || {}).id || "";
+    renderTplCats();
+    renderTplGrid();
+  } catch (e) { /* 模板非必须 */ }
+}
+
+function renderTplCats() {
+  const box = $("#tpl-cats");
+  if (!box) return;
+  box.innerHTML = (tplData.categories || []).map((c) =>
+    `<button class="tab ${c.id === tplActiveCat ? "active" : ""}" onclick="tplActiveCat='${esc(c.id)}';renderTplCats();renderTplGrid()">${esc(c.name)}</button>`).join("");
+}
+
+function tplMockHtml(catId, name, colors) {
+  const [bg, ink, accent] = colors;
+  const base = `background:${bg};color:${ink};border-color:${accent}`;
+  const titleBar = `<div class="tpl-mock-title" style="background:${accent}"></div>`;
+  const lines = `<div class="tpl-mock-line"></div><div class="tpl-mock-line short"></div><div class="tpl-mock-line"></div>`;
+  if (catId === "xhs_card") {
+    return `<div class="tpl-mock tpl-mock-card" style="${base}">
+      ${titleBar}
+      <div class="tpl-mock-media" style="background:${ink}"></div>
+      ${lines}
+      <span class="tpl-mock-tag" style="color:${accent}">${esc(name)}</span>
+    </div>`;
+  }
+  if (catId === "gzh_layout") {
+    return `<div class="tpl-mock tpl-mock-article" style="${base}">
+      ${titleBar}
+      <div class="tpl-mock-title wide" style="background:${ink}"></div>
+      <div class="tpl-mock-meta" style="color:${accent}">标题 · 作者 · 摘要</div>
+      ${lines}${lines}
+    </div>`;
+  }
+  return `<div class="tpl-mock tpl-mock-cover" style="${base}">
+    <span class="tpl-mock-tag" style="color:${ink}">${esc(name)}</span>
+    <div class="tpl-mock-title wide" style="background:${accent}"></div>
+    ${lines}
+  </div>`;
+}
+
+function renderTplGrid() {
+  const box = $("#tpl-grid");
+  if (!box) return;
+  const cat = (tplData.categories || []).find((c) => c.id === tplActiveCat);
+  if (!cat) return box.innerHTML = '<span class="muted">暂无模板</span>';
+  box.innerHTML = cat.items.map((it) => {
+    const sel = tplSel[cat.id] === it.id;
+    return `
+      <div class="tpl-item ${sel ? "selected" : ""}" onclick="selectTemplate('${esc(cat.id)}','${esc(it.id)}')">
+        <div class="tpl-preview">${tplMockHtml(cat.id, it.name, it.colors)}</div>
+        <div class="tpl-name">${esc(it.name)}</div>
+        <div class="tpl-desc">${esc(it.desc)}</div>
+      </div>`;
+  }).join("");
+}
+
+function selectTemplate(catId, itemId) {
+  tplSel[catId] = itemId;
+  renderTplGrid();
+}
+window.selectTemplate = selectTemplate;
+
+async function saveTemplates() {
+  try {
+    await api("/api/user-preferences", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ templates: tplSel }),
+    });
+    const st = $("#tpl-save-status");
+    if (st) st.textContent = "已保存 " + new Date().toLocaleTimeString();
+    toast("模板选择已保存，后续生成将按此模板初始化");
+  } catch (e) {
+    toast("保存模板失败: " + e.message, false);
+  }
+}
+window.saveTemplates = saveTemplates;
+
+let stylePresets = [];
+
+async function loadStylePresets() {
+  try {
+    const d = await api("/api/style-presets");
+    stylePresets = d.presets || [];
+    const psel = $("#style-preset-select");
+    if (!psel) return;
+    psel.innerHTML = '<option value="">-- 套用预设文风模板 --</option>' +
+      stylePresets.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+  } catch (e) { /* 忽略 */ }
+}
+
+async function applyStylePreset(presetId) {
+  if (!presetId) return;
+  const p = stylePresets.find((x) => x.id === presetId);
+  if (!p || !p.content) return;
+  const ta = $("#style-doc-text");
+  if (ta && ta.value.trim() && !confirm("套用预设文风模板「" + p.name + "」？当前编辑器内容将被替换。")) {
+    const psel = $("#style-preset-select");
+    if (psel) psel.value = "";
+    return;
+  }
+  if (ta) ta.value = p.content;
+  const psel = $("#style-preset-select");
+  if (psel) psel.value = "";
+  const sel = $("#style-doc-select");
+  const path = (sel && sel.value) || "skills/personal-style-guide.md";
+  styleDocMeta[path] = { path, name: "个人文风指南", is_default: false };
+  renderStyleDocMeta(path);
+  toast("已套用「" + p.name + "」，请点击「保存文风文档」生效");
+}
+window.applyStylePreset = applyStylePreset;
+
+async function loadStyleDocs() {
+  try {
+    await loadStylePresets();
+    const d = await api("/api/style-docs");
+    styleDocs = d.docs || [];
+    styleDocMeta = {};
+    (styleDocs || []).forEach((x) => { styleDocMeta[x.path] = x; });
+    const sel = $("#style-doc-select");
+    if (!sel) return;
+    sel.innerHTML = styleDocs.map((doc) =>
+      `<option value="${esc(doc.path)}">${esc(doc.name)}${doc.is_default ? "（默认）" : ""}</option>`
+    ).join("");
+    loadStyleDoc();
+  } catch (e) { /* 忽略 */ }
+}
+
+async function loadStyleDoc() {
+  const sel = $("#style-doc-select");
+  const ta = $("#style-doc-text");
+  if (!sel || !ta || !sel.value) return;
+  try {
+    const d = await api("/api/style-doc?path=" + encodeURIComponent(sel.value));
+    ta.value = d.content || "";
+    styleDocMeta[sel.value] = d;
+    renderStyleDocMeta(sel.value);
+    $("#style-doc-status").textContent = "已加载 " + sel.value;
+  } catch (e) {
+    $("#style-doc-status").textContent = "加载失败: " + e.message;
+  }
+}
+window.loadStyleDoc = loadStyleDoc;
+
+function renderStyleDocMeta(path) {
+  const m = styleDocMeta[path] || {};
+  const badge = $("#style-doc-badge");
+  const resetBtn = $("#btn-style-reset");
+  const presetSel = $("#style-preset-select");
+  const isDefault = !!m.is_default;
+  if (badge) {
+    badge.textContent = isDefault ? "默认模板" : "已自定义";
+    badge.className = "badge " + (isDefault ? "success" : "primary");
+  }
+  if (resetBtn) resetBtn.disabled = isDefault;
+  if (presetSel) {
+    presetSel.style.display = path === "skills/personal-style-guide.md" ? "" : "none";
+  }
+}
+
+function openStyleGuide() {
+  $("#style-guide-modal").classList.remove("hidden");
+}
+window.openStyleGuide = openStyleGuide;
+
+function closeStyleGuide() {
+  $("#style-guide-modal").classList.add("hidden");
+}
+window.closeStyleGuide = closeStyleGuide;
+
+async function submitStyleGuide() {
+  const body = {
+    audience: ($("#sg-audience") || {}).value || "",
+    platforms: ($("#sg-platforms") || {}).value || "",
+    tone: ($("#sg-tone") || {}).value || "",
+    avoid: ($("#sg-avoid") || {}).value || "",
+    keywords: ($("#sg-keywords") || {}).value || "",
+    redlines: ($("#sg-redlines") || {}).value || "",
+  };
+  try {
+    const d = await api("/api/style-doc/guide", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const ta = $("#style-doc-text");
+    if (ta) ta.value = d.content || "";
+    const path = "skills/personal-style-guide.md";
+    styleDocMeta[path] = { path, name: "个人文风指南", is_default: false };
+    renderStyleDocMeta(path);
+    closeStyleGuide();
+    toast(d.mode === "ai" ? "文风指南已生成，点「保存文风文档」生效" : "已生成填空草稿，补充后保存", d.mode === "ai");
+  } catch (e) {
+    toast("生成失败: " + e.message, false);
+  }
+}
+window.submitStyleGuide = submitStyleGuide;
+
+async function resetStyleDoc() {
+  const sel = $("#style-doc-select");
+  const path = sel && sel.value;
+  if (!path) return;
+  if (!confirm("恢复默认模板？当前内容会先备份到 data/style_backups/。")) return;
+  try {
+    await api("/api/style-doc/reset", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path }),
+    });
+    await loadStyleDoc();
+    toast("已恢复默认模板");
+  } catch (e) {
+    toast("恢复失败: " + e.message, false);
+  }
+}
+window.resetStyleDoc = resetStyleDoc;
+
+async function saveStyleDoc() {
+  const sel = $("#style-doc-select");
+  const ta = $("#style-doc-text");
+  if (!sel || !sel.value) return;
+  try {
+    await api("/api/style-doc", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: sel.value, content: ta.value }),
+    });
+    $("#style-doc-status").textContent = "已保存 " + sel.value;
+    toast("文风文档已保存");
+  } catch (e) {
+    toast("保存失败: " + e.message, false);
+  }
+}
+window.saveStyleDoc = saveStyleDoc;
+
 // ---------- 配置（API Key / 公众号凭据） ----------
 function openSettings() {
   loadSettings();
+  loadRetention();
+  loadTemplates();
+  loadStyleDocs();
   $("#settings-modal").classList.remove("hidden");
 }
 window.openSettings = openSettings;
@@ -1915,6 +3577,29 @@ async function loadSettings() {
   const st = $("#settings-status");
   try {
     const d = await api("/api/settings");
+    let prof = {};
+    try { prof = JSON.parse(localStorage.getItem("selfmedia_profile") || "{}"); } catch (e) { /* ignore */ }
+    if ($("#set-nickname")) $("#set-nickname").value = prof.nickname || "";
+    if ($("#set-avatar")) $("#set-avatar").value = prof.avatar || "";
+    const pv = $("#set-avatar-preview");
+    if (pv) {
+      if (prof.avatar) {
+        pv.src = prof.avatar;
+        pv.classList.remove("hidden");
+      } else {
+        pv.classList.add("hidden");
+        pv.removeAttribute("src");
+      }
+    }
+    const fv = $("#set-avatar-file");
+    if (fv) fv.value = "";
+    const th = document.documentElement.dataset.theme || "default";
+    const themeSel = $("#set-theme");
+    if (themeSel) themeSel.value = THEME_NAMES[th] ? th : "default";
+    const stl = document.documentElement.dataset.style || "google-rounded";
+    const styleSel = $("#set-style");
+    if (styleSel) styleSel.value = STYLE_NAMES[stl] ? stl : "google-rounded";
+    initGlassUI();
     $("#set-llm-key").value = "";
     $("#set-llm-base").value = d.llm.base_url || "";
     $("#set-llm-model").value = d.llm.model || "";
@@ -1931,6 +3616,155 @@ async function loadSettings() {
 }
 window.loadSettings = loadSettings;
 
+const THEME_NAMES = {
+  default: "蓝白默认", midnight: "深空暗黑",
+  doraemon: "哆啦A梦（蓝胖）", cyberpunk: "赛博朋克·霓虹风暴",
+  fuji: "和风·藤菫紫", hermes: "爱马仕橙奢侈风", chanel: "香奈儿可可闪蜜", lv: "LV奢华风",
+};
+
+function applyTheme(name) {
+  name = THEME_NAMES[name] ? name : "default";
+  if (name !== "default" && currentTier === "free") {
+    toast(`「${THEME_NAMES[name]}」为 Pro 高级皮肤，免费版仅提供「蓝白默认」，请升级 Pro 解锁`, false);
+    const sel = $("#set-theme");
+    if (sel) sel.value = "default";
+    document.documentElement.dataset.theme = "default";
+    localStorage.setItem("selfmedia_theme", "default");
+    return;
+  }
+  document.documentElement.dataset.theme = name;
+  localStorage.setItem("selfmedia_theme", name);
+  const sel = $("#set-theme");
+  if (sel) sel.value = name;
+  toast("已切换主题：" + THEME_NAMES[name]);
+}
+window.applyTheme = applyTheme;
+
+const STYLE_NAMES = {
+  "google-rounded": "谷歌圆润", "sharp-flat": "极简直角",
+  "paper-layered": "纸张叠影", "neon-glow": "霓虹光晕",
+};
+
+function applyStyle(name) {
+  name = STYLE_NAMES[name] ? name : "google-rounded";
+  if (name !== "google-rounded" && currentTier === "free") {
+    toast(`「${STYLE_NAMES[name]}」为 Pro 质感档位，免费版仅提供「谷歌圆润」，请升级 Pro 解锁`, false);
+    const sel = $("#set-style");
+    if (sel) sel.value = "google-rounded";
+    document.documentElement.dataset.style = "google-rounded";
+    localStorage.setItem("selfmedia_style", "google-rounded");
+    return;
+  }
+  document.documentElement.dataset.style = name;
+  localStorage.setItem("selfmedia_style", name);
+  const sel = $("#set-style");
+  if (sel) sel.value = name;
+  toast("已切换质感：" + STYLE_NAMES[name]);
+}
+window.applyStyle = applyStyle;
+
+function glassStrength() {
+  const raw = localStorage.getItem("selfmedia_glass") || "follow";
+  if (raw === "follow" || raw === "on" || raw === "off") return raw === "off" ? 0 : 60;
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? 60 : Math.max(0, Math.min(100, n));
+}
+
+function applyGlassStrength(v) {
+  if (currentTier === "free") {
+    toast("透明毛玻璃无级调节为 Pro 会员功能，请升级 Pro 解锁", false);
+    const cb = $("#set-glass-follow");
+    if (cb) { cb.checked = true; onGlassFollowChange(cb); }
+    return;
+  }
+  const n = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+  const el = document.documentElement;
+  el.style.setProperty("--style-glass-alpha", (100 - n * 0.35).toFixed(1) + "%");
+  el.style.setProperty("--style-glass-blur", (n * 0.25).toFixed(1) + "px");
+  localStorage.setItem("selfmedia_glass", String(n));
+  const val = $("#set-glass-val");
+  if (val) val.textContent = n + "%";
+  const slider = $("#set-glass");
+  if (slider) slider.value = String(n);
+}
+window.applyGlassStrength = applyGlassStrength;
+
+function onGlassFollowChange(cb) {
+  const el = document.documentElement;
+  if (cb.checked) {
+    el.style.removeProperty("--style-glass-alpha");
+    el.style.removeProperty("--style-glass-blur");
+    localStorage.setItem("selfmedia_glass", "follow");
+    const val = $("#set-glass-val");
+    if (val) val.textContent = "跟随质感档位";
+    const slider = $("#set-glass");
+    if (slider) slider.disabled = true;
+  } else {
+    const slider = $("#set-glass");
+    if (slider) {
+      slider.disabled = false;
+      applyGlassStrength(slider.value);
+    }
+  }
+}
+window.onGlassFollowChange = onGlassFollowChange;
+
+function initGlassUI() {
+  const raw = localStorage.getItem("selfmedia_glass") || "follow";
+  const isFollow = raw === "follow";
+  const followCb = $("#set-glass-follow");
+  const slider = $("#set-glass");
+  const val = $("#set-glass-val");
+  if (followCb) followCb.checked = isFollow;
+  if (slider) {
+    slider.disabled = isFollow;
+    if (!isFollow) slider.value = String(glassStrength());
+  }
+  if (val) val.textContent = isFollow ? "跟随质感档位" : glassStrength() + "%";
+}
+
+const RETENTION_LABELS = {
+  candidates: "过期候选", logs: "过期日志", platform_days: "过期榜单快照",
+  stale_videos: "长期未拆解跟踪", jobs_to_archive: "可归档旧任务",
+  media_files: "过期大文件", dashboard_files: "超出保留份数导入文件",
+};
+
+async function loadRetention() {
+  const el = $("#retention-summary");
+  el.textContent = "正在扫描存储…";
+  try {
+    const d = await api("/api/retention/status");
+    const plan = d.plan || {};
+    const parts = Object.entries(plan)
+      .filter(([, n]) => n > 0)
+      .map(([k, n]) => `${RETENTION_LABELS[k] || k} ${n} 项`);
+    el.innerHTML = `当前占用 <b>${(d.space.scanned_mb || 0).toFixed(1)}MB</b>，可释放 <b>${(d.space.reclaimable_mb || 0).toFixed(1)}MB</b>` +
+      (parts.length ? "：" + parts.join("、") : "，无需清理");
+    $("#retention-last").textContent = d.last_run
+      ? `上次清理：${d.last_run.ran_at}（释放 ${(d.last_run.reclaimable_mb || 0).toFixed(1)}MB）`
+      : "尚未执行过清理";
+  } catch (e) {
+    el.textContent = "扫描失败: " + e.message;
+  }
+}
+window.loadRetention = loadRetention;
+
+async function applyRetention() {
+  if (!confirm("将删除过期日志/榜单快照/候选与未出爆款任务的旧图片（文案与拆解报告保留），确认执行？")) return;
+  const el = $("#retention-summary");
+  el.textContent = "正在清理…";
+  try {
+    const d = await api("/api/retention/apply", { method: "POST" });
+    const total = Object.values(d.applied || {}).reduce((a, b) => a + b, 0);
+    el.innerHTML = `清理完成：释放 <b>${(d.space.reclaimable_mb || 0).toFixed(1)}MB</b>（${total} 项）`;
+    $("#retention-last").textContent = "上次清理：" + (d.ran_at || "");
+    toast("数据清理完成");
+  } catch (e) {
+    el.textContent = "清理失败: " + e.message;
+  }
+}
+window.applyRetention = applyRetention;
+
 async function saveSettings(silent) {
   const st = $("#settings-status");
   const body = {};
@@ -1946,6 +3780,13 @@ async function saveSettings(silent) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    try {
+      localStorage.setItem("selfmedia_profile", JSON.stringify({
+        nickname: $("#set-nickname") ? $("#set-nickname").value.trim() : "",
+        avatar: $("#set-avatar") ? $("#set-avatar").value.trim() : "",
+      }));
+    } catch (e) { /* ignore */ }
+    applyProfile();
     $("#set-llm-key").value = "";
     $("#set-gzh-secret").value = "";
     $("#set-key-mask").textContent = d.llm.configured ? "当前已配置：" + d.llm.api_key_masked : "未配置";

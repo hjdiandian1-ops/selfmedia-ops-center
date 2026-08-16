@@ -17,6 +17,7 @@ import dashboard_analysis  # noqa: E402
 import data_stats  # noqa: E402
 import fetch_hot_topics  # noqa: E402
 import upgrade_agent_docs  # noqa: E402
+import retention as RT  # noqa: E402
 
 
 def _write_job(job_id, state="archive", log=None, scores=None):
@@ -284,6 +285,69 @@ def test_lesson_crud(isolated_flywheel):
     assert server.api_flywheel()["lessons"] == []
 
 
+def test_retention_api_roundtrip(isolated_dirs, tmp_path, monkeypatch):
+    monkeypatch.setattr(RT, "ROOT", str(isolated_dirs))
+    monkeypatch.setattr(server, "RETENTION_LOG", str(tmp_path / "retention_log.json"))
+    st = server.api_retention_status()
+    assert st["ok"] is True
+    assert "plan" in st and "space" in st
+    ap = server.api_retention_apply()
+    assert ap["ok"] is True and "applied" in ap and "ran_at" in ap
+    st2 = server.api_retention_status()
+    assert st2["last_run"] and st2["last_run"]["ran_at"] == ap["ran_at"]
+
+
+def test_adopt_truncates_long_title(isolated_dirs, monkeypatch):
+    def fake_run(args, timeout=60):
+        if args and args[0].endswith("job_state.py") and args[1] == "init":
+            jdir = os.path.join(server.JOBS_DIR, args[2])
+            os.makedirs(jdir, exist_ok=True)
+            with open(os.path.join(jdir, "state.json"), "w", encoding="utf-8") as f:
+                json.dump({"job_id": args[2]}, f, ensure_ascii=False)
+        return {"ok": True, "stdout": "ok", "stderr": ""}
+    monkeypatch.setattr(server, "run_script", fake_run)
+    monkeypatch.setattr(server, "_enqueue_job", lambda job_id: [])
+    monkeypatch.setattr(server, "_kick_production", lambda: False)
+    long_title = "超长选题标题" * 20
+    r = server.api_adopt(server.AdoptTopic(title=long_title))
+    assert r["production_started"] is False
+    brief = open(os.path.join(server.JOBS_DIR, r["job_id"], "brief.md"), encoding="utf-8").read()
+    assert f"- 主题：{long_title[:60]}" in brief
+    assert len(long_title[:60]) == 60
+
+
+def test_topics_preferences_roundtrip(tmp_path, monkeypatch):
+    monkeypatch.setattr(server, "TOPICS_DIR", str(tmp_path))
+    with open(os.path.join(str(tmp_path), "niches.json"), "w", encoding="utf-8") as f:
+        json.dump({"小红书": {"科技数码": ["AI"]}}, f, ensure_ascii=False)
+    r = server.api_topics_preferences_save(server.PrefPayload(
+        platforms={"小红书": ["科技数码", "不存在的赛道"]}))
+    assert r["preferences"]["platforms"]["小红书"] == ["科技数码"]
+    d = server.api_topics_preferences()
+    assert d["niches"]["小红书"]["科技数码"]
+    assert d["preferences"]["platforms"]["小红书"] == ["科技数码"]
+
+
+def test_templates_and_style_docs(tmp_path, monkeypatch):
+    t = server.api_templates()
+    assert len(t["categories"]) >= 3
+    docs = server.api_style_docs()
+    assert any(d["path"] == "skills/personal-style-guide.md" for d in docs["docs"])
+    monkeypatch.setattr(server, "ROOT", str(tmp_path))
+    rel = "skills/personal-style-guide.md"
+    p = os.path.join(str(tmp_path), rel)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w", encoding="utf-8") as f:
+        f.write("旧内容")
+    r = server.api_style_doc_save(server.StyleDocPayload(path=rel, content="新文风"))
+    assert r["ok"] is True
+    assert open(p, encoding="utf-8").read() == "新文风"
+    assert server.api_style_doc(path=rel)["content"] == "新文风"
+    backups = list((tmp_path / "data" / "style_backups").glob("*-personal-style-guide.md"))
+    assert len(backups) == 1
+    assert backups[0].read_text(encoding="utf-8") == "旧内容"
+
+
 def test_flywheel_regenerate(isolated_dirs, isolated_flywheel):
     r = server.api_flywheel_regenerate()
     assert r["ok"] is True
@@ -486,10 +550,13 @@ def test_upgrade_agent_docs_idempotent(tmp_path):
 
     r1 = upgrade_agent_docs.upgrade_agents(str(agents_dir), str(fly))
     assert r1["agents"][0]["patches"] == 1
+    assert r1["applied_lessons"] == 1
     v1 = r1["agents"][0]["version"]
     assert v1 != "1.0.0"
     text = doc.read_text(encoding="utf-8")
     assert "标题带数字" in text and "- [经验]" in text
+    lessons_after = json.loads((fly / "lessons.json").read_text(encoding="utf-8"))["lessons"]
+    assert lessons_after[0]["applied"] is True
 
     r2 = upgrade_agent_docs.upgrade_agents(str(agents_dir), str(fly))
     assert r2["agents"] == []  # 无新内容不重复升版/不写盘

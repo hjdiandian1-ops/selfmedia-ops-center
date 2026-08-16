@@ -17,8 +17,8 @@ import re
 import socket
 import zipfile
 
-# 允许中英文、数字、下划线、连字符（Job 命名与命令行参数共用）
-JOB_ID_RE = re.compile(r"^[A-Za-z0-9_\-\u4e00-\u9fa5]{1,80}$")
+# 允许中英文、数字、下划线、连字符、点、空格（真实任务名含 1.2 万亿、Grok 4.6 等）
+JOB_ID_RE = re.compile(r"^[A-Za-z0-9_\-. \u4e00-\u9fa5]{1,80}$")
 THEME_RE = re.compile(r"^[\u4e00-\u9fa5A-Za-z0-9_，。、：:；;！!？?（）()「」【】《》\s·—-]{1,200}$")
 
 # 默认限制：单文件 50MB、条目数 300、单成员解压 200MB、总解压 600MB、压缩比 1000:1
@@ -37,7 +37,7 @@ def valid_job_id(job_id):
 def require_job_id(job_id, label="job_id"):
     """不合法即抛 ValueError（服务端转 400）。"""
     if not valid_job_id(job_id):
-        raise ValueError(f"{label} 含非法字符（仅允许中英文、数字、_ 与 -）: {job_id!r}")
+        raise ValueError(f"{label} 含非法字符（仅允许中英文、数字、_、-、. 与空格）: {job_id!r}")
     return job_id
 
 

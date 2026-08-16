@@ -37,6 +37,12 @@ PLATFORM_APPLY = {
     "公众号": "公众号主编",
 }
 
+PLATFORM_SLUG = {
+    "小红书主编": "xhs",
+    "公众号主编": "gzh",
+    "短视频导演": "dy",
+}
+
 PLATFORM_ADVICE = {
     "小红书": "标题对齐热搜词、封面抓点击、正文做成可收藏的清单/教程/避坑，结尾给关注理由。",
     "抖音": "前 3 秒强钩子、高信息密度保完播，结尾引导收藏/关注等深度行为，选题埋搜索词。",
@@ -145,7 +151,7 @@ def build_platform_lesson(platform, items, week):
 
 
 def upsert_lessons(lessons_store, new_lessons, now):
-    """同周同平台幂等：命中 source=viral_weekly + apply_to 则更新，否则新增。"""
+    """同周同平台幂等：命中 source=viral_weekly + apply_to 则更新，否则新增（每平台唯一 id）。"""
     lessons = lessons_store.setdefault("lessons", [])
     for nl in new_lessons:
         hit = next((l for l in lessons
@@ -156,8 +162,9 @@ def upsert_lessons(lessons_store, new_lessons, now):
             hit.update({k: v for k, v in nl.items()})
             hit["updated_at"] = now
         else:
+            slug = PLATFORM_SLUG.get(nl.get("apply_to", ""), "oth")
             lessons.insert(0, {
-                "id": f"lw_{now.replace('-', '').replace(':', '').replace(' ', '')}",
+                "id": f"lw_{now.replace('-', '').replace(':', '').replace(' ', '')}_{slug}",
                 **nl,
                 "applied": False,
                 "created_at": now,

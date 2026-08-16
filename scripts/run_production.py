@@ -21,6 +21,9 @@ import sys
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 JOBS_DIR = os.path.join(ROOT, "jobs")
 SCRIPTS = os.path.dirname(os.path.abspath(__file__))
+TEMPLATES_FILE = os.path.join(ROOT, "data", "templates.json")
+USER_PREFS_FILE = os.path.join(ROOT, "data", "user_prefs.json")
+STYLE_GUIDE_FILE = os.path.join(ROOT, "skills", "personal-style-guide.md")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from license.license_gate import check_feature  # noqa: E402
@@ -49,6 +52,40 @@ def read_text(path):
         return ""
 
 
+def user_template_prefs():
+    """读取用户偏好的模板选择（小红书卡片/公众号排版/封面风格），返回可读指令文本。"""
+    try:
+        import json
+        with open(USER_PREFS_FILE, encoding="utf-8") as f:
+            prefs = json.load(f).get("templates", {})
+    except Exception:
+        return ""
+    try:
+        with open(TEMPLATES_FILE, encoding="utf-8") as f:
+            td = json.load(f)
+    except Exception:
+        return ""
+    by_id = {}
+    for cat in td.get("categories", []):
+        cat_name = cat.get("name", "")
+        for it in cat.get("items", []):
+            by_id[it.get("id", "")] = (cat_name, it.get("name", ""), it.get("desc", ""))
+    mapping = {"xhs_card": "小红书图文卡片", "gzh_layout": "公众号排版", "cover_style": "封面构图风格"}
+    refs = {
+        "xhs_card": "skills/guizang-social-card-skill/references/theme-presets.md",
+        "cover_style": "skills/cover-design-skill/references/style-templates.md",
+    }
+    lines = []
+    for key in ("xhs_card", "gzh_layout", "cover_style"):
+        tid = prefs.get(key)
+        if not tid:
+            continue
+        cat_name, name, desc = by_id.get(tid, ("", tid, ""))
+        ref = refs.get(key) or f"skills/gzh-design-skill/references/theme-{tid}.md"
+        lines.append(f"- {mapping.get(key, key)}：{name}（{cat_name}，{desc}）参考 {ref}")
+    return "\n".join(lines)
+
+
 def build_prompt(job_id):
     state = {}
     try:
@@ -60,12 +97,20 @@ def build_prompt(job_id):
     theme = state.get("theme") or job_id
     brief = read_text(os.path.join(JOBS_DIR, job_id, "brief.md"))
     feedback = read_text(os.path.join(ROOT, "data", "flywheel", "pipeline_feedback.md"))
+    template_prefs = user_template_prefs()
+    style_guide = read_text(STYLE_GUIDE_FILE)
     return "\n".join([
         "你是「自媒体运营工厂」的生产执行器。请把下面的 Job 从素材一路生产到归档，不要中途停下来问问题。",
         "",
         f"Job ID：{job_id}",
         f"主题：{theme}",
         "期望平台：小红书（图文卡片 + 文案）+ 公众号（深度长文 + 排版 HTML）+ 短视频分镜脚本（可选，主题适合时）。",
+        "",
+        "## 用户偏好模板（必须遵循）",
+        template_prefs or "（用户尚未在「设置 → 模板选择」中配置，沿用各 Agent 默认模板）",
+        "",
+        "## 用户文风指南（必须遵循）",
+        style_guide[-3000:] if style_guide else "（未设置个人文风指南，沿用 agents/ 各角色 SOP 默认文风）",
         "",
         "## 生产简报",
         brief or "（无简报，按主题直接开工）",
@@ -98,6 +143,7 @@ def _api_production(job_id, prompt, log_path):
         "xhs={\"title\":\"小红书标题≤20字\",\"body\":\"小红书正文\"}；"
         "gzh=公众号长文 Markdown；video=短视频 120s 分镜脚本 Markdown。"
         "内容要硬核、有具体数字、无 AI 腔（不用“不是…而是…”“首先其次最后”等模板）。"
+        "若用户已配置模板偏好与个人文风，必须按其中的小红书卡片风格、公众号排版与封面风格落笔。"
     )
     try:
         out = llm_engine.chat_json([

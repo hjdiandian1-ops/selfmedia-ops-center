@@ -13,10 +13,12 @@
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
 import glob
+import logging
 import tempfile
 from collections import Counter
 from datetime import datetime, timedelta
@@ -26,6 +28,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+logger = logging.getLogger("selfmedia")
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SCRIPTS = os.path.join(ROOT, "scripts")
@@ -50,6 +54,24 @@ COLLECT_VIRAL = os.path.join(SCRIPTS, "collect_viral_candidates.py")
 COLLECT_PLATFORM_VIRALS = os.path.join(SCRIPTS, "collect_platform_virals.py")
 RUN_VIRAL_BREAKDOWN_DAILY = os.path.join(SCRIPTS, "run_viral_breakdown_daily.py")
 AGGREGATE_VIRAL = os.path.join(SCRIPTS, "aggregate_viral_lessons.py")
+RETENTION_LOG = os.path.join(ROOT, "data", "retention_log.json")
+TOPICS_DIR = os.path.join(ROOT, "data", "topics")
+TEMPLATES_FILE = os.path.join(ROOT, "data", "templates.json")
+USER_PREFS_FILE = os.path.join(ROOT, "data", "user_prefs.json")
+
+STYLE_DOCS = [
+    ("skills/personal-style-guide.md", "个人文风指南"),
+    ("agent.md", "总入口 Agent 指令"),
+    ("agents/xhs-editor-小红书主编.md", "小红书主编 SOP"),
+    ("agents/gzh-editor-公众号主编.md", "公众号主编 SOP"),
+    ("agents/video-director-短视频导演.md", "短视频导演 SOP"),
+    ("workflows/自媒体运营工厂.md", "自媒体运营工厂工作流"),
+    ("skills/anti-ai-flavor-skill/SKILL.md", "去 AI 味规则"),
+]
+STYLE_DOC_ALLOWED_PREFIXES = ("skills/", "agents/", "workflows/", "agent.md")
+STYLE_DOC_DEFAULTS = {
+    "skills/personal-style-guide.md": os.path.join("data", "templates", "style_docs", "personal-style-guide.template.md"),
+}
 
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
@@ -57,6 +79,7 @@ import data_stats  # noqa: E402
 import dashboard_analysis  # noqa: E402
 import upgrade_agent_docs  # noqa: E402
 import security_utils  # noqa: E402
+import retention as RT  # noqa: E402
 from license import license_gate as LG  # noqa: E402
 import llm_engine  # noqa: E402
 
@@ -640,18 +663,34 @@ def _collect_job_rows():
 
 
 @app.get("/api/stats")
-def api_stats():
+def api_stats(platforms: str = ""):
     """自有数据统计：实时扫描 jobs/ + outputs/，聚合 KPI/平台/主题/趋势/内容特征。"""
-    return data_stats.build_summary(jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR)
+    plats = _parse_platforms(platforms)
+    return data_stats.build_summary(
+        jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR, platforms=plats)
 
 
 @app.get("/api/dashboard")
-def api_dashboard(range: int = 7):
-    """小红书式四页签数据分析 + 薄弱点诊断（近7日/近30日）。"""
-    if range not in (7, 30):
-        raise HTTPException(status_code=400, detail="range 仅支持 7 或 30")
+def api_dashboard(range: int = 7, period: str = "day", platforms: str = ""):
+    """平台看板：period=day|week|month|year，platforms=逗号分隔的平台过滤。"""
+    if period not in dashboard_analysis.PERIOD_DAYS:
+        raise HTTPException(status_code=400, detail="period 仅支持 day/week/month/year")
+    plats = _parse_platforms(platforms)
     return dashboard_analysis.build_dashboard(
-        range_days=range, jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR)
+        period=period, platforms=plats,
+        jobs_dir=JOBS_DIR, outputs_dir=OUTPUTS_DIR, data_dir=DATA_DIR)
+
+
+def _parse_platforms(platforms: str):
+    """解析逗号分隔的平台白名单；空串返回 None（全部平台）。"""
+    if not platforms.strip():
+        return None
+    names = [p.strip() for p in platforms.split(",") if p.strip()]
+    allowed = set(dashboard_analysis.PLATFORM_ORDER)
+    bad = [p for p in names if p not in allowed]
+    if bad:
+        raise HTTPException(status_code=400, detail=f"平台不合法: {bad}")
+    return names
 
 
 def _agent_outputs(job_id: str, limit: int = 3):
@@ -833,7 +872,7 @@ def api_viral_save(payload: ViralVideo):
     _validate_viral(payload)
     data = _load_flywheel(VIRAL_FILE, {"videos": []})
     videos = data.get("videos", [])
-    item = payload.dict()
+    item = payload.model_dump()
     if payload.id:
         idx = next((i for i, v in enumerate(videos) if v.get("id") == payload.id), None)
         if idx is None:
@@ -901,7 +940,9 @@ def api_viral_analyze(payload: ViralAnalyze):
         raise HTTPException(status_code=400, detail="字段过长")
     if payload.platform not in ("小红书", "抖音", "视频号", "B站", "快手", "X", "公众号", "其他"):
         raise HTTPException(status_code=400, detail=f"平台不合法: {payload.platform}")
-    if payload.link.strip() and not security_utils.safe_http_url(payload.link):
+    # 链接只传给 AI 拆解做参考，服务端不会主动请求它：用 resolve_dns=False，
+    # 避免本机 DNS 抖动/受限把正常公网链接误判为内网（与采集器同策略）。
+    if payload.link.strip() and not security_utils.safe_http_url(payload.link, resolve_dns=False):
         raise HTTPException(status_code=400, detail="链接不合法：仅允许公网 http/https，禁止内网/元数据地址")
 
     data = _load_flywheel(VIRAL_FILE, {"videos": []})
@@ -1115,7 +1156,7 @@ def api_lesson_save(payload: LessonEntry):
     _validate_lesson(payload)
     data = _load_flywheel(LESSONS_FILE, {"lessons": []})
     lessons = data.get("lessons", [])
-    item = payload.dict()
+    item = payload.model_dump()
     if payload.id:
         idx = next((i for i, l in enumerate(lessons) if l.get("id") == payload.id), None)
         if idx is None:
@@ -1159,6 +1200,77 @@ def api_flywheel_regenerate():
         f.write(text)
     agents = upgrade_agent_docs.upgrade_agents(AGENTS_DIR, FLYWHEEL_DIR)
     return {"ok": True, "path": FEEDBACK_FILE, "feedback": text, "agents": agents}
+
+
+@app.get("/api/retention/status")
+def api_retention_status():
+    """数据体检：各模块存储占用与可清理项（不删除任何文件）。"""
+    try:
+        r = RT.scan()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"数据体检失败: {exc}")
+    log = read_json(RETENTION_LOG) or {}
+    runs = log.get("runs", [])
+    return {
+        "ok": True,
+        "plan": {k: len(v) for k, v in r["plan"].items()},
+        "space": r["space"],
+        "last_run": runs[-1] if runs else None,
+    }
+
+
+@app.post("/api/retention/apply")
+def api_retention_apply():
+    """执行数据清理：删除过期日志/快照/候选/未出爆款的旧图片，并归档旧任务。"""
+    r = RT.scan()
+    applied = RT.apply_plan(r)
+    log = read_json(RETENTION_LOG) or {"runs": []}
+    runs = log.setdefault("runs", [])
+    runs.append({
+        "ran_at": _now_str(),
+        "applied": applied.get("applied", {}),
+        "scanned_mb": r["space"]["scanned_mb"],
+        "reclaimable_mb": r["space"]["reclaimable_mb"],
+    })
+    log["runs"] = runs[-10:]
+    os.makedirs(os.path.dirname(RETENTION_LOG), exist_ok=True)
+    with open(RETENTION_LOG, "w", encoding="utf-8") as f:
+        json.dump(log, f, ensure_ascii=False, indent=2)
+    return {
+        "ok": True,
+        "applied": applied.get("applied", {}),
+        "space": r["space"],
+        "ran_at": runs[-1]["ran_at"],
+    }
+
+
+class PrefPayload(BaseModel):
+    platforms: dict = {}
+
+
+@app.get("/api/topics/preferences")
+def api_topics_preferences():
+    prefs = read_json(os.path.join(TOPICS_DIR, "preferences.json")) or {}
+    niches = read_json(os.path.join(TOPICS_DIR, "niches.json")) or {}
+    return {"preferences": prefs, "niches": niches}
+
+
+@app.post("/api/topics/preferences")
+def api_topics_preferences_save(payload: PrefPayload):
+    """保存选题偏好：平台→赛道列表（无选择=默认模式）。"""
+    niches = read_json(os.path.join(TOPICS_DIR, "niches.json")) or {}
+    cleaned = {}
+    for platform, names in (payload.platforms or {}).items():
+        if platform not in niches:
+            continue
+        valid = [n for n in names if n in niches[platform]]
+        if valid:
+            cleaned[platform] = valid
+    data = {"platforms": cleaned, "updated_at": _now_str()}
+    os.makedirs(TOPICS_DIR, exist_ok=True)
+    with open(os.path.join(TOPICS_DIR, "preferences.json"), "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "preferences": data}
 
 
 @app.get("/api/topics")
@@ -1314,8 +1426,9 @@ class AdoptTopic(BaseModel):
 def api_adopt(payload: AdoptTopic):
     _license_guard("production")
     title = payload.title.strip()
-    if not title or len(title) > 60:
-        raise HTTPException(status_code=400, detail="标题为空或过长")
+    if not title:
+        raise HTTPException(status_code=400, detail="标题为空")
+    title = title[:60]  # 超长标题自动截断，避免长选题无法建任务
     if len(payload.link) > 500 or len(payload.notes) > 500:
         raise HTTPException(status_code=400, detail="link/notes 过长")
     safe_slug = re.sub(r"[^A-Za-z0-9_\-\u4e00-\u9fa5]", "", title[:12]) or "未命名选题"
@@ -1447,6 +1560,216 @@ class GzhDraftRequest(BaseModel):
 
 class LicenseActivateRequest(BaseModel):
     token: str
+
+
+def _safe_style_path(path):
+    p = os.path.normpath(path or "")
+    if p.startswith("/") or ".." in p:
+        raise HTTPException(status_code=400, detail="path 不合法")
+    if p == "agent.md" or p.startswith(STYLE_DOC_ALLOWED_PREFIXES):
+        return os.path.join(ROOT, p)
+    raise HTTPException(status_code=400, detail=f"path 不在可编辑白名单: {p}")
+
+
+@app.get("/api/templates")
+def api_templates():
+    data = read_json(TEMPLATES_FILE) or {"categories": []}
+    return data
+
+
+STYLE_PRESETS = [
+    {"id": "default-template", "name": "通用填空向导（基础骨架）", "file": os.path.join("data", "templates", "style_docs", "personal-style-guide.template.md")},
+    {"id": "tech-hands-on", "name": "科技实战风（极客评测/提效）", "file": os.path.join("data", "templates", "style_docs", "tech-hands-on.template.md")},
+    {"id": "business-deep-dive", "name": "深度商业风（商业观察/尽调拆解）", "file": os.path.join("data", "templates", "style_docs", "business-deep-dive.template.md")},
+    {"id": "xhs-lifestyle", "name": "小红书轻快风（视觉种草/好物干货）", "file": os.path.join("data", "templates", "style_docs", "xhs-lifestyle.template.md")},
+    {"id": "career-growth", "name": "职场认知风（避坑指南/效率跃迁）", "file": os.path.join("data", "templates", "style_docs", "career-growth.template.md")},
+]
+
+
+@app.get("/api/style-presets")
+def api_style_presets():
+    out = []
+    for sp in STYLE_PRESETS:
+        full = os.path.join(ROOT, sp["file"])
+        content = read_text(full) if os.path.exists(full) else ""
+        out.append({"id": sp["id"], "name": sp["name"], "content": content})
+    return {"presets": out}
+
+
+@app.get("/api/style-docs")
+def api_style_docs():
+    out = []
+    for rel, name in STYLE_DOCS:
+        _ensure_style_default(rel)
+        p = os.path.join(ROOT, rel)
+        out.append({
+            "path": rel, "name": name,
+            "chars": os.path.getsize(p) if os.path.exists(p) else 0,
+            "is_default": _style_is_default(rel),
+        })
+    return {"docs": out}
+
+
+@app.get("/api/style-doc")
+def api_style_doc(path: str = ""):
+    p = _safe_style_path(path)
+    _ensure_style_default(path)
+    if not os.path.exists(p):
+        raise HTTPException(status_code=404, detail=f"文档不存在: {path}")
+    return {"path": path, "content": read_text(p), "is_default": _style_is_default(path)}
+
+
+class StyleDocPayload(BaseModel):
+    path: str
+    content: str = ""
+
+
+class StyleDocResetPayload(BaseModel):
+    path: str
+
+
+class StyleGuidePayload(BaseModel):
+    audience: str = ""
+    platforms: str = ""
+    tone: str = ""
+    avoid: str = ""
+    keywords: str = ""
+    redlines: str = ""
+
+
+def _default_style_content(rel: str) -> str:
+    tpl = STYLE_DOC_DEFAULTS.get(rel)
+    if not tpl:
+        return ""
+    p = os.path.join(ROOT, tpl)
+    return read_text(p) if os.path.exists(p) else ""
+
+
+def _style_is_default(rel: str) -> bool:
+    default = _default_style_content(rel)
+    if not default:
+        return False
+    p = os.path.join(ROOT, rel)
+    return read_text(p).strip() == default.strip() if os.path.exists(p) else True
+
+
+def _ensure_style_default(rel: str) -> bool:
+    """文档不存在时用默认模板初始化（小白开箱即用）。"""
+    p = os.path.join(ROOT, rel)
+    if os.path.exists(p):
+        return False
+    content = _default_style_content(rel)
+    if not content:
+        return False
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(content)
+    return True
+
+
+def _backup_style_doc(p: str) -> None:
+    if not os.path.exists(p):
+        return
+    backup_dir = os.path.join(ROOT, "data", "style_backups")
+    os.makedirs(backup_dir, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup_path = os.path.join(backup_dir, f"{stamp}-{os.path.basename(p)}")
+    try:
+        shutil.copy2(p, backup_path)
+    except OSError as e:
+        logger.warning("备份旧文风文档失败: %s", e)
+
+
+@app.post("/api/style-doc/reset")
+def api_style_doc_reset(payload: StyleDocResetPayload):
+    p = _safe_style_path(payload.path)
+    content = _default_style_content(payload.path)
+    if not content:
+        raise HTTPException(status_code=404, detail=f"该文档没有默认模板: {payload.path}")
+    _backup_style_doc(p)
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(content)
+    return {"ok": True, "path": payload.path, "is_default": True}
+
+
+@app.post("/api/style-doc/guide")
+def api_style_doc_guide(payload: StyleGuidePayload):
+    """文风初始化引导：LLM 可用则 AI 生成，否则返回可填空模板骨架。"""
+    default = _default_style_content("skills/personal-style-guide.md")
+    prompt = (
+        "根据下面的回答生成一份《个人文风指南》Markdown。"
+        "必须包含分节：人设定位/目标读者/主要平台/说话口吻/要避免的表达/常用术语/开头与结构/硬红线/参考示例。"
+        "语气自然、可直接用于自媒体生产，不要出现解释性文字，只输出 Markdown 正文。\n\n"
+        f"目标读者：{payload.audience or '（未填）'}\n"
+        f"主要平台：{payload.platforms or '（未填）'}\n"
+        f"说话风格：{payload.tone or '（未填）'}\n"
+        f"要避免的表达：{payload.avoid or '（未填）'}\n"
+        f"常用术语/黑话：{payload.keywords or '（未填）'}\n"
+        f"硬红线：{payload.redlines or '（未填）'}\n\n"
+        f"默认模板结构参考：\n{default[:1800]}"
+    )
+    try:
+        out = llm_engine.chat_json(
+            [
+                {"role": "system", "content": "你是资深自媒体文风顾问，擅长把用户零散回答整理成可执行的内容风格指南。"},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=3000,
+        )
+        content = ((out or {}).get("content") or "").strip()
+        if content:
+            return {"ok": True, "mode": "ai", "content": content}
+    except Exception as e:
+        logger.warning("AI 文风生成失败，降级为模板模式: %s", e)
+    content = (
+        "# 个人文风指南（引导生成草稿）\n\n"
+        f"- 目标读者：{payload.audience or '（待补充）'}\n"
+        f"- 主要平台：{payload.platforms or '（待补充）'}\n"
+        f"- 说话风格：{payload.tone or '（待补充）'}\n"
+        f"- 要避免的表达：{payload.avoid or '（待补充）'}\n"
+        f"- 常用术语/黑话：{payload.keywords or '（待补充）'}\n"
+        f"- 硬红线：{payload.redlines or '（待补充）'}\n\n"
+        "> 这是填空草稿，请补充具体例子后保存；配置 LLM Key 后可一键 AI 生成更完整的版本。"
+    )
+    return {"ok": True, "mode": "template", "content": content}
+
+
+@app.post("/api/style-doc")
+def api_style_doc_save(payload: StyleDocPayload):
+    p = _safe_style_path(payload.path)
+    if len(payload.content) > 200_000:
+        raise HTTPException(status_code=400, detail="内容过大（≤200KB）")
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    _backup_style_doc(p)
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(payload.content)
+    return {"ok": True, "path": payload.path}
+
+
+class UserPrefsPayload(BaseModel):
+    templates: dict = {}
+
+
+@app.post("/api/user-preferences")
+def api_user_preferences_save(payload: UserPrefsPayload):
+    """保存用户偏好（模板选择等），供初始化与流水线读取。"""
+    templates = payload.templates or {}
+    valid_ids = set()
+    td = read_json(TEMPLATES_FILE) or {"categories": []}
+    for cat in td.get("categories", []):
+        for it in cat.get("items", []):
+            valid_ids.add(it.get("id", ""))
+    cleaned = {k: v for k, v in templates.items() if v in valid_ids}
+    data = {"templates": cleaned, "updated_at": _now_str()}
+    os.makedirs(os.path.dirname(USER_PREFS_FILE), exist_ok=True)
+    with open(USER_PREFS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "preferences": data}
+
+
+@app.get("/api/user-preferences")
+def api_user_preferences():
+    return read_json(USER_PREFS_FILE) or {"templates": {}}
 
 
 @app.get("/api/settings")
@@ -1631,7 +1954,8 @@ def api_pipeline(payload: PipelineRequest):
         return api_qa(QaRequest(output_dir=payload.output_dir))
     if action not in ("topics", "recycle", "weekly"):
         raise HTTPException(status_code=400, detail=f"不支持的 action: {action}")
-    r = run_script(["run_daily_pipeline.py", f"--{action}"], timeout=180)
+    r = run_script(["run_daily_pipeline.py", f"--{action}"],
+                   timeout=300 if action == "topics" else 180)
     return r
 
 
@@ -1650,6 +1974,35 @@ class StatsBackfill(BaseModel):
     collects: int = 0
     comments: int = 0
     url: str = ""
+
+
+class AccountSnapshot(BaseModel):
+    followers: int = 0
+    following: int = 0
+    likes_collects: int = 0
+
+
+@app.post("/api/stats/account-snapshot")
+def api_account_snapshot(payload: AccountSnapshot):
+    """保存账号快照（小红书总粉丝数等；导出表不含总粉丝，需手动维护）。"""
+    for name, val in (("followers", payload.followers), ("following", payload.following),
+                      ("likes_collects", payload.likes_collects)):
+        if not isinstance(val, int) or val < 0:
+            raise HTTPException(status_code=400, detail=f"{name} 必须是非负整数")
+    path = os.path.join(DATA_DIR, "xhs_account.json")
+    data = read_json(path) or {}
+    data.update({
+        "followers": payload.followers,
+        "following": payload.following,
+        "likes_collects": payload.likes_collects,
+        "updated_at": _now_str(),
+        "period": data.get("period", ""),
+    })
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "followers": payload.followers}
+
 
 @app.post("/api/publish/manual")
 def api_publish_manual(payload: ManualPublishRequest):

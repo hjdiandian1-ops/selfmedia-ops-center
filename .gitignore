@@ -19,6 +19,11 @@ materials/*
 !materials/.gitkeep
 data/*
 !data/.gitkeep
+!data/templates.json
+!data/templates/
+!data/templates/**
+!data/topics/
+!data/topics/niches.json
 !data/stats/
 data/stats/*
 !data/stats/.gitkeep
@@ -40,6 +45,10 @@ data/compliance/*
 !data/compliance/words/
 data/compliance/words/*
 !data/compliance/words/.gitkeep
+data/topics/preferences.json
+data/topics/lexicon.json
+data/user_prefs.json
+data/style_backups/
 nas-n8n/
 skills/范文库/
 
