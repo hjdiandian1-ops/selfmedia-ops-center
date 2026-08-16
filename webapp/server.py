@@ -18,6 +18,7 @@ import signal
 import subprocess
 import sys
 import glob
+import logging
 import tempfile
 from collections import Counter
 from datetime import datetime, timedelta
@@ -27,6 +28,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+logger = logging.getLogger("selfmedia")
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SCRIPTS = os.path.join(ROOT, "scripts")
@@ -1673,8 +1676,8 @@ def _backup_style_doc(p: str) -> None:
     backup_path = os.path.join(backup_dir, f"{stamp}-{os.path.basename(p)}")
     try:
         shutil.copy2(p, backup_path)
-    except Exception:
-        pass  # 备份失败不阻断保存
+    except OSError as e:
+        logger.warning("备份旧文风文档失败: %s", e)
 
 
 @app.post("/api/style-doc/reset")
@@ -1716,8 +1719,8 @@ def api_style_doc_guide(payload: StyleGuidePayload):
         content = ((out or {}).get("content") or "").strip()
         if content:
             return {"ok": True, "mode": "ai", "content": content}
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("AI 文风生成失败，降级为模板模式: %s", e)
     content = (
         "# 个人文风指南（引导生成草稿）\n\n"
         f"- 目标读者：{payload.audience or '（待补充）'}\n"
