@@ -17,6 +17,8 @@ outputs/*
 !outputs/.gitkeep
 materials/*
 !materials/.gitkeep
+!materials/样例_热点雷达.md
+!materials/样例_选题推荐.md
 data/*
 !data/.gitkeep
 !data/templates.json

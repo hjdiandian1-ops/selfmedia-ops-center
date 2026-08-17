@@ -101,13 +101,30 @@ def strip_html(text):
     return html.unescape(re.sub(r"<[^>]+>", " ", text))
 
 
-def platform_files(output_dir):
-    """按平台收集待审文本：小红书/公众号/短视频 子目录下的 md 与 html。"""
+def platform_files(target_path):
+    """按平台收集待审文本：支持单文件、平台子目录或通用目录。"""
     found = {}
+    if os.path.isfile(target_path):
+        try:
+            with open(target_path, encoding="utf-8") as f:
+                t = f.read()
+            if target_path.endswith((".html", ".htm")):
+                t = strip_html(t)
+            # 智能推断平台
+            plat = "通用"
+            for p in ("小红书", "公众号", "短视频", "抖音"):
+                if p in target_path or f"platform: {p}" in t:
+                    plat = p
+                    break
+            return {plat: t}
+        except OSError:
+            return {}
+
+    # 目录扫描：优先按小红书/公众号/短视频平台子目录扫描
     for plat in ("小红书", "公众号", "短视频", "抖音"):
         texts = []
         for ext in ("*.md", "*.html", "*.htm"):
-            for p in glob.glob(os.path.join(output_dir, plat, ext)):
+            for p in glob.glob(os.path.join(target_path, plat, ext)):
                 try:
                     with open(p, encoding="utf-8") as f:
                         t = f.read()
@@ -118,6 +135,25 @@ def platform_files(output_dir):
                 texts.append(t)
         if texts:
             found[plat] = "\n".join(texts)
+
+    # 兜底：若没有标准平台子目录，直接扫描该目录下所有 md / html 文件
+    if not found and os.path.isdir(target_path):
+        generic_texts = []
+        for root_dir, _, files in os.walk(target_path):
+            for fname in files:
+                if fname.endswith((".md", ".html", ".htm")):
+                    p = os.path.join(root_dir, fname)
+                    try:
+                        with open(p, encoding="utf-8") as f:
+                            t = f.read()
+                        if fname.endswith((".html", ".htm")):
+                            t = strip_html(t)
+                        generic_texts.append(t)
+                    except OSError:
+                        continue
+        if generic_texts:
+            found["通用"] = "\n".join(generic_texts)
+
     return found
 
 
@@ -184,8 +220,8 @@ def check_platform(platform, text, words, checks):
                 "evidence": _snippet(text, w),
             })
 
-    # 平台专有外挂词库
-    key = {"小红书": "xhs", "抖音": "douyin", "公众号": "gzh"}[platform]
+    # 平台专属违禁词
+    key = {"小红书": "xhs", "抖音": "douyin", "公众号": "gzh"}.get(platform, "gzh")
     for w in words.get(key, []):
         if w in norm:
             checks.append({
@@ -243,8 +279,14 @@ def run(output_dir, out_path=None):
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "rules_note": "机器初筛，高风险项禁止发布；中风险人工复核；词库见 data/compliance/words/",
     }
-    out_path = out_path or os.path.join(output_dir, "compliance_report.json")
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    if not out_path:
+        if os.path.isdir(output_dir):
+            out_path = os.path.join(output_dir, "compliance_report.json")
+        else:
+            out_path = os.path.join(os.path.dirname(output_dir) or ".", "compliance_report.json")
+    dir_name = os.path.dirname(out_path)
+    if dir_name:
+        os.makedirs(dir_name, exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
     return report

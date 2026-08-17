@@ -1665,7 +1665,11 @@ async function adopt(btn, title) {
       loadTopics();
       loadPipeline();
     } catch (e) {
-      toast("建任务失败: " + e.message, false);
+      if (e.message && (e.message.includes("403") || e.message.includes("Pro") || e.message.includes("未授权") || e.message.includes("会员"))) {
+        openProUpgradeModal();
+      } else {
+        toast("建任务失败: " + e.message, false);
+      }
     }
   });
 }
@@ -3605,11 +3609,13 @@ async function loadSettings() {
     $("#set-llm-model").value = d.llm.model || "";
     $("#set-gzh-id").value = "";
     $("#set-gzh-secret").value = "";
+    if ($("#set-proxy-url")) $("#set-proxy-url").value = (d.proxy && d.proxy.url) ? d.proxy.url : "";
     $("#set-key-mask").textContent = d.llm.configured
       ? "当前已配置：" + d.llm.api_key_masked
       : "未配置（免费功能不需要 AI Key）";
     const gzhTxt = d.gzh.configured ? "公众号已配置：" + d.gzh.app_id_masked : "公众号未配置（手动发布也能用）";
-    st.textContent = (d.llm.status_ok ? "AI 引擎就绪（" + d.engine.mode + "）" : "AI 引擎：" + d.llm.status_reason) + " · " + gzhTxt;
+    const proxyTxt = (d.proxy && d.proxy.configured) ? "代理已配置" : "代理未配置（国内源秒开）";
+    st.textContent = (d.llm.status_ok ? "AI 引擎就绪（" + d.engine.mode + "）" : "AI 引擎：" + d.llm.status_reason) + " · " + gzhTxt + " · " + proxyTxt;
   } catch (e) {
     st.textContent = "读取配置失败: " + e.message;
   }
@@ -3768,12 +3774,13 @@ window.applyRetention = applyRetention;
 async function saveSettings(silent) {
   const st = $("#settings-status");
   const body = {};
-  const val = (id) => $(id).value.trim();
+  const val = (id) => $(id) ? $(id).value.trim() : "";
   if (val("#set-llm-key")) body.llm_api_key = val("#set-llm-key");
   if (val("#set-llm-base")) body.llm_base_url = val("#set-llm-base");
   if (val("#set-llm-model")) body.llm_model = val("#set-llm-model");
   if (val("#set-gzh-id")) body.gzh_app_id = val("#set-gzh-id");
   if (val("#set-gzh-secret")) body.gzh_app_secret = val("#set-gzh-secret");
+  if ($("#set-proxy-url")) body.proxy_url = val("#set-proxy-url");
   try {
     const d = await api("/api/settings", {
       method: "POST",
@@ -3802,6 +3809,28 @@ async function saveSettings(silent) {
 }
 window.saveSettings = saveSettings;
 
+async function testProxyConnection() {
+  const st = $("#set-proxy-status");
+  const pUrl = $("#set-proxy-url") ? $("#set-proxy-url").value.trim() : "";
+  if (!pUrl) return toast("请先输入代理服务器地址（如 http://127.0.0.1:7897）", false);
+  st.textContent = "正在测试代理连通性…";
+  try {
+    await saveSettings(true);
+    const d = await api("/api/settings/proxy-test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proxy_url: pUrl }),
+    });
+    st.textContent = d.message;
+    if (d.ok) toast("代理测试成功，海外源可用");
+    else toast("代理连接失败", false);
+  } catch (e) {
+    st.textContent = "测试失败: " + e.message;
+    toast("测试失败: " + e.message, false);
+  }
+}
+window.testProxyConnection = testProxyConnection;
+
 async function testLlm() {
   const st = $("#settings-status");
   st.textContent = "正在保存并测试连接…";
@@ -3822,7 +3851,7 @@ async function refreshLicense() {
     await loadLicenseStatus();
     const d = await api("/api/license/status");
     const tierTxt = {
-      owner: "Pro · 卖家模式",
+      owner: "Pro · 终身版",
       pro: "Pro 已激活" + (d.exp ? " · 到期 " + d.exp : ""),
       free: "免费版",
     }[d.tier] || d.tier;
@@ -3833,6 +3862,44 @@ async function refreshLicense() {
   }
 }
 window.refreshLicense = refreshLicense;
+
+function openProUpgradeModal() {
+  const m = $("#pro-upgrade-modal");
+  if (m) m.classList.remove("hidden");
+}
+window.openProUpgradeModal = openProUpgradeModal;
+
+function closeProUpgradeModal() {
+  const m = $("#pro-upgrade-modal");
+  if (m) m.classList.add("hidden");
+}
+window.closeProUpgradeModal = closeProUpgradeModal;
+
+async function activateLicenseFromModal() {
+  const token = $("#upgrade-license-token") ? $("#upgrade-license-token").value.trim() : "";
+  const st = $("#upgrade-license-status");
+  if (!token) {
+    if (st) st.innerHTML = '<span style="color:var(--danger, #ef4444);">请先粘贴授权 Token 激活码</span>';
+    return;
+  }
+  if (st) st.textContent = "正在校验激活…";
+  try {
+    const d = await api("/api/license/activate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    if (st) st.innerHTML = '<span style="color:var(--success, #10b981);">✅ 激活成功！已升级为 Pro 会员</span>';
+    toast("🎉 恭喜升级为 Pro 会员！");
+    setTimeout(() => {
+      closeProUpgradeModal();
+      loadLicenseStatus();
+    }, 1200);
+  } catch (e) {
+    if (st) st.innerHTML = `<span style="color:var(--danger, #ef4444);">❌ 激活失败：${e.message}</span>`;
+  }
+}
+window.activateLicenseFromModal = activateLicenseFromModal;
 
 async function activateLicense() {
   const st = $("#settings-status");

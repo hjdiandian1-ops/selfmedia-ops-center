@@ -507,10 +507,28 @@ def _own_hits() -> list:
     return sorted(hits, key=lambda h: h.get("reads", 0), reverse=True)
 
 
+def _resolve_radar_path() -> Optional[str]:
+    p = latest_matching("materials/*/*_热点雷达.md")
+    if not p:
+        sample = os.path.join(ROOT, "materials", "样例_热点雷达.md")
+        if os.path.exists(sample):
+            return sample
+    return p
+
+
+def _resolve_suggest_path() -> Optional[str]:
+    p = latest_matching("materials/*/*_选题推荐.md")
+    if not p:
+        sample = os.path.join(ROOT, "materials", "样例_选题推荐.md")
+        if os.path.exists(sample):
+            return sample
+    return p
+
+
 def _market_snapshot() -> dict:
     """市场数据快照：最近热点雷达 / 选题推荐 / 质量周报（作为学习输入）。"""
-    radar_path = latest_matching("materials/*/*_热点雷达.md")
-    suggest_path = latest_matching("materials/*/*_选题推荐.md")
+    radar_path = _resolve_radar_path()
+    suggest_path = _resolve_suggest_path()
     weekly_path = latest_matching("jobs/weekly_report/*_质量周报.md")
 
     radar = {"path": radar_path, "sources": 0, "items": 0}
@@ -1275,8 +1293,8 @@ def api_topics_preferences_save(payload: PrefPayload):
 
 @app.get("/api/topics")
 def api_topics():
-    radar_path = latest_matching("materials/*/*_热点雷达.md")
-    suggest_path = latest_matching("materials/*/*_选题推荐.md")
+    radar_path = _resolve_radar_path()
+    suggest_path = _resolve_suggest_path()
 
     radar = {"path": radar_path, "sources": []}
     if radar_path:
@@ -1550,6 +1568,11 @@ class SettingsRequest(BaseModel):
     llm_model: Optional[str] = None
     gzh_app_id: Optional[str] = None
     gzh_app_secret: Optional[str] = None
+    proxy_url: Optional[str] = None
+
+
+class ProxyTestRequest(BaseModel):
+    proxy_url: str = ""
 
 
 class GzhDraftRequest(BaseModel):
@@ -1777,6 +1800,7 @@ def api_settings():
     """读取配置状态（密钥只显示掩码，不返回明文）。"""
     env = _read_env()
     api_ok, api_reason, _ = llm_engine.engine_status()
+    proxy_val = env.get("SELFMEDIA_PROXY", env.get("HTTP_PROXY", "")).strip()
     return {
         "llm": {
             "configured": bool(env.get("LLM_API_KEY", "").strip()),
@@ -1790,6 +1814,10 @@ def api_settings():
             "configured": bool(env.get("GZH_APP_ID", "").strip() and env.get("GZH_APP_SECRET", "").strip()),
             "app_id_masked": _mask(env.get("GZH_APP_ID", "")),
             "secret_masked": _mask(env.get("GZH_APP_SECRET", "")),
+        },
+        "proxy": {
+            "configured": bool(proxy_val),
+            "url": proxy_val,
         },
         "engine": _engine_status(),
     }
@@ -1809,11 +1837,35 @@ def api_save_settings(payload: SettingsRequest):
         updates["GZH_APP_ID"] = payload.gzh_app_id.strip()
     if payload.gzh_app_secret is not None:
         updates["GZH_APP_SECRET"] = payload.gzh_app_secret.strip()
+    if payload.proxy_url is not None:
+        p_clean = payload.proxy_url.strip()
+        updates["SELFMEDIA_PROXY"] = p_clean
+        updates["HTTP_PROXY"] = p_clean
+        updates["HTTPS_PROXY"] = p_clean
     if updates:
         _write_env(updates)
         for k, v in updates.items():
             os.environ[k] = v
     return api_settings()
+
+
+@app.post("/api/settings/proxy-test")
+def api_proxy_test(payload: ProxyTestRequest):
+    """测试代理连通性（检测是否能访问海外源如 Google Trends）。"""
+    p_url = payload.proxy_url.strip() or os.environ.get("SELFMEDIA_PROXY", "")
+    if not p_url:
+        raise HTTPException(status_code=400, detail="请先输入代理地址（如 http://127.0.0.1:7897）")
+    import urllib.request
+    try:
+        req = urllib.request.Request(
+            "https://trends.google.com/trending/rss?geo=US",
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({"http": p_url, "https": p_url}))
+        with opener.open(req, timeout=6) as resp:
+            return {"ok": True, "status_code": resp.getcode(), "message": "✅ 代理连接正常，可高速访问谷歌趋势与海外热点！"}
+    except Exception as e:
+        return {"ok": False, "message": f"❌ 代理连接失败: {e}（请检查本地代理软件是否开启）"}
 
 
 @app.post("/api/license/activate")
