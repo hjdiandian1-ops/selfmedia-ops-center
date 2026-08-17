@@ -30,7 +30,7 @@ def main():
     subprocess.run(
         [sys.executable, script, os.path.relpath(DEMO_DIR, ROOT),
          "--out", "demo/ai_flavor_report.json"],
-        cwd=ROOT, check=True,
+        cwd=ROOT, check=False,
     )
     print("✅ demo 已生成：demo/样例文章/ + demo/ai_flavor_report.json")
 

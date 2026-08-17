@@ -34,8 +34,6 @@ ALL_FEATURES = (
 def mint(uid, tier, expiry, bind="", features=None):
     if tier not in TIERS:
         raise ValueError(f"tier 必须是 {TIERS}")
-    if tier != "owner" and not bind:
-        raise ValueError("v1 流程必须 --bind 设备指纹（owner 档除外）")
     features = list(features or (ALL_FEATURES if tier == "pro" else []))
     payload = {
         "ver": LL.TOKEN_VERSION,
@@ -52,7 +50,8 @@ def mint(uid, tier, expiry, bind="", features=None):
 def main():
     ap = argparse.ArgumentParser(description="卖家发码工具（Ed25519 签名 token）")
     ap.add_argument("--keygen", action="store_true", help="首次生成密钥对")
-    ap.add_argument("--mint", action="store_true", help="签发 token")
+    ap.add_argument("--mint", action="store_true", help="签发单个 token")
+    ap.add_argument("--batch", type=int, default=0, help="批量签发 N 个未绑定卡密（用于面包多自动发货库存）")
     ap.add_argument("--uid", default="")
     ap.add_argument("--tier", default="pro", choices=TIERS)
     ap.add_argument("--expiry", default="")
@@ -77,6 +76,22 @@ def main():
             print("❌ 指纹不匹配")
             return 1
         print("✅ 验签通过")
+        return 0
+    if args.batch > 0:
+        import uuid
+        tokens = []
+        for i in range(1, args.batch + 1):
+            uid = f"MBD-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            t = mint(uid, args.tier, args.expiry, args.bind,
+                     [x.strip() for x in args.features.split(",") if x.strip()])
+            tokens.append(t)
+        if args.out:
+            with open(args.out, "w", encoding="utf-8") as f:
+                f.write("\n".join(tokens) + "\n")
+            print(f"✅ 已成功批量生成 {len(tokens)} 个 {args.tier} 卡密并保存至：{args.out}")
+        else:
+            for t in tokens:
+                print(t)
         return 0
     if args.mint:
         token = mint(

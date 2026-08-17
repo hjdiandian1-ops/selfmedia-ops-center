@@ -568,6 +568,7 @@
             <button class="set-menu-item" data-panel="templates" onclick="switchSettingsPanel('templates')">模板选择</button>
             <button class="set-menu-item" data-panel="style" onclick="switchSettingsPanel('style')">文风设置</button>
             <button class="set-menu-item" data-panel="llm" onclick="switchSettingsPanel('llm')">AI 引擎</button>
+            <button class="set-menu-item" data-panel="proxy" onclick="switchSettingsPanel('proxy')">网络与代理</button>
             <button class="set-menu-item" data-panel="gzh" onclick="switchSettingsPanel('gzh')">公众号</button>
             <button class="set-menu-item" data-panel="license" onclick="switchSettingsPanel('license')">Pro 授权</button>
             <button class="set-menu-item" data-panel="data" onclick="switchSettingsPanel('data')">数据管理</button>
@@ -655,6 +656,21 @@
               <input id="set-llm-base" placeholder="https://api.deepseek.com/v1">
               <label class="field-label">模型名</label>
               <input id="set-llm-model" placeholder="deepseek-chat">
+            </div>
+            <div class="set-panel" id="panel-proxy">
+              <p class="muted set-hint">配置网络代理（可选）：国内热榜直连秒开无需代理；仅启用海外源（谷歌趋势等）时需配置。</p>
+              <label class="field-label">HTTP / SOCKS5 代理服务器（如 http://127.0.0.1:7897）</label>
+              <div class="set-toolbar set-toolbar-input">
+                <input id="set-proxy-url" placeholder="http://127.0.0.1:7897" autocomplete="off">
+                <button class="btn tonal" onclick="runWithSpin(this, testProxyConnection)">⚡ 测试代理连通性</button>
+              </div>
+              <div class="muted" id="set-proxy-status" style="margin-top:8px"></div>
+              <div class="card set-card" style="margin-top:16px;">
+                <div class="stack" style="font-size:13px; color:var(--text-muted);">
+                  <div>💡 <b>国内热榜</b>：微博、知乎、B站、百度、36氪、少数派等均国内公网直连秒开，<b>完全不需要代理</b>。</div>
+                  <div>🌍 <b>海外源</b>：仅在启用谷歌趋势 (Google Trends) 或 X 趋势时使用本代理；留空时海外源将自动跳过且不报错。</div>
+                </div>
+              </div>
             </div>
             <div class="set-panel" id="panel-gzh">
               <p class="muted set-hint">公众号凭据（可选，认证号自动推草稿用）。</p>
@@ -770,6 +786,54 @@
       <input id="sg-redlines" placeholder="例如：不虚构案例、不承诺收益、不搬运洗稿">
       <div class="toolbar" style="margin-top:14px">
         <button class="btn filled" onclick="submitStyleGuide()">生成文风指南</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pro-upgrade-modal" class="modal hidden" onclick="if(event.target===this)closeProUpgradeModal()">
+  <div class="modal-box" style="max-width:620px;">
+    <div class="modal-head">
+      <h3 style="display:flex; align-items:center; gap:8px;">👑 升级到 Pro 旗舰版 · 释放全自动生产力</h3>
+      <button class="icon-btn" onclick="closeProUpgradeModal()" style="border:none; background:transparent; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div class="stack" style="padding:12px 20px 20px;">
+      <p style="color:var(--text-muted); font-size:14px; margin:0;">
+        感谢使用自媒体运营工厂！开通 Pro 即可解锁全自动流水线、无限次爆款拆解与高审美全套皮肤：
+      </p>
+
+      <div style="background:var(--bg-subtle, #f8fafc); border:1px solid var(--border); border-radius:12px; padding:16px; margin:12px 0;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:13px; line-height:1.7;">
+          <div><b>免费开源版 (当前)</b></div>
+          <div style="color:var(--primary, #2563eb);"><b>👑 Pro 旗舰版 (¥29/月 或 ¥199/年)</b></div>
+          <div>• 基础选题雷达与打分</div>
+          <div style="color:var(--primary, #2563eb);">• ⚡ 一键采纳 ➔ 9大Agent全自动投产</div>
+          <div>• 去AI味 22条质检规则</div>
+          <div style="color:var(--primary, #2563eb);">• ♾️ 无限次全网爆款 AI 深度拆解</div>
+          <div>• 每月 3 次爆款拆解</div>
+          <div style="color:var(--primary, #2563eb);">• 🔄 数据飞轮 SOP 自动进化升级</div>
+          <div>• 默认经典蓝白皮肤</div>
+          <div style="color:var(--primary, #2563eb);">• 💎 8 套奢华质感皮肤 + 毛玻璃无级调节</div>
+          <div>• 本地草稿双端排版预览</div>
+          <div style="color:var(--primary, #2563eb);">• 🚀 公众号官方草稿箱一键直推</div>
+        </div>
+      </div>
+
+      <label class="field-label" style="font-weight:bold; margin-top:8px;">已有激活码？粘贴卡密一键激活：</label>
+      <div class="set-toolbar set-toolbar-input" style="display:flex; gap:8px;">
+        <input id="upgrade-license-token" type="text" placeholder="粘贴专属 Pro 激活 Token 码" style="flex:1;">
+        <button class="btn filled" onclick="runWithSpin(this, activateLicenseFromModal)">立即激活</button>
+      </div>
+      <div id="upgrade-license-status" style="font-size:13px; margin-top:4px;"></div>
+
+      <div style="border-top:1px dashed var(--border); padding-top:16px; margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:13px; color:var(--text-muted);">
+          还没有激活码？前往官方渠道订阅：
+        </div>
+        <div style="display:flex; gap:8px;">
+          <a href="https://afdian.com/a/xiaowuliao" target="_blank" rel="noopener" class="btn tonal" style="text-decoration:none;">⚡ 爱发电购买</a>
+          <a href="https://mbd.pub" target="_blank" rel="noopener" class="btn tonal" style="text-decoration:none;">🍞 面包多购买</a>
+        </div>
       </div>
     </div>
   </div>

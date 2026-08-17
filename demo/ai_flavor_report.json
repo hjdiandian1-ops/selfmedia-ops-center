@@ -1,14 +1,94 @@
 {
   "output_dir": "demo/样例文章",
-  "checked_at": "2026-08-16 22:05:54",
-  "verdict": "PASSED",
+  "checked_at": "2026-08-17 11:40:41",
+  "verdict": "REJECTED",
   "summary": {
-    "platforms": [],
-    "high": 0,
-    "medium": 0,
-    "total_hits": 0
+    "platforms": [
+      "通用"
+    ],
+    "high": 2,
+    "medium": 3,
+    "total_hits": 7
   },
-  "hits": [],
+  "hits": [
+    {
+      "rule": "binary_shell",
+      "severity": "high",
+      "source": "[B][A]",
+      "pattern": "不是.{0,24}?(?:而是|是)|与其说.{0,24}?(?:不如说|倒不如说)",
+      "count": 3,
+      "examples": [
+        "…的是，这种情况并不少见。␤这不是技术问题，而是习惯问题；不是工具问题，而是方法问题；不是速度问题，而是…",
+        "…不是技术问题，而是习惯问题；不是工具问题，而是方法问题；不是速度问题，而是方向问题。␤由此可见，规范化…",
+        "…不是工具问题，而是方法问题；不是速度问题，而是方向问题。␤由此可见，规范化的检查很有必要。␤"
+      ],
+      "suggestion": "「不是 A 而是 B」全文 ≤2 次；≥3 次为二元对比模板，改成直陈事实。",
+      "platform": "通用",
+      "platforms": [
+        "通用"
+      ]
+    },
+    {
+      "rule": "formula_progression",
+      "severity": "high",
+      "source": "[A][B]",
+      "pattern": "首先.{0,80}其次.{0,80}最后",
+      "count": 1,
+      "examples": [
+        "…AI 味检查的输出效果。␤␤首先，我们要理解问题的背景；其次，我们需要分析核心原因；最后，给出结论。␤本质上，这是一个流程问题。值得注意的是，这…"
+      ],
+      "suggestion": "「首先…其次…最后」三连是 AI 分点腔，改写为按内容权重排序的自然段落。",
+      "platform": "通用",
+      "platforms": [
+        "通用"
+      ]
+    },
+    {
+      "rule": "essence_claim",
+      "severity": "medium",
+      "source": "[B]",
+      "pattern": "本质上|真正重要的是|核心在于|底层逻辑(?:是|在于|就是)?",
+      "count": 1,
+      "examples": [
+        "…核心原因；最后，给出结论。␤本质上，这是一个流程问题。值得注意的是，这种情况并不少见。␤这…"
+      ],
+      "suggestion": "「本质上/真正重要的是/核心在于」1 次 WARN，≥3 次 REJECTED；直接说结论。",
+      "platform": "通用",
+      "platforms": [
+        "通用"
+      ]
+    },
+    {
+      "rule": "assistant_marker",
+      "severity": "medium",
+      "source": "[B][A]",
+      "pattern": "值得注意的是|不可否认的是|我们可以看到|总的来说|说白了|划重点",
+      "count": 1,
+      "examples": [
+        "…␤本质上，这是一个流程问题。值得注意的是，这种情况并不少见。␤这不是技术问题，而是习惯问题；不是…"
+      ],
+      "suggestion": "「值得注意的是/总的来说/我们可以看到」是报幕词，删掉后句子依然成立就该删。",
+      "platform": "通用",
+      "platforms": [
+        "通用"
+      ]
+    },
+    {
+      "rule": "summary_filler",
+      "severity": "medium",
+      "source": "[A]",
+      "pattern": "由此可见|综上所述|总而言之",
+      "count": 1,
+      "examples": [
+        "…是速度问题，而是方向问题。␤由此可见，规范化的检查很有必要。␤"
+      ],
+      "suggestion": "「由此可见/综上所述」总结填充 ≤1 次；结尾给判断或行动增量。",
+      "platform": "通用",
+      "platforms": [
+        "通用"
+      ]
+    }
+  ],
   "manual_review": [
     "展示型三拍（对仗短句+点评）与均匀段落形状机器不判定，需人工复核。",
     "引号/破折号命中需人工确认是否属于真实引语/技术标识例外。",
