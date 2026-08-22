@@ -4,6 +4,21 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 格式与 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/) 规范。
 
+## [v2.0.0] - 2026-08-22
+
+### 🚀 Agent Skills 模块化重构与跨 IDE 技能套件升级
+- **5 大标准 Agent Skills 技能包**：
+  - `selfmedia-director`：自媒体总编·总控调度与四重质检门禁
+  - `selfmedia-radar`：爆款雷达·微信公众号真实低粉爆款抓取、小红书/B站搜索、5平台音视频转录
+  - `selfmedia-production`：工业化创作·素材事实清单萃取与三平台爆款正文生成
+  - `selfmedia-visual`：高颜值排版·Playwright 2x Retina 3:4 组图无损渲染与架构流程图
+  - `selfmedia-video`：短视频成片·HTML转1080x1920 MP4 B-roll逐帧渲染、-18dB动态侧链混音成片
+- **纯 Python 3.9+ 统一核心底层**：封装在 `src/selfmedia/`，零 node_modules 膨胀，跨平台一键安装。
+- **统一终端 CLI（`python -m selfmedia`）**：支持 radar/produce/check/install 完整命令体系。
+- **跨 AI IDE 一键安装**：支持一键软链挂载到 `~/.cursor/skills`、`~/.claude/skills`、`~/.codex/skills`。
+- **25 项全自动化质检测试**：覆盖全部 5 大技能领域与端到端 E2E 闭环（100% 通过）。
+- **详尽升级文档**：新增 [docs/UPGRADE_GUIDE_V2.md](docs/UPGRADE_GUIDE_V2.md)。
+
 ---
 
 ## [v1.1.0] - 2026-08-21
