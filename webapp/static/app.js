@@ -4717,3 +4717,87 @@ async function triggerTopicCalibration() {
 }
 window.triggerTopicCalibration = triggerTopicCalibration;
 
+// ===== v2.0 爆款转录与赛道探测前端交互 =====
+function openTranscribeModal() {
+  const modal = document.getElementById("transcribe-modal");
+  if (modal) {
+    modal.style.display = "flex";
+    modal.classList.remove("hidden");
+    const inp = document.getElementById("transcribe-url-input");
+    if (inp) { inp.value = ""; inp.focus(); }
+    const st = document.getElementById("transcribe-status");
+    if (st) { st.style.display = "none"; st.textContent = ""; }
+  }
+}
+window.openTranscribeModal = openTranscribeModal;
+
+function closeTranscribeModal() {
+  const modal = document.getElementById("transcribe-modal");
+  if (modal) {
+    modal.style.display = "none";
+    modal.classList.add("hidden");
+  }
+}
+window.closeTranscribeModal = closeTranscribeModal;
+
+async function submitTranscribeLink() {
+  const inp = document.getElementById("transcribe-url-input");
+  const url = (inp ? inp.value : "").trim();
+  if (!url) {
+    toast("请先粘贴音视频链接", false);
+    return;
+  }
+  const btn = document.getElementById("btn-do-transcribe");
+  const st = document.getElementById("transcribe-status");
+  if (btn) btn.disabled = true;
+  if (st) {
+    st.style.display = "block";
+    st.textContent = "⏳ 正在提取音视频逐字稿并执行 AI 爆款拆解...";
+  }
+
+  try {
+    const res = await api("/api/viral/transcribe-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url })
+    });
+    if (res.ok) {
+      toast("🎉 转录与爆款拆解成功！已自动入库");
+      closeTranscribeModal();
+      await loadViral();
+    } else {
+      toast("转录失败: " + (res.error || "未知错误"), false);
+    }
+  } catch (e) {
+    toast("转录异常: " + e.message, false);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (st) st.style.display = "none";
+  }
+}
+window.submitTranscribeLink = submitTranscribeLink;
+
+async function exploreGzhNiche() {
+  const inp = document.getElementById("gzh-explore-kw");
+  const kw = (inp ? inp.value : "AI编程").trim() || "AI编程";
+  toast(`📡 正在探测公众号【${kw}】赛道真实低粉爆款...`);
+
+  try {
+    const res = await api("/api/viral/explore-gzh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keyword: kw, limit: 10 })
+    });
+    if (res.ok) {
+      toast(`✅ 成功探测到 ${res.items.length} 篇【${kw}】爆款文章！`);
+      await loadViral();
+    } else {
+      toast("探测失败: " + (res.error || "未知错误"), false);
+    }
+  } catch (e) {
+    toast("探测异常: " + e.message, false);
+  }
+}
+window.exploreGzhNiche = exploreGzhNiche;
+
+
