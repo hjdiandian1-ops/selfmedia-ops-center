@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }}</title>
+<style>
+  :root {
+    --bg: {{ theme_bg or "#0f172a" }};
+    --card-bg: {{ theme_card or "#1e293b" }};
+    --text: {{ theme_text or "#f8fafc" }};
+    --text-sub: {{ theme_text_sub or "#94a3b8" }};
+    --accent: {{ theme_accent or "#38bdf8" }};
+    --border: {{ theme_border or "#334155" }};
+    --badge-bg: {{ theme_badge or "#0369a1" }};
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1080px;
+    height: 1440px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 72px 64px;
+    overflow: hidden;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .tag {
+    background: var(--badge-bg);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: 999px;
+    letter-spacing: 1px;
+  }
+  .page-num {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-sub);
+  }
+
+  .content-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 36px;
+    margin: 40px 0;
+  }
+
+  .title {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: var(--text);
+    letter-spacing: -1px;
+  }
+  .title span {
+    color: var(--accent);
+  }
+
+  .card-body {
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: 28px;
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  }
+
+  .item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .item-icon {
+    font-size: 36px;
+    line-height: 1;
+  }
+  .item-text {
+    font-size: 32px;
+    line-height: 1.45;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .item-text strong {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 2px solid var(--border);
+    padding-top: 36px;
+  }
+  .author {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text-sub);
+  }
+  .callout {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="tag">{{ tag or "干货实操" }}</div>
+    <div class="page-num">{{ page_index or "01" }} / {{ total_pages or "05" }}</div>
+  </div>
+
+  <div class="content-box">
+    <h1 class="title">{{ headline | safe }}</h1>
+    
+    <div class="card-body">
+      {% for item in items %}
+      <div class="item-row">
+        <div class="item-icon">{{ item.icon or "📍" }}</div>
+        <div class="item-text">{{ item.content | safe }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="author">@{{ author or "自媒体运营工厂" }}</div>
+    <div class="callout">{{ callout or "建议点赞收藏反复看 🔥" }}</div>
+  </div>
+
+</body>
+</html>
