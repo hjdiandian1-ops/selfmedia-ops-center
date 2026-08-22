@@ -202,23 +202,26 @@
         </div>
 
         <!-- 链接转录弹窗 -->
-        <div id="transcribe-modal" class="modal hidden" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;display:none;align-items:center;justify-content:center;">
-          <div class="card" style="width:580px;max-width:90%;background:var(--bg-card,#1e293b);border:1px solid var(--border,#334155);border-radius:16px;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.4);">
-            <div class="card-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-              <h3 style="margin:0;display:flex;align-items:center;gap:8px;">🔗 外部音视频链接一键转录与拆解</h3>
-              <button class="btn small tonal" onclick="closeTranscribeModal()">✕</button>
+        <div id="transcribe-modal" class="modal hidden" onclick="if(event.target===this)closeTranscribeModal()">
+          <div class="modal-box" style="max-width:580px;">
+            <div class="modal-head">
+              <h3>🔗 外部音视频链接一键转录与拆解</h3>
+              <button class="btn small tonal" onclick="closeTranscribeModal()">关闭</button>
             </div>
-            <p style="font-size:13px;opacity:0.8;margin-bottom:16px;">支持 <strong>B站、小宇宙播客、YouTube、小红书、抖音</strong> 链接。自动提取逐字稿、生成事实清单并入库拆解。</p>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <input id="transcribe-url-input" type="url" placeholder="粘贴视频或播客 URL，例如: https://www.bilibili.com/video/BV1..." style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.2);color:inherit;font-size:14px;">
-              <div style="display:flex;justify-content:flex-end;gap:10px;">
-                <button class="btn tonal" onclick="closeTranscribeModal()">取消</button>
-                <button class="btn primary-btn" id="btn-do-transcribe" style="background:var(--accent,#38bdf8);color:#0f172a;font-weight:700;" onclick="submitTranscribeLink()">🚀 开始智能解析与入库</button>
+            <div style="padding:16px;">
+              <p style="font-size:13px;opacity:0.8;margin-bottom:16px;line-height:1.6;">支持 <strong>B站、小宇宙播客、YouTube、小红书、抖音</strong> 链接。系统将全自动提取逐字稿、生成量化事实清单并入库拆解。</p>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <input id="transcribe-url-input" type="url" placeholder="粘贴视频或播客 URL，例如: https://www.bilibili.com/video/BV1..." style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.2);color:inherit;font-size:14px;">
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;">
+                  <button class="btn tonal" onclick="closeTranscribeModal()">取消</button>
+                  <button class="btn primary-btn" id="btn-do-transcribe" style="background:var(--accent,#38bdf8);color:#0f172a;font-weight:700;" onclick="submitTranscribeLink()">🚀 开始智能解析与入库</button>
+                </div>
+                <div id="transcribe-status" style="font-size:13px;color:var(--accent,#38bdf8);display:none;padding:8px 0;"></div>
               </div>
-              <div id="transcribe-status" style="font-size:13px;color:var(--accent,#38bdf8);display:none;padding:8px 0;"></div>
             </div>
           </div>
         </div>
+
 
         <div class="kpi-grid" id="viral-kpi"></div>
         <div id="viral-daily-grid" class="viral-daily-grid"></div>

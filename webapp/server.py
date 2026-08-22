@@ -32,7 +32,8 @@ for router_mod in (overview, agents, viral, flywheel, topics, production, settin
 @app.on_event("startup")
 def _start_scheduler():
     try:
-        scheduler.start_scheduler()
+        import scheduler as sched_runner
+        sched_runner.start_scheduler()
     except Exception as e:
         core.logger.warning("定时调度器启动失败: %s", e)
 

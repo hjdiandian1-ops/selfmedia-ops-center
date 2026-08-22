@@ -2181,7 +2181,21 @@ function statusButton(status, vid, hasReport, note) {
 }
 
 async function analyzeDailyItem(vid) {
-  const v = viralCache.videos.find((x) => x.id === vid);
+  let v = (viralCache.videos || []).find((x) => x.id === vid);
+  if (!v) {
+    for (const p of Object.keys(viralCache.daily || {})) {
+      const match = (viralCache.daily[p] || []).find((x) => x.viral_id === vid);
+      if (match) {
+        v = {
+          id: vid,
+          title: match.title,
+          url: match.link || "",
+          platform: p,
+        };
+        break;
+      }
+    }
+  }
   if (!v) return toast("记录不存在，请先刷新", false);
   try {
     const d = await api("/api/viral/analyze", {
@@ -2196,6 +2210,7 @@ async function analyzeDailyItem(vid) {
   }
 }
 window.analyzeDailyItem = analyzeDailyItem;
+
 
 async function collectPlatformVirals() {
   try {
@@ -2411,7 +2426,22 @@ async function copyViralPrompt(id) {
 window.copyViralPrompt = copyViralPrompt;
 
 async function setViralStatus(id, status) {
-  const v = viralCache.videos.find((x) => x.id === id);
+  let v = (viralCache.videos || []).find((x) => x.id === id);
+  if (!v) {
+    for (const p of Object.keys(viralCache.daily || {})) {
+      const match = (viralCache.daily[p] || []).find((x) => x.viral_id === id);
+      if (match) {
+        v = {
+          id: id,
+          title: match.title,
+          url: match.link || "",
+          platform: p,
+          status: "tracked",
+        };
+        break;
+      }
+    }
+  }
   if (!v) return;
   try {
     await api("/api/viral", {
@@ -2425,6 +2455,7 @@ async function setViralStatus(id, status) {
   }
 }
 window.setViralStatus = setViralStatus;
+
 
 async function deleteViral(id) {
   const v = viralCache.videos.find((x) => x.id === id);
@@ -4721,7 +4752,7 @@ window.triggerTopicCalibration = triggerTopicCalibration;
 function openTranscribeModal() {
   const modal = document.getElementById("transcribe-modal");
   if (modal) {
-    modal.style.display = "flex";
+    modal.style.display = "";
     modal.classList.remove("hidden");
     const inp = document.getElementById("transcribe-url-input");
     if (inp) { inp.value = ""; inp.focus(); }
@@ -4734,11 +4765,12 @@ window.openTranscribeModal = openTranscribeModal;
 function closeTranscribeModal() {
   const modal = document.getElementById("transcribe-modal");
   if (modal) {
-    modal.style.display = "none";
+    modal.style.display = "";
     modal.classList.add("hidden");
   }
 }
 window.closeTranscribeModal = closeTranscribeModal;
+
 
 async function submitTranscribeLink() {
   const inp = document.getElementById("transcribe-url-input");
