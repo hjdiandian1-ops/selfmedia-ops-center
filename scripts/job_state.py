@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from security_utils import require_job_id, require_theme  # noqa: E402
 
 STATES = ["topic", "materials", "draft", "visual", "review", "archive", "publish", "recycle"]
-JOBS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "jobs"))
+JOBS_DIR = os.environ.get("SELFMEDIA_JOBS_DIR") or os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "jobs"))
 
 # 每个状态对应的产物位置（供断点续跑时核对）
 STATE_ARTIFACTS = {

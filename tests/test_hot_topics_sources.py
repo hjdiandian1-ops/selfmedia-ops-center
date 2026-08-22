@@ -3,6 +3,7 @@
 import json
 import os
 import sys
+import urllib.error
 
 SCRIPTS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts"))
 if SCRIPTS not in sys.path:
@@ -43,6 +44,22 @@ def test_compliance_pass():
     ok, blocked = FHT.compliance_pass(items)
     assert [i["title"] for i in ok] == ["strait of hormuz", "AI 工具价格战"]
     assert set(blocked) == {"election fraud", "赌博网站"}
+
+
+def test_fetch_source_route_fallback(monkeypatch):
+    """RSSHub 单路由 503 时自动尝试备选路由。"""
+    calls = []
+
+    def fake_http(url, proxy=None, timeout=20, ua="", allow_private=False):
+        calls.append(url)
+        if url.endswith("/zhihu/hotlist"):
+            raise urllib.error.HTTPError(url, 503, "Service Unavailable", None, None)
+        return "<rss><channel><item><title>test</title><link>http://x</link></item></channel></rss>".encode("utf-8")
+
+    monkeypatch.setattr(FHT, "fetch_http", fake_http)
+    items = FHT.fetch_source("知乎热榜", ["/zhihu/hotlist", "/zhihu/hot"], 5)
+    assert calls == [FHT.BASE + "/zhihu/hotlist", FHT.BASE + "/zhihu/hot"]
+    assert items and items[0]["title"] == "test"
 
 
 def test_fetch_google_trends(monkeypatch):

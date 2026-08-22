@@ -10,7 +10,7 @@ payload = {ver, uid, tier, exp, bind, features[], iat}
 - bind: 设备指纹（可空=未绑定，安装时按卖家签发为准）
 - features: 允许的功能清单（pro 未列明时视为全部 Pro 功能）
 
-私钥只存在于本机 ~/.xiaowuliao-license/，公钥随付费包分发（public_key.pem）。
+私钥只存在于本机 ~/.selfmedia-license/，公钥随付费包分发（public_key.pem）。
 """
 import base64
 import hashlib
@@ -26,7 +26,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
-LICENSE_DIR = os.path.expanduser("~/.xiaowuliao-license")
+LICENSE_DIR = os.path.expanduser(os.environ.get("SELFMEDIA_LICENSE_DIR", "~/.selfmedia-license"))
 PRIVATE_KEY_FILE = os.path.join(LICENSE_DIR, "license_private.pem")
 PUBLIC_KEY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public_key.pem")
 TOKEN_VERSION = 1
@@ -105,7 +105,7 @@ def verify_token(token, public_key=None):
 
 
 def device_fingerprint():
-    """设备指纹：macOS IOPlatformUUID 优先，降级 uuid.getnode()+hostname 哈希。"""
+    """设备指纹：macOS IOPlatformUUID 优先，降级 uuid.getnode()+hostname 哈希（跨平台支持 Win/Mac/Linux）。"""
     if os.path.isdir("/System/Library/CoreServices"):
         try:
             out = subprocess.run(  # nosec B603 B607  # 固定命令+参数列表，无用户输入
@@ -120,7 +120,10 @@ def device_fingerprint():
                         return "mac_" + hashlib.sha256(val.encode("utf-8")).hexdigest()[:24]
         except Exception:
             pass  # nosec B110  # 指纹读取失败时降级到通用哈希，属预期兜底
-    raw = f"{uuid.getnode()}|{os.uname().nodename}".encode("utf-8")
+    import platform
+    import socket
+    node_name = platform.node() or socket.gethostname() or "generic_node"
+    raw = f"{uuid.getnode()}|{node_name}".encode("utf-8")
     return "dev_" + hashlib.sha256(raw, usedforsecurity=False).hexdigest()[:24]
 
 

@@ -17,8 +17,15 @@ outputs/*
 !outputs/.gitkeep
 materials/*
 !materials/.gitkeep
+!materials/样例_热点雷达.md
+!materials/样例_选题推荐.md
 data/*
 !data/.gitkeep
+!data/templates.json
+!data/templates/
+!data/templates/**
+!data/topics/
+!data/topics/niches.json
 !data/stats/
 data/stats/*
 !data/stats/.gitkeep
@@ -40,6 +47,10 @@ data/compliance/*
 !data/compliance/words/
 data/compliance/words/*
 !data/compliance/words/.gitkeep
+data/topics/preferences.json
+data/topics/lexicon.json
+data/user_prefs.json
+data/style_backups/
 nas-n8n/
 skills/范文库/
 

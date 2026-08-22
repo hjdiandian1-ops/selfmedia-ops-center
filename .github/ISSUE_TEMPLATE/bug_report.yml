@@ -1,0 +1,60 @@
+name: "🐛 Bug 报告 (Bug Report)"
+description: "提交自媒体运营工厂中遇到的问题或运行错误"
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈问题！请尽量提供清晰的复现步骤与错误日志，以便快速定位。
+
+  - type: input
+    id: environment
+    attributes:
+      label: 运行环境
+      description: 你的操作系统与 Python 版本
+      placeholder: 例如：macOS 15.0 / Windows 11, Python 3.11.8, Chrome 127
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 详细描述发生了什么异常现象
+      placeholder: 在点击「采纳生产」时，流水线未能正常启动...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 触发该问题的操作步骤
+      placeholder: |
+        1. 启动 webapp/server.py
+        2. 打开 http://127.0.0.1:8787
+        3. 点击「选题」视图并选择第 1 条推荐
+        4. 点击「采纳生产」
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 错误日志与截图
+      description: 终端输出、控制台报错或截图
+      render: shell
+      placeholder: 粘贴终端输出或上传截图...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 前置检查
+      options:
+        - label: 我已确认本地运行在 127.0.0.1 并且依赖已安装完整
+          required: true
+        - label: 我搜索过现有的 Issues，未发现重复问题
+          required: true

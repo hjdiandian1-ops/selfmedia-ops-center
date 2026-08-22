@@ -42,7 +42,9 @@ async function api(path, options) {
   if (!res.ok) {
     let detail = res.statusText;
     try { detail = (await res.json()).detail || detail; } catch (e) { /* ignore */ }
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    const err = new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    err.status = res.status;
+    throw err;
   }
   return res.json();
 }
@@ -52,6 +54,9 @@ function esc(s) {
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
   ));
 }
+const escapeHtml = esc;
+window.esc = esc;
+window.escapeHtml = esc;
 
 function mdInline(s) {
   s = esc(s);
@@ -152,25 +157,321 @@ function switchView(name) {
 }
 window.switchView = switchView;
 
-// ---------- 首启引导 ----------
-function showOnboarding(force) {
-  if (!force && localStorage.getItem("selfmedia_onboarded")) return;
-  $("#onboard-modal").classList.remove("hidden");
-}
-window.showOnboarding = showOnboarding;
+// ==================== 首启向导 (Onboarding Wizard) 控制器 ====================
+let currentOnboardStep = 1;
+let wizLlmTestedOk = false;
+let wizChosenPreset = null;
+let wizStylePresetsList = [];
 
-function dismissOnboarding() {
-  localStorage.setItem("selfmedia_onboarded", "1");
-  $("#onboard-modal").classList.add("hidden");
-}
-window.dismissOnboarding = dismissOnboarding;
+// 6 大内置文风预设（降级与初始骨架）
+const DEFAULT_STYLE_PRESETS = [
+  { id: "xiaowuliao-style", name: "👑 小吴聊专属风", desc: "19篇历史发文提炼、极客技术+实战操盘、四不原则与审美优先", file: "data/templates/style_docs/xiaowuliao-style.template.md" },
+  { id: "tech-hands-on", name: "💻 科技实战风", desc: "极客硬核评测、实操提效、代码与工具链，拒绝空话套话", file: "data/templates/style_docs/tech-hands-on.template.md" },
+  { id: "business-deep-dive", name: "💼 深度商业风", desc: "商业观察、单店模型测算、行业尽调、数字驱动与成本拆解", file: "data/templates/style_docs/business-deep-dive.template.md" },
+  { id: "xhs-lifestyle", name: "🛍️ 小红书轻快风", desc: "视觉高级种草、好物干货、闺蜜好友口吻、情绪价值饱满", file: "data/templates/style_docs/xhs-lifestyle.template.md" },
+  { id: "career-growth", name: "📈 职场认知风", desc: "避坑指南、效率跃迁、认知通透、附带可抄作业的行动清单", file: "data/templates/style_docs/career-growth.template.md" },
+  { id: "default-template", name: "📝 通用填空向导", desc: "人设/读者/平台/口吻/红线标准化基础骨架，支持自由调整", file: "data/templates/style_docs/personal-style-guide.template.md" }
+];
 
-function onboardGo(view) {
-  if (view === "settings") openSettings();
-  else switchView(view);
-  dismissOnboarding();
+async function showOnboardingWizard(force = false) {
+  if (!force && localStorage.getItem("onboarding_done")) return;
+
+  const modal = $("#onboarding-wizard-modal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  goToOnboardStep(1);
+
+  // 1. 回填当前已保存的设置
+  try {
+    const s = await api("/api/settings");
+    if (s && s.llm) {
+      if ($("#wiz-llm-base-url") && s.llm.base_url) $("#wiz-llm-base-url").value = s.llm.base_url;
+      if ($("#wiz-llm-model") && s.llm.model) $("#wiz-llm-model").value = s.llm.model;
+      if (s.llm.has_key) wizLlmTestedOk = true;
+    }
+  } catch (e) {}
+
+  // 2. 加载文风预设
+  loadOnboardPresets();
 }
-window.onboardGo = onboardGo;
+window.showOnboardingWizard = showOnboardingWizard;
+window.showOnboarding = showOnboardingWizard; // 兼容旧调用
+
+function skipOnboardingWizard() {
+  localStorage.setItem("onboarding_done", "1");
+  const modal = $("#onboarding-wizard-modal");
+  if (modal) modal.classList.add("hidden");
+  toast("已跳过首启向导，随时可点击左下角 🚀 重新开启");
+}
+window.skipOnboardingWizard = skipOnboardingWizard;
+
+function finishOnboardingWizard() {
+  localStorage.setItem("onboarding_done", "1");
+  const modal = $("#onboarding-wizard-modal");
+  if (modal) modal.classList.add("hidden");
+  toast("🎉 欢迎使用自媒体运营中心！");
+}
+window.finishOnboardingWizard = finishOnboardingWizard;
+
+function goToOnboardStep(step) {
+  step = Math.max(1, Math.min(4, step));
+  currentOnboardStep = step;
+
+  // 更新进度条
+  const progressFill = $("#onboard-progress-fill");
+  if (progressFill) {
+    progressFill.style.width = (step * 25) + "%";
+  }
+
+  // 更新步骤节点激活状态
+  for (let i = 1; i <= 4; i++) {
+    const node = $(`#onboard-step-node-${i}`);
+    if (node) {
+      if (i <= step) node.classList.add("active");
+      else node.classList.remove("active");
+    }
+    const panel = $(`#onboard-panel-${i}`);
+    if (panel) {
+      if (i === step) panel.classList.add("active");
+      else panel.classList.remove("active");
+    }
+  }
+
+  // 更新底部按钮
+  const prevBtn = $("#wiz-btn-prev");
+  const nextBtn = $("#wiz-btn-next");
+  const skipStepBtn = $("#wiz-btn-skip-step");
+
+  if (prevBtn) prevBtn.style.display = step > 1 ? "inline-flex" : "none";
+  if (skipStepBtn) skipStepBtn.style.display = step < 4 ? "inline-flex" : "none";
+  if (nextBtn) {
+    if (step === 4) {
+      nextBtn.textContent = "🎉 完成向导 · 进入工作台";
+      nextBtn.classList.remove("tonal");
+      nextBtn.classList.add("filled");
+    } else {
+      nextBtn.textContent = "下一步 ➔";
+    }
+  }
+
+  // 第 3 步确保文风预设就绪
+  if (step === 3) {
+    loadOnboardPresets();
+  }
+
+  // 第 4 步更新总结状态
+  if (step === 4) {
+    const llmStatus = $("#wiz-status-llm-val");
+    if (llmStatus) {
+      llmStatus.textContent = wizLlmTestedOk ? "✅ 已连通并验证" : "⏭️ 已跳过 (可随时在设置中配置)";
+    }
+    const styleStatus = $("#wiz-status-style-val");
+    if (styleStatus) {
+      styleStatus.textContent = wizChosenPreset ? `✅ ${wizChosenPreset.name}` : "✅ 科技实战风 (默认)";
+    }
+  }
+}
+window.goToOnboardStep = goToOnboardStep;
+
+async function nextOnboardStep() {
+  if (currentOnboardStep === 1) {
+    // 自动后台保存一次输入的 LLM 配置
+    saveOnboardLlmConfig();
+    goToOnboardStep(2);
+  } else if (currentOnboardStep < 4) {
+    goToOnboardStep(currentOnboardStep + 1);
+  } else {
+    finishOnboardingWizard();
+  }
+}
+window.nextOnboardStep = nextOnboardStep;
+
+function prevOnboardStep() {
+  if (currentOnboardStep > 1) {
+    goToOnboardStep(currentOnboardStep - 1);
+  }
+}
+window.prevOnboardStep = prevOnboardStep;
+
+function skipCurrentOnboardStep() {
+  if (currentOnboardStep < 4) {
+    goToOnboardStep(currentOnboardStep + 1);
+  } else {
+    finishOnboardingWizard();
+  }
+}
+window.skipCurrentOnboardStep = skipCurrentOnboardStep;
+
+async function saveOnboardLlmConfig() {
+  const key = ($("#wiz-llm-api-key")?.value || "").trim();
+  let base = ($("#wiz-llm-base-url")?.value || "").trim();
+  const model = ($("#wiz-llm-model")?.value || "").trim();
+  // 自动清理结尾多填的 /models 或 /chat/completions
+  if (base) {
+    base = base.replace(/\/models\/?$/, "").replace(/\/chat\/completions\/?$/, "");
+    if ($("#wiz-llm-base-url")) $("#wiz-llm-base-url").value = base;
+  }
+  if (key || base || model) {
+    try {
+      await api("/api/settings", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ llm_api_key: key, llm_base_url: base, llm_model: model }),
+      });
+    } catch (e) {}
+  }
+}
+
+async function testOnboardLlmConnection() {
+  const feedback = $("#wiz-llm-test-feedback");
+  const testBtn = $("#wiz-btn-test-llm");
+  const key = ($("#wiz-llm-api-key")?.value || "").trim();
+  let base = ($("#wiz-llm-base-url")?.value || "").trim();
+  const model = ($("#wiz-llm-model")?.value || "").trim();
+
+  // 自动清理结尾多填的 /models 或 /chat/completions 路径
+  if (base) {
+    base = base.replace(/\/models\/?$/, "").replace(/\/chat\/completions\/?$/, "");
+    if ($("#wiz-llm-base-url")) $("#wiz-llm-base-url").value = base;
+  }
+
+  if (feedback) feedback.innerHTML = '<span class="muted">⏳ 正在发起连通性测试请求…</span>';
+  if (testBtn) testBtn.disabled = true;
+
+  try {
+    if (key || base || model) {
+      await api("/api/settings", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ llm_api_key: key, llm_base_url: base, llm_model: model }),
+      });
+    }
+    const r = await api("/api/settings/llm-test", { method: "POST" });
+    if (r && r.ok) {
+      wizLlmTestedOk = true;
+      if (feedback) feedback.innerHTML = `<span style="color:var(--success); font-weight:600;">✅ ${r.message || "大模型 API 连接成功！"}</span>`;
+      toast("大模型 API 连通性测试成功！");
+    } else {
+      if (feedback) feedback.innerHTML = `<span style="color:var(--error);">❌ 连接失败: ${r ? r.message : "未知错误"}</span>`;
+      toast("API 测试未通过，请检查 Key 或 Base URL", false);
+    }
+  } catch (e) {
+    if (feedback) feedback.innerHTML = `<span style="color:var(--error);">❌ 请求异常: ${e.message}</span>`;
+    toast("连接请求失败: " + e.message, false);
+  } finally {
+    if (testBtn) testBtn.disabled = false;
+  }
+}
+window.testOnboardLlmConnection = testOnboardLlmConnection;
+
+async function triggerOnboardFetchTopics() {
+  const btn = $("#wiz-btn-fetch-topics");
+  if (btn) runWithSpin(btn, async () => {
+    toast("正在启动热点采集雷达…");
+    try {
+      await api("/api/pipeline/run", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "topics" }),
+      });
+      const data = await api("/api/topics");
+      const list = (data && (data.daily || data.items || data.topics)) || [];
+      if (list.length > 0) {
+        renderOnboardTopicsList(list.slice(0, 3));
+        toast("✅ 实时热点采集完成！");
+      } else {
+        toast("热点雷达已更新");
+      }
+    } catch (e) {
+      toast("采集提示: " + e.message, false);
+    }
+  });
+}
+window.triggerOnboardFetchTopics = triggerOnboardFetchTopics;
+
+function renderOnboardTopicsList(items) {
+  const container = $("#wiz-topics-preview-list");
+  if (!container) return;
+  container.innerHTML = items.map((item, idx) => `
+    <div class="onboard-topic-card ${idx === 0 ? 'highlight-card' : ''}">
+      <div class="onboard-topic-title">
+        <span class="badge primary">热点 #${idx + 1}</span>
+        ${escapeHtml(item.title || item.name || "")}
+      </div>
+      <div class="onboard-topic-meta">
+        <span>🔥 热度 ${item.score || 90}</span> · <span>⏱️ 实时雷达</span> · <span>来源: ${escapeHtml(item.source || "聚合")}</span>
+      </div>
+      <div class="onboard-adopt-guide">
+        <span class="guide-arrow">👉</span> 点击右侧按钮即可自动投产：
+        <button class="btn small filled disabled-look" title="向导演示">⚡ 采纳生产</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function loadOnboardPresets() {
+  try {
+    const d = await api("/api/style-presets");
+    if (d && d.presets && d.presets.length > 0) {
+      // 合并预设的详细描述
+      wizStylePresetsList = d.presets.map(p => {
+        const def = DEFAULT_STYLE_PRESETS.find(x => x.id === p.id);
+        return {
+          ...p,
+          name: def ? def.name : p.name,
+          desc: def ? def.desc : (p.desc || p.name)
+        };
+      });
+    } else {
+      wizStylePresetsList = DEFAULT_STYLE_PRESETS;
+    }
+  } catch (e) {
+    wizStylePresetsList = DEFAULT_STYLE_PRESETS;
+  }
+  renderOnboardPresets(wizStylePresetsList);
+}
+
+function renderOnboardPresets(presets) {
+  const grid = $("#wiz-presets-grid");
+  if (!grid) return;
+  const list = (presets && presets.length > 0) ? presets : DEFAULT_STYLE_PRESETS;
+  const chosenId = wizChosenPreset ? wizChosenPreset.id : "xiaowuliao-style";
+  grid.innerHTML = list.map((p) => `
+    <div class="onboard-preset-card ${p.id === chosenId ? 'active' : ''}" onclick="selectOnboardPreset('${p.id}')" id="wiz-preset-card-${p.id}">
+      <div class="onboard-preset-name">${escapeHtml(p.name)}</div>
+      <div class="onboard-preset-desc">${escapeHtml(p.desc || p.name)}</div>
+    </div>
+  `).join("");
+  if (!wizChosenPreset && list.length > 0) {
+    wizChosenPreset = list[0];
+  }
+}
+
+async function selectOnboardPreset(presetId) {
+  const list = wizStylePresetsList.length > 0 ? wizStylePresetsList : DEFAULT_STYLE_PRESETS;
+  const preset = list.find(p => p.id === presetId) || DEFAULT_STYLE_PRESETS.find(p => p.id === presetId);
+  if (!preset) return;
+  wizChosenPreset = preset;
+
+  $$("#wiz-presets-grid .onboard-preset-card").forEach(c => c.classList.remove("active"));
+  const card = $(`#wiz-preset-card-${presetId}`);
+  if (card) card.classList.add("active");
+
+  const fb = $("#wiz-preset-save-feedback");
+  if (fb) fb.innerHTML = `<span class="muted">⏳ 正在同步《个人文风指南》预设…</span>`;
+
+  try {
+    const content = preset.content || `# 个人文风指南\n\n风格预设: ${preset.name}\n`;
+    await api("/api/style-doc", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: "skills/personal-style-guide.md", content: content }),
+    });
+    if (fb) fb.innerHTML = `<span style="color:var(--success);">✅ 已应用文风预设: <b>${escapeHtml(preset.name)}</b></span>`;
+  } catch (e) {
+    if (fb) fb.innerHTML = `<span style="color:var(--error);">⚠️ 同步提示: ${e.message}</span>`;
+  }
+}
+window.selectOnboardPreset = selectOnboardPreset;
+
+
+
 
 $$(".nav-item").forEach((btn) => btn.addEventListener("click", () => switchView(btn.dataset.view)));
 $("#btn-refresh-topics").addEventListener("click", (e) => runWithSpin(e.currentTarget, loadTopics));
@@ -241,7 +542,22 @@ function loadPrefChip() {
   if (chip) chip.textContent = n ? `偏好：${n} 个赛道` : "";
 }
 
+let prefDraft = null;
+
+function prefSelectionsFor(pl) {
+  if (prefDraft && prefDraft[pl]) return prefDraft[pl];
+  return ((prefData.preferences || {}).platforms || {})[pl] || [];
+}
+
+function capturePrefDraft() {
+  if (!prefDraft) prefDraft = {};
+  const pl = currentPrefPlatform();
+  prefDraft[pl] = Array.from(document.querySelectorAll("#pref-niches input:checked")).map((i) => i.value);
+}
+
 function openPrefModal() {
+  prefDraft = null;
+  renderPrefPlats();
   renderPrefNiches();
   $("#pref-modal").classList.remove("hidden");
 }
@@ -252,19 +568,71 @@ function closePrefModal() {
 }
 window.closePrefModal = closePrefModal;
 
+function currentPrefPlatform() {
+  const btn = document.querySelector("#pref-plats .pref-plat.active");
+  return btn ? btn.dataset.platform : "小红书";
+}
+
+function renderPrefPlats() {
+  const cur = currentPrefPlatform();
+  document.querySelectorAll("#pref-plats .pref-plat").forEach((b) => {
+    const pl = b.dataset.platform;
+    const count = prefSelectionsFor(pl).length;
+    b.classList.toggle("active", pl === cur);
+    const c = b.querySelector(".pref-count");
+    if (c) c.textContent = count ? `${count}/5` : "";
+  });
+}
+
+function selectPrefPlatform(pl) {
+  capturePrefDraft();
+  document.querySelectorAll("#pref-plats .pref-plat").forEach((b) => {
+    b.classList.toggle("active", b.dataset.platform === pl);
+  });
+  renderPrefNiches();
+}
+window.selectPrefPlatform = selectPrefPlatform;
+
 function renderPrefNiches() {
-  const pl = $("#pref-platform").value;
+  const pl = currentPrefPlatform();
   const names = Object.keys((prefData.niches || {})[pl] || {});
-  const saved = ((prefData.preferences || {}).platforms || {})[pl] || [];
-  $("#pref-niches").innerHTML = names.length
-    ? names.map((n) => `<label class="field-label"><input type="checkbox" value="${esc(n)}" ${saved.includes(n) ? "checked" : ""}> ${esc(n)}</label>`).join("")
-    : '<span class="muted">该平台暂无赛道词库</span>';
+  const selected = prefSelectionsFor(pl);
+  const box = $("#pref-niches");
+  if (!box) return;
+  if (!names.length) {
+    box.innerHTML = '<span class="muted">该平台暂无赛道词库</span>';
+    return;
+  }
+  box.innerHTML = names.map((n) => {
+    const checked = selected.includes(n);
+    const disabled = !checked && selected.length >= 5;
+    return `<label class="pref-niche ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}"><input type="checkbox" value="${esc(n)}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""} onchange="onPrefNicheChange(this)"> ${esc(n)}</label>`;
+  }).join("");
 }
 window.renderPrefNiches = renderPrefNiches;
 
+function onPrefNicheChange(el) {
+  capturePrefDraft();
+  const pl = currentPrefPlatform();
+  if ((prefDraft[pl] || []).length > 5) {
+    el.checked = false;
+    prefDraft[pl] = Array.from(document.querySelectorAll("#pref-niches input:checked")).map((i) => i.value);
+    toast("单平台最多选择 5 个赛道", false);
+    return;
+  }
+  renderPrefNiches();
+  renderPrefPlats();
+}
+window.onPrefNicheChange = onPrefNicheChange;
+
 async function savePrefs() {
-  const pl = $("#pref-platform").value;
-  const names = Array.from(document.querySelectorAll("#pref-niches input:checked")).map((i) => i.value);
+  capturePrefDraft();
+  const pl = currentPrefPlatform();
+  const names = prefDraft ? (prefDraft[pl] || []) : [];
+  if (names.length > 5) {
+    toast("单平台最多选择 5 个赛道", false);
+    return;
+  }
   const platforms = JSON.parse(JSON.stringify((prefData.preferences || {}).platforms || {}));
   platforms[pl] = names;
   try {
@@ -290,6 +658,7 @@ async function clearPrefs() {
     });
     prefData.preferences = d.preferences;
     loadPrefChip();
+    prefDraft = null;
     toast("已清除偏好，恢复默认模式");
     closePrefModal();
   } catch (e) {
@@ -911,8 +1280,11 @@ function fillPanelModule(platform, id, p) {
     dashState.weakPoints = ovCache.weak_points || [];
     renderDash();
     const files = (ovCache.sources || {}).dashboard_files || {};
-    $("#dash-note").textContent =
-      `更新于 ${ovCache.generated_at || ""} · 看板导出 ${Object.values(files).filter(Boolean).length}/4 · 笔记明细 ${(ovCache.sources || {}).notes_in_range || 0} 条`;
+    const noteEl = $("#dash-note");
+    if (noteEl) {
+      noteEl.textContent =
+        `更新于 ${ovCache.generated_at || ""} · 看板导出 ${Object.values(files).filter(Boolean).length}/4 · 笔记明细 ${(ovCache.sources || {}).notes_in_range || 0} 条`;
+    }
   }
 }
 
@@ -1312,10 +1684,16 @@ async function loadDashboard() {
     renderDash();
     renderWeakPoints();
     const files = d.sources && d.sources.dashboard_files ? d.sources.dashboard_files : {};
-    $("#dash-note").textContent =
-      `更新于 ${d.generated_at || ""} · 看板导出 ${Object.values(files).filter(Boolean).length}/4 · 笔记明细 ${d.sources ? d.sources.notes_in_range : 0} 条`;
+    const noteEl = $("#dash-note");
+    if (noteEl) {
+      noteEl.textContent =
+        `更新于 ${d.generated_at || ""} · 看板导出 ${Object.values(files).filter(Boolean).length}/4 · 笔记明细 ${d.sources ? d.sources.notes_in_range : 0} 条`;
+    }
   } catch (e) {
-    $("#dash-note").textContent = "看板数据加载失败: " + e.message;
+    const noteEl = $("#dash-note");
+    if (noteEl) {
+      noteEl.textContent = "看板数据加载失败: " + e.message;
+    }
   }
 }
 
@@ -1337,8 +1715,10 @@ function deltaBadge(delta) {
 }
 
 function renderDashKpis(kpis) {
-  if (!kpis.length) return $("#dash-kpis").innerHTML = '<span class="muted">暂无数据</span>';
-  $("#dash-kpis").innerHTML = kpis.map((k) => `
+  const kpiEl = $("#dash-kpis");
+  if (!kpiEl) return;
+  if (!kpis.length) return kpiEl.innerHTML = '<span class="muted">暂无数据</span>';
+  kpiEl.innerHTML = kpis.map((k) => `
     <div class="kpi">
       <div class="num small">${k.value == null ? "—" : esc(fmtNum(k.value)) + (k.unit ? '<small class="unit">' + esc(k.unit) + "</small>" : "")}</div>
       <div class="lbl">${esc(k.key)} ${deltaBadge(k.delta)}</div>
@@ -1496,16 +1876,22 @@ function renderSuggestPool(tbodySel, cands, countSel, poolLabel) {
   $(countSel).textContent = cands.length ? `（${cands.length} 条）` : "";
   tbody.innerHTML = cands.length
     ? cands.map((c) => {
+        let rawTitle = c.title || "";
+        rawTitle = rawTitle.replace(/^\s*\*+\s*/, "").replace(/\s*\*+\s*$/, "").replace(/^【[^】]+】\s*/, "").trim();
+        let rawLink = (c.link || "").trim();
+        if (["无", "None", "null", "-"].includes(rawLink)) rawLink = "";
+        const titleHtml = (rawLink && /^https?:\/\//i.test(rawLink))
+          ? `<a href="${esc(rawLink)}" target="_blank" rel="noopener" class="topic-link" title="点击跳转原文：${esc(rawTitle)}">${esc(rawTitle)}</a>`
+          : `<span class="topic-title" title="${esc(rawTitle)}">${esc(rawTitle)}</span>`;
         const titleCell = `
-          <div class="t" title="${esc(c.title)}">${esc(c.title)}${c.compliance ? '<span class="badge hit">海外源</span>' : ""}</div>
-          <div class="meta" title="${esc((c.source || "") + " · " + (c.view || "") + " · 公式：" + (c.formulas || "—") + (c.pool_scores ? " · " + c.pool_scores : ""))}">${esc(shortTopicMeta(c))}</div>`;
+          <div class="t">${titleHtml}${c.compliance ? '<span class="badge hit">海外源</span>' : ""}</div>`;
         return `
         <tr>
           <td class="title-col">${titleCell}</td>
           ${SCORE_DIMS.map(([k]) => `<td class="num">${c.breakdown_parts ? c.breakdown_parts[k] ?? "—" : "—"}</td>`).join("")}
           <td class="num score-total">${c.score ?? "?"}</td>
           <td class="actions-col">
-            <button class="btn small filled" title="采纳 → 开始生产（日选题：时效×1.2+热度×1.2+质量×0.4；周选题：质量×1.2+热度×0.5+时效×0.3；IP 为准入门槛）" onclick="adopt(this,'${esc(c.title).replace(/'/g, "\\'")}')">采纳生产</button>
+            <button class="btn small filled" title="采纳 → 开始生产（会抓取原文链接做素材 grounding；日选题：时效×1.2+热度×1.2+质量×0.4；周选题：质量×1.2+热度×0.5+时效×0.3；IP 为准入门槛）" onclick="adopt(this,'${esc(rawTitle).replace(/'/g, "\\'")}','${esc(rawLink).replace(/'/g, "\\'")}')">采纳生产</button>
           </td>
         </tr>`;
       }).join("")
@@ -1573,31 +1959,46 @@ function renderAdoptHistory(jobs, queue) {
         <div class="meta">${esc(j.job_id)} ${stateBadge(j.state)} ${prodBadge}</div>
         <div class="actions">
           <button class="btn small" onclick="goOutputs('${esc(j.job_id).replace(/'/g, "\\'")}')">查看成品/进度</button>
+          <button class="btn small danger" title="删除该生产任务（含 jobs 与 outputs 产物）" onclick="deleteProduction('${esc(j.job_id).replace(/'/g, "\\'")}')">删除</button>
         </div>
       </div>`;
   }).join("");
 }
 
-async function adopt(btn, title) {
+async function adopt(btn, title, link) {
   let useTitle = String(title || "").trim();
+  let useLink = String(link || "").trim();
   const chars = [...useTitle];
   if (chars.length > 60) {
     useTitle = chars.slice(0, 60).join("");
     toast("选题标题过长，已自动截断为 60 字", true);
   }
   if (!useTitle) return toast("选题标题为空，无法建任务", false);
-  if (!confirm("采纳选题并开始自动生产：\n" + useTitle + "\n\n将创建任务并调用本机 Codex 后台跑完整流水线（素材→初稿→视觉→质检→归档）。")) return;
+  if (!confirm("采纳选题并开始自动生产：\n" + useTitle + "\n\n将创建任务、抓取原文链接做素材，并按所选引擎（API/Codex）后台跑完整流水线（素材→初稿→视觉→质检→归档）。")) return;
   await runWithSpin(btn, async () => {
     try {
       const d = await api("/api/topics/adopt", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: useTitle }),
+        body: JSON.stringify({ title: useTitle, link: useLink }),
       });
       toast("已创建任务并开始生产: " + d.job_id + (d.production_started ? "" : "（排队中）"));
       loadTopics();
       loadPipeline();
     } catch (e) {
-      toast("建任务失败: " + e.message, false);
+      if (e.status === 403 || (e.message && (e.message.includes("需要订阅授权") || e.message.includes("Pro 功能") || e.message.includes("未授权")))) {
+        openProUpgradeModal();
+      } else {
+        let msg = e.message || "未知错误";
+        try {
+          const parsed = JSON.parse(msg);
+          if (parsed && parsed.stdout && parsed.stdout.includes("已存在")) {
+            msg = "⚠️ 该任务今天已存在，无需重复创建（可在右侧或流水线查看进度）";
+          } else if (parsed && parsed.stderr) {
+            msg = parsed.stderr.split("\n").filter(Boolean).pop() || msg;
+          }
+        } catch (_) {}
+        toast("采纳提示: " + msg, false);
+      }
     }
   });
 }
@@ -1610,7 +2011,7 @@ async function copyThemePrompt(id) {
   const t = themesCache.find((x) => x.id === id);
   if (!t) return;
   const prompt = [
-    `请用【${t.name}】主题，按「小吴聊」IP 风格创作一期引流内容。`,
+    `请用【${t.name}】主题，按个人文风指南创作一期引流内容。`,
     `定位：${t.slogan}`,
     `受众：${t.audience}`,
     `钩子参考：${(t.hooks || []).join("、")}`,
@@ -1825,7 +2226,9 @@ async function aggregateViralWeekly() {
   try {
     toast("正在聚合近 7 天拆解产物…");
     const d = await api("/api/flywheel/aggregate-viral", { method: "POST" });
-    toast(`周经验包 ${d.week || ""} 已生成：${d.lessons ?? 0} 条经验，升级 ${(d.agents || []).length} 份 SOP`);
+    const agents = d.agents || [];
+    const names = agents.map((a) => a.file || "").filter(Boolean).join("、");
+    toast(`周经验包已写入 ${d.weekly_report || "data/flywheel/"}，沉淀 ${d.lessons ?? 0} 条经验，升级 ${agents.length} 份 SOP` + (names ? `：${names}` : ""));
     loadViral();
     loadFlywheel();
   } catch (e) {
@@ -1839,8 +2242,14 @@ async function viewBreakdown(vid) {
     const d = await api("/api/viral/breakdown/" + encodeURIComponent(vid));
     const bd = d.breakdown || {};
     $("#viral-report-title").textContent = "拆解报告 · " + (bd.title || vid);
+    const ev = bd.evidence_level || "title_only";
+    const evBadge = ev === "content"
+      ? '<span class="badge success">📄 真实分析（有原文）</span>'
+      : '<span class="badge warn">🔎 推断拆解（仅标题，置信度低）</span>';
     const jsonText = Object.entries(bd).map(([k, v]) => `${k}：${v}`).join("\n");
     $("#viral-report-body").innerHTML =
+      `<div style="margin-bottom:10px">${evBadge}</div>` +
+      (ev !== "content" ? `<div class="muted" style="margin-bottom:10px;font-size:13px">榜单采集只有标题+热度，没有原文正文。想得到真实拆解，请在「＋添加爆款 / 编辑」里粘贴原文或逐字稿后重新拆解。</div>` : "") +
       `<pre class="md-json">${esc(jsonText)}</pre>` +
       (d.report_md ? `<div class="md-divider"></div>` + renderMarkdown(d.report_md) : "");
     $("#viral-report-modal").classList.remove("hidden");
@@ -1954,7 +2363,7 @@ async function importOwnHit(jobId) {
     const saved = await api("/api/viral", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        platform, title, author: "小吴聊（自家）",
+        platform, title, author: "自家发布",
         url: h.url || "", published_at: (h.collected_at || "").slice(0, 10),
         reads: h.reads || 0, likes: h.likes || 0, collects: h.collects || 0,
         comments: h.comments || 0, theme: "", hook: "", structure: "",
@@ -2259,8 +2668,9 @@ async function runRegenerate() {
     flywheelCache.feedback = d.feedback || "";
     $("#feedback-preview").textContent = d.feedback || "";
     $("#feedback-path").textContent = d.path ? "(" + d.path + ")" : "";
-    const n = d.agents && d.agents.agents ? d.agents.agents.length : 0;
-    toast(`反哺指令包已重新生成，并自动升级 ${n} 份 Agent SOP`);
+    const agents = (d.agents && d.agents.agents) || [];
+    const names = agents.map((a) => a.file || "").filter(Boolean).join("、");
+    toast(`反哺指令包已写入 ${d.path || "data/flywheel/pipeline_feedback.md"}，并升级 ${agents.length} 份 Agent SOP` + (names ? `：${names}` : ""));
     loadFlywheel();
   } catch (e) {
     toast("生成失败: " + e.message, false);
@@ -2345,19 +2755,29 @@ function renderProduction(prod) {
     queued: ["排队中", "primary"], running: ["生产中", ""],
     done: ["已完成", "success"], failed: ["失败", "error"], canceled: ["已取消", ""],
   }[s] || [s, ""]);
-  $("#prod-queue").innerHTML = queue.length ? queue.map((q) => {
+  const itemHtml = (q) => {
     const [label, cls] = statusBadge(q.status);
     return `
       <div class="topic-item">
         <div class="t">${esc(q.job_id)} <span class="badge ${cls}">${label}</span></div>
-        <div class="meta">创建 ${esc(q.created_at || "—")}${q.started_at ? " ｜ 开始 " + esc(q.started_at) : ""}${q.finished_at ? " ｜ 结束 " + esc(q.finished_at) : ""}</div>
+        <div class="meta">创建 ${esc(q.created_at || "—")}${q.started_at ? " ｜ 开始 " + esc(q.started_at) : ""}${q.finished_at ? " ｜ 结束 " + esc(q.finished_at) : ""}${q.age_days != null ? " ｜ " + (q.age_days >= 1 ? Math.round(q.age_days) + " 天前" : "今天") : ""}</div>
         ${q.error ? `<div class="meta" style="color:var(--error)">${esc(q.error)}</div>` : ""}
         <div class="actions">
           ${["queued", "running"].includes(q.status) ? `<button class="btn small danger" onclick="cancelProduction('${esc(q.job_id)}')">取消</button>` : ""}
           ${["done", "failed", "canceled"].includes(q.status) ? `<button class="btn small tonal" onclick="rerunProduction('${esc(q.job_id)}')">重新生产</button>` : ""}
+          <button class="btn small danger" title="删除该生产任务（含 jobs 与 outputs 产物）" onclick="deleteProduction('${esc(q.job_id)}')">删除</button>
         </div>
       </div>`;
-  }).join("") : '<span class="muted">暂无生产任务（在选题页“采纳 → 开始生产”即可入队）</span>';
+  };
+  const active = queue.filter((q) => !q.archived);
+  const archived = queue.filter((q) => q.archived);
+  const activeHtml = active.length
+    ? active.map(itemHtml).join("")
+    : '<span class="muted">暂无生产任务（在选题页“采纳 → 开始生产”即可入队）</span>';
+  const archivedHtml = archived.length
+    ? `<details class="queue-archived" style="margin-top:12px"><summary>📦 已归档（${archived.length} 条，超过 1 周，点击展开）</summary>${archived.map(itemHtml).join("")}</details>`
+    : "";
+  $("#prod-queue").innerHTML = activeHtml + archivedHtml;
   $("#prod-log").textContent = prod.log || (running ? "日志生成中…" : "暂无日志");
 }
 
@@ -2384,6 +2804,19 @@ async function rerunProduction(jobId) {
   }
 }
 window.rerunProduction = rerunProduction;
+
+async function deleteProduction(jobId) {
+  if (!confirm("删除生产任务？\n" + jobId + "\n\n将删除该任务的队列记录、jobs/ 与 outputs/ 产物（不可恢复）。")) return;
+  try {
+    await api("/api/production/" + encodeURIComponent(jobId), { method: "DELETE" });
+    toast("已删除任务：" + jobId);
+    loadPipeline();
+    loadTopics();
+  } catch (e) {
+    toast("删除失败: " + e.message, false);
+  }
+}
+window.deleteProduction = deleteProduction;
 
 function renderPipelineJob() {
   const jobId = $("#pipeline-job-select").value;
@@ -3009,12 +3442,20 @@ document.addEventListener("DOMContentLoaded", () => {
   switchView("overview");
   loadLicenseStatus();
   applyProfile();
-  setTimeout(() => showOnboarding(false), 500);
+  if (!localStorage.getItem("onboarding_done")) {
+    setTimeout(() => showOnboardingWizard(), 400);
+  }
 });
+
+
+let currentTier = "free";
+let upgradeUrl = "https://mbd.pub/";
 
 async function loadLicenseStatus() {
   try {
     const d = await api("/api/license/status");
+    currentTier = d.tier || "free";
+    upgradeUrl = d.upgrade_url || "https://mbd.pub/";
     const tierTxt = {
       owner: "Pro · 卖家模式",
       pro: "Pro 已激活" + (d.exp ? " · 到期 " + d.exp : ""),
@@ -3025,6 +3466,24 @@ async function loadLicenseStatus() {
     el.innerHTML = d.tier === "free"
       ? `<a href="${esc(d.upgrade_url || "#")}" target="_blank" rel="noopener">${tierTxt}</a> · ${eng}`
       : `${tierTxt} · ${eng}`;
+
+    // 免费版限制：仅放行默认皮肤与默认质感，若存储了 Pro 皮肤则重置为默认
+    if (currentTier === "free") {
+      const savedTheme = localStorage.getItem("selfmedia_theme") || "default";
+      if (savedTheme !== "default") {
+        document.documentElement.dataset.theme = "default";
+        localStorage.setItem("selfmedia_theme", "default");
+        const sel = $("#set-theme");
+        if (sel) sel.value = "default";
+      }
+      const savedStyle = localStorage.getItem("selfmedia_style") || "google-rounded";
+      if (savedStyle !== "google-rounded") {
+        document.documentElement.dataset.style = "google-rounded";
+        localStorage.setItem("selfmedia_style", "google-rounded");
+        const sel = $("#set-style");
+        if (sel) sel.value = "google-rounded";
+      }
+    }
   } catch (e) {
     $("#license-badge").textContent = "授权状态加载失败";
   }
@@ -3043,11 +3502,11 @@ function applyProfile() {
       av.textContent = "";
     } else {
       av.style.backgroundImage = "";
-      av.textContent = (prof.nickname || "小吴聊").slice(0, 1);
+      av.textContent = (prof.nickname || "自").slice(0, 1);
     }
   }
   const nk = $("#brand-nickname");
-  if (nk) nk.textContent = (prof.nickname || "小吴聊") + " · 运营工作台";
+  if (nk) nk.textContent = (prof.nickname || "自媒体") + " · 运营工作台";
 }
 window.applyProfile = applyProfile;
 
@@ -3097,10 +3556,10 @@ function openCropModal(dataUrl) {
     cropState.naturalW = img.naturalWidth || 1;
     cropState.naturalH = img.naturalHeight || 1;
     const cover = cropBaseScale();
-    cropState.zoom = cover;
+    cropState.zoom = 1;
     const zoom = $("#crop-zoom");
     if (zoom) {
-      zoom.min = cover.toFixed(2);
+      zoom.min = "1";
       zoom.max = Math.max(4, (cover * 3).toFixed(2));
       zoom.value = cropState.zoom.toFixed(2);
     }
@@ -3131,8 +3590,9 @@ function confirmCrop() {
   const cropPx = cropState.cropSize / scale;
   const cx = cropFramePos.x + cropState.cropSize / 2;
   const cy = cropFramePos.y + cropState.cropSize / 2;
-  const sx = Math.max(0, Math.min(cropState.naturalW - cropPx, (cx - cropState.imgX) / scale));
-  const sy = Math.max(0, Math.min(cropState.naturalH - cropPx, (cy - cropState.imgY) / scale));
+  // (cx - imgX)/scale 是框中心在原图上的坐标，需再减半框宽才是左上角
+  const sx = Math.max(0, Math.min(cropState.naturalW - cropPx, (cx - cropState.imgX) / scale - cropPx / 2));
+  const sy = Math.max(0, Math.min(cropState.naturalH - cropPx, (cy - cropState.imgY) / scale - cropPx / 2));
   const cv = document.createElement("canvas");
   cv.width = 256;
   cv.height = 256;
@@ -3224,6 +3684,7 @@ let tplData = { categories: [] };
 let tplSel = {};
 let tplActiveCat = "";
 let styleDocs = [];
+let styleDocMeta = {};
 
 async function loadTemplates() {
   try {
@@ -3311,13 +3772,52 @@ async function saveTemplates() {
 }
 window.saveTemplates = saveTemplates;
 
+let stylePresets = [];
+
+async function loadStylePresets() {
+  try {
+    const d = await api("/api/style-presets");
+    stylePresets = d.presets || [];
+    const psel = $("#style-preset-select");
+    if (!psel) return;
+    psel.innerHTML = '<option value="">-- 套用预设文风模板 --</option>' +
+      stylePresets.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+  } catch (e) { /* 忽略 */ }
+}
+
+async function applyStylePreset(presetId) {
+  if (!presetId) return;
+  const p = stylePresets.find((x) => x.id === presetId);
+  if (!p || !p.content) return;
+  const ta = $("#style-doc-text");
+  if (ta && ta.value.trim() && !confirm("套用预设文风模板「" + p.name + "」？当前编辑器内容将被替换。")) {
+    const psel = $("#style-preset-select");
+    if (psel) psel.value = "";
+    return;
+  }
+  if (ta) ta.value = p.content;
+  const psel = $("#style-preset-select");
+  if (psel) psel.value = "";
+  const sel = $("#style-doc-select");
+  const path = (sel && sel.value) || "skills/personal-style-guide.md";
+  styleDocMeta[path] = { path, name: "个人文风指南", is_default: false };
+  renderStyleDocMeta(path);
+  toast("已套用「" + p.name + "」，请点击「保存文风文档」生效");
+}
+window.applyStylePreset = applyStylePreset;
+
 async function loadStyleDocs() {
   try {
+    await loadStylePresets();
     const d = await api("/api/style-docs");
     styleDocs = d.docs || [];
+    styleDocMeta = {};
+    (styleDocs || []).forEach((x) => { styleDocMeta[x.path] = x; });
     const sel = $("#style-doc-select");
     if (!sel) return;
-    sel.innerHTML = styleDocs.map((doc) => `<option value="${esc(doc.path)}">${esc(doc.name)}</option>`).join("");
+    sel.innerHTML = styleDocs.map((doc) =>
+      `<option value="${esc(doc.path)}">${esc(doc.name)}${doc.is_default ? "（默认）" : ""}</option>`
+    ).join("");
     loadStyleDoc();
   } catch (e) { /* 忽略 */ }
 }
@@ -3329,12 +3829,85 @@ async function loadStyleDoc() {
   try {
     const d = await api("/api/style-doc?path=" + encodeURIComponent(sel.value));
     ta.value = d.content || "";
+    styleDocMeta[sel.value] = d;
+    renderStyleDocMeta(sel.value);
     $("#style-doc-status").textContent = "已加载 " + sel.value;
   } catch (e) {
     $("#style-doc-status").textContent = "加载失败: " + e.message;
   }
 }
 window.loadStyleDoc = loadStyleDoc;
+
+function renderStyleDocMeta(path) {
+  const m = styleDocMeta[path] || {};
+  const badge = $("#style-doc-badge");
+  const resetBtn = $("#btn-style-reset");
+  const presetSel = $("#style-preset-select");
+  const isDefault = !!m.is_default;
+  if (badge) {
+    badge.textContent = isDefault ? "默认模板" : "已自定义";
+    badge.className = "badge " + (isDefault ? "success" : "primary");
+  }
+  if (resetBtn) resetBtn.disabled = isDefault;
+  if (presetSel) {
+    presetSel.style.display = path === "skills/personal-style-guide.md" ? "" : "none";
+  }
+}
+
+function openStyleGuide() {
+  $("#style-guide-modal").classList.remove("hidden");
+}
+window.openStyleGuide = openStyleGuide;
+
+function closeStyleGuide() {
+  $("#style-guide-modal").classList.add("hidden");
+}
+window.closeStyleGuide = closeStyleGuide;
+
+async function submitStyleGuide() {
+  const body = {
+    audience: ($("#sg-audience") || {}).value || "",
+    platforms: ($("#sg-platforms") || {}).value || "",
+    tone: ($("#sg-tone") || {}).value || "",
+    avoid: ($("#sg-avoid") || {}).value || "",
+    keywords: ($("#sg-keywords") || {}).value || "",
+    redlines: ($("#sg-redlines") || {}).value || "",
+  };
+  try {
+    const d = await api("/api/style-doc/guide", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const ta = $("#style-doc-text");
+    if (ta) ta.value = d.content || "";
+    const path = "skills/personal-style-guide.md";
+    styleDocMeta[path] = { path, name: "个人文风指南", is_default: false };
+    renderStyleDocMeta(path);
+    closeStyleGuide();
+    toast(d.mode === "ai" ? "文风指南已生成，点「保存文风文档」生效" : "已生成填空草稿，补充后保存", d.mode === "ai");
+  } catch (e) {
+    toast("生成失败: " + e.message, false);
+  }
+}
+window.submitStyleGuide = submitStyleGuide;
+
+async function resetStyleDoc() {
+  const sel = $("#style-doc-select");
+  const path = sel && sel.value;
+  if (!path) return;
+  if (!confirm("恢复默认模板？当前内容会先备份到 data/style_backups/。")) return;
+  try {
+    await api("/api/style-doc/reset", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path }),
+    });
+    await loadStyleDoc();
+    toast("已恢复默认模板");
+  } catch (e) {
+    toast("恢复失败: " + e.message, false);
+  }
+}
+window.resetStyleDoc = resetStyleDoc;
 
 async function saveStyleDoc() {
   const sel = $("#style-doc-select");
@@ -3359,6 +3932,7 @@ function openSettings() {
   loadRetention();
   loadTemplates();
   loadStyleDocs();
+  loadScheduler();
   $("#settings-modal").classList.remove("hidden");
 }
 window.openSettings = openSettings;
@@ -3394,16 +3968,31 @@ async function loadSettings() {
     const stl = document.documentElement.dataset.style || "google-rounded";
     const styleSel = $("#set-style");
     if (styleSel) styleSel.value = STYLE_NAMES[stl] ? stl : "google-rounded";
+    initGlassUI();
     $("#set-llm-key").value = "";
     $("#set-llm-base").value = d.llm.base_url || "";
     $("#set-llm-model").value = d.llm.model || "";
+    const modeSel = $("#set-llm-mode");
+    if (modeSel) { modeSel.value = d.llm.engine_mode || "auto"; onEngineModeChange(modeSel.value); }
+    const engineNow = $("#set-engine-now");
+    if (engineNow) engineNow.textContent = d.engine.mode || "none";
+    const modelNow = $("#set-model-now");
+    if (modelNow) modelNow.textContent = (d.engine.model || d.llm.model || "未配置");
+    const usageEl = $("#set-token-usage");
+    if (usageEl) {
+      const u = d.token_usage || {};
+      const t = u.total || {};
+      usageEl.textContent = `${t.total_tokens || 0} tokens（${t.calls || 0} 次调用，输入 ${t.prompt_tokens || 0} / 输出 ${t.completion_tokens || 0}）`;
+    }
     $("#set-gzh-id").value = "";
     $("#set-gzh-secret").value = "";
+    if ($("#set-proxy-url")) $("#set-proxy-url").value = (d.proxy && d.proxy.url) ? d.proxy.url : "";
     $("#set-key-mask").textContent = d.llm.configured
       ? "当前已配置：" + d.llm.api_key_masked
       : "未配置（免费功能不需要 AI Key）";
     const gzhTxt = d.gzh.configured ? "公众号已配置：" + d.gzh.app_id_masked : "公众号未配置（手动发布也能用）";
-    st.textContent = (d.llm.status_ok ? "AI 引擎就绪（" + d.engine.mode + "）" : "AI 引擎：" + d.llm.status_reason) + " · " + gzhTxt;
+    const proxyTxt = (d.proxy && d.proxy.configured) ? "代理已配置" : "代理未配置（国内源秒开）";
+    st.textContent = (d.llm.status_ok ? "AI 引擎就绪（" + d.engine.mode + "）" : "AI 引擎：" + d.llm.status_reason) + " · " + gzhTxt + " · " + proxyTxt;
   } catch (e) {
     st.textContent = "读取配置失败: " + e.message;
   }
@@ -3413,11 +4002,19 @@ window.loadSettings = loadSettings;
 const THEME_NAMES = {
   default: "蓝白默认", midnight: "深空暗黑",
   doraemon: "哆啦A梦（蓝胖）", cyberpunk: "赛博朋克·霓虹风暴",
-  hermes: "爱马仕橙奢侈风", chanel: "香奈儿蔚蓝香精风", lv: "LV奢华风",
+  fuji: "和风·藤菫紫", hermes: "爱马仕橙奢侈风", chanel: "香奈儿可可闪蜜", lv: "LV奢华风",
 };
 
 function applyTheme(name) {
   name = THEME_NAMES[name] ? name : "default";
+  if (name !== "default" && currentTier === "free") {
+    toast(`「${THEME_NAMES[name]}」为 Pro 高级皮肤，免费版仅提供「蓝白默认」，请升级 Pro 解锁`, false);
+    const sel = $("#set-theme");
+    if (sel) sel.value = "default";
+    document.documentElement.dataset.theme = "default";
+    localStorage.setItem("selfmedia_theme", "default");
+    return;
+  }
   document.documentElement.dataset.theme = name;
   localStorage.setItem("selfmedia_theme", name);
   const sel = $("#set-theme");
@@ -3433,6 +4030,14 @@ const STYLE_NAMES = {
 
 function applyStyle(name) {
   name = STYLE_NAMES[name] ? name : "google-rounded";
+  if (name !== "google-rounded" && currentTier === "free") {
+    toast(`「${STYLE_NAMES[name]}」为 Pro 质感档位，免费版仅提供「谷歌圆润」，请升级 Pro 解锁`, false);
+    const sel = $("#set-style");
+    if (sel) sel.value = "google-rounded";
+    document.documentElement.dataset.style = "google-rounded";
+    localStorage.setItem("selfmedia_style", "google-rounded");
+    return;
+  }
   document.documentElement.dataset.style = name;
   localStorage.setItem("selfmedia_style", name);
   const sel = $("#set-style");
@@ -3440,6 +4045,66 @@ function applyStyle(name) {
   toast("已切换质感：" + STYLE_NAMES[name]);
 }
 window.applyStyle = applyStyle;
+
+function glassStrength() {
+  const raw = localStorage.getItem("selfmedia_glass") || "follow";
+  if (raw === "follow" || raw === "on" || raw === "off") return raw === "off" ? 0 : 60;
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? 60 : Math.max(0, Math.min(100, n));
+}
+
+function applyGlassStrength(v) {
+  if (currentTier === "free") {
+    toast("透明毛玻璃无级调节为 Pro 会员功能，请升级 Pro 解锁", false);
+    const cb = $("#set-glass-follow");
+    if (cb) { cb.checked = true; onGlassFollowChange(cb); }
+    return;
+  }
+  const n = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+  const el = document.documentElement;
+  el.style.setProperty("--style-glass-alpha", (100 - n * 0.35).toFixed(1) + "%");
+  el.style.setProperty("--style-glass-blur", (n * 0.25).toFixed(1) + "px");
+  localStorage.setItem("selfmedia_glass", String(n));
+  const val = $("#set-glass-val");
+  if (val) val.textContent = n + "%";
+  const slider = $("#set-glass");
+  if (slider) slider.value = String(n);
+}
+window.applyGlassStrength = applyGlassStrength;
+
+function onGlassFollowChange(cb) {
+  const el = document.documentElement;
+  if (cb.checked) {
+    el.style.removeProperty("--style-glass-alpha");
+    el.style.removeProperty("--style-glass-blur");
+    localStorage.setItem("selfmedia_glass", "follow");
+    const val = $("#set-glass-val");
+    if (val) val.textContent = "跟随质感档位";
+    const slider = $("#set-glass");
+    if (slider) slider.disabled = true;
+  } else {
+    const slider = $("#set-glass");
+    if (slider) {
+      slider.disabled = false;
+      applyGlassStrength(slider.value);
+    }
+  }
+}
+window.onGlassFollowChange = onGlassFollowChange;
+
+function initGlassUI() {
+  const raw = localStorage.getItem("selfmedia_glass") || "follow";
+  const isFollow = raw === "follow";
+  const followCb = $("#set-glass-follow");
+  const slider = $("#set-glass");
+  const val = $("#set-glass-val");
+  if (followCb) followCb.checked = isFollow;
+  if (slider) {
+    slider.disabled = isFollow;
+    if (!isFollow) slider.value = String(glassStrength());
+  }
+  if (val) val.textContent = isFollow ? "跟随质感档位" : glassStrength() + "%";
+}
 
 const RETENTION_LABELS = {
   candidates: "过期候选", logs: "过期日志", platform_days: "过期榜单快照",
@@ -3486,12 +4151,15 @@ window.applyRetention = applyRetention;
 async function saveSettings(silent) {
   const st = $("#settings-status");
   const body = {};
-  const val = (id) => $(id).value.trim();
+  const val = (id) => $(id) ? $(id).value.trim() : "";
   if (val("#set-llm-key")) body.llm_api_key = val("#set-llm-key");
   if (val("#set-llm-base")) body.llm_base_url = val("#set-llm-base");
   if (val("#set-llm-model")) body.llm_model = val("#set-llm-model");
+  const modeSel = $("#set-llm-mode");
+  if (modeSel) body.llm_engine_mode = modeSel.value;
   if (val("#set-gzh-id")) body.gzh_app_id = val("#set-gzh-id");
   if (val("#set-gzh-secret")) body.gzh_app_secret = val("#set-gzh-secret");
+  if ($("#set-proxy-url")) body.proxy_url = val("#set-proxy-url");
   try {
     const d = await api("/api/settings", {
       method: "POST",
@@ -3520,6 +4188,28 @@ async function saveSettings(silent) {
 }
 window.saveSettings = saveSettings;
 
+async function testProxyConnection() {
+  const st = $("#set-proxy-status");
+  const pUrl = $("#set-proxy-url") ? $("#set-proxy-url").value.trim() : "";
+  if (!pUrl) return toast("请先输入代理服务器地址（如 http://127.0.0.1:7897）", false);
+  st.textContent = "正在测试代理连通性…";
+  try {
+    await saveSettings(true);
+    const d = await api("/api/settings/proxy-test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proxy_url: pUrl }),
+    });
+    st.textContent = d.message;
+    if (d.ok) toast("代理测试成功，海外源可用");
+    else toast("代理连接失败", false);
+  } catch (e) {
+    st.textContent = "测试失败: " + e.message;
+    toast("测试失败: " + e.message, false);
+  }
+}
+window.testProxyConnection = testProxyConnection;
+
 async function testLlm() {
   const st = $("#settings-status");
   st.textContent = "正在保存并测试连接…";
@@ -3533,6 +4223,153 @@ async function testLlm() {
 }
 window.testLlm = testLlm;
 
+function onEngineModeChange(mode) {
+  const hint = $("#set-engine-mode-hint");
+  const fields = $("#set-llm-api-fields");
+  const tips = {
+    auto: "自动探测：本机装了 Codex 优先用 Codex，否则回退到 API Key 直连。",
+    api: "直接调用大模型 API（DeepSeek / OpenAI / Moonshot / 本地 Ollama 等任何 OpenAI 兼容端点）。生产与拆解都走 API，消耗下方统计的 Token。",
+    codex: "通过本机 Codex CLI 接入（需安装 ChatGPT 应用或配置 CODEX_BIN）。",
+    workbuddy: "由 WorkBuddy / 其他 Agent 调度本仓库脚本，工作台负责看板与数据。",
+  };
+  if (hint) hint.textContent = tips[mode] || "";
+  if (fields) fields.style.display = (mode === "api" || mode === "auto") ? "" : "none";
+}
+window.onEngineModeChange = onEngineModeChange;
+
+async function clearLlmConfig() {
+  if (!confirm("清空 LLM 配置？\n将删除 .env 中的 LLM_API_KEY / LLM_BASE_URL / LLM_MODEL。")) return;
+  try {
+    await api("/api/settings/llm-clear", { method: "POST" });
+    toast("已清空 LLM 配置");
+    loadSettings();
+    loadLicenseStatus();
+  } catch (e) {
+    toast("清空失败: " + e.message, false);
+  }
+}
+window.clearLlmConfig = clearLlmConfig;
+
+// ---------- 定时任务 ----------
+let schedConfig = null;
+let schedMeta = {};
+
+async function loadScheduler() {
+  try {
+    const d = await api("/api/scheduler");
+    schedConfig = d.config || {};
+    schedMeta = d.tasks_meta || {};
+    $("#sched-enabled").checked = !!schedConfig.enabled;
+    renderSchedTasks();
+  } catch (e) {
+    toast("读取定时任务失败: " + e.message, false);
+  }
+}
+window.loadScheduler = loadScheduler;
+
+function renderSchedTasks() {
+  const box = $("#sched-task-list");
+  if (!box || !schedConfig) return;
+  const tasks = schedConfig.tasks || {};
+  const lastRuns = schedConfig.last_runs || {};
+  box.innerHTML = Object.keys(schedMeta).map((key) => {
+    const m = schedMeta[key] || { label: key, hint: "" };
+    const t = tasks[key] || { enabled: false, times: [] };
+    const times = (t.times || []).map((tm) => `
+      <span class="chip">${esc(tm)} <a href="javascript:void(0)" style="margin-left:4px" onclick="removeSchedTime('${esc(key)}','${esc(tm)}')">×</a></span>`).join(" ");
+    return `
+      <div class="card set-card">
+        <div class="set-toolbar" style="justify-content:space-between">
+          <div>
+            <div style="font-weight:600">${esc(m.label)}</div>
+            <div class="muted" style="font-size:12px">${esc(m.hint)}${lastRuns[key] ? " ｜ 上次运行：" + esc(lastRuns[key]) : ""}</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+            <input type="checkbox" ${t.enabled ? "checked" : ""} onchange="schedTaskEnabled('${esc(key)}', this.checked)"> 启用
+          </label>
+        </div>
+        <div style="margin-top:8px">${times || '<span class="muted" style="font-size:12px">未设置时间（点下方添加）</span>'}</div>
+        <div class="set-toolbar" style="margin-top:8px">
+          <input type="time" id="sched-time-${esc(key)}" class="select small" style="width:120px">
+          <button class="btn small tonal" onclick="addSchedTime('${esc(key)}')">＋ 添加时间</button>
+          <button class="btn small" onclick="runSchedulerNow('${esc(key)}')">立即运行一次</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function schedTaskEnabled(key, checked) {
+  if (!schedConfig) return;
+  schedConfig.tasks = schedConfig.tasks || {};
+  schedConfig.tasks[key] = schedConfig.tasks[key] || { enabled: false, times: [] };
+  schedConfig.tasks[key].enabled = checked;
+}
+
+function onSchedEnabledChange(checked) {
+  if (schedConfig) schedConfig.enabled = checked;
+}
+
+function addSchedTime(key) {
+  if (!schedConfig) return;
+  const input = $(`#sched-time-${key}`);
+  if (!input || !input.value) return toast("请先选择时间", false);
+  const tm = input.value;
+  schedConfig.tasks = schedConfig.tasks || {};
+  schedConfig.tasks[key] = schedConfig.tasks[key] || { enabled: false, times: [] };
+  const times = schedConfig.tasks[key].times || [];
+  if (times.includes(tm)) return toast("该时间已存在", false);
+  times.push(tm);
+  times.sort();
+  schedConfig.tasks[key].times = times;
+  renderSchedTasks();
+}
+window.addSchedTime = addSchedTime;
+
+function removeSchedTime(key, tm) {
+  if (!schedConfig) return;
+  schedConfig.tasks = schedConfig.tasks || {};
+  schedConfig.tasks[key] = schedConfig.tasks[key] || { enabled: false, times: [] };
+  schedConfig.tasks[key].times = (schedConfig.tasks[key].times || []).filter((x) => x !== tm);
+  renderSchedTasks();
+}
+window.removeSchedTime = removeSchedTime;
+
+async function saveScheduler() {
+  if (!schedConfig) return;
+  const st = $("#sched-save-status");
+  if (st) st.textContent = "保存中…";
+  try {
+    const d = await api("/api/scheduler", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: !!schedConfig.enabled, tasks: schedConfig.tasks || {} }),
+    });
+    schedConfig = d.config;
+    renderSchedTasks();
+    if (st) st.textContent = "已保存（应用打开期间生效）";
+    toast("定时设置已保存");
+  } catch (e) {
+    if (st) st.textContent = "保存失败: " + e.message;
+    toast("保存失败: " + e.message, false);
+  }
+}
+window.saveScheduler = saveScheduler;
+
+async function runSchedulerNow(key) {
+  try {
+    const d = await api("/api/scheduler/run-now", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ task: key }),
+    });
+    toast(d.ok ? "已在后台启动：" + key + "（稍后刷新查看结果）" : "启动失败");
+    if (key === "topics") setTimeout(loadTopics, 15000);
+    if (key === "viral") setTimeout(loadViral, 15000);
+    setTimeout(loadScheduler, 3000);
+  } catch (e) {
+    toast("运行失败: " + e.message, false);
+  }
+}
+window.runSchedulerNow = runSchedulerNow;
+
 async function refreshLicense() {
   const st = $("#settings-status");
   st.textContent = "正在刷新授权状态…";
@@ -3540,7 +4377,7 @@ async function refreshLicense() {
     await loadLicenseStatus();
     const d = await api("/api/license/status");
     const tierTxt = {
-      owner: "Pro · 卖家模式",
+      owner: "Pro · 终身版",
       pro: "Pro 已激活" + (d.exp ? " · 到期 " + d.exp : ""),
       free: "免费版",
     }[d.tier] || d.tier;
@@ -3551,6 +4388,44 @@ async function refreshLicense() {
   }
 }
 window.refreshLicense = refreshLicense;
+
+function openProUpgradeModal() {
+  const m = $("#pro-upgrade-modal");
+  if (m) m.classList.remove("hidden");
+}
+window.openProUpgradeModal = openProUpgradeModal;
+
+function closeProUpgradeModal() {
+  const m = $("#pro-upgrade-modal");
+  if (m) m.classList.add("hidden");
+}
+window.closeProUpgradeModal = closeProUpgradeModal;
+
+async function activateLicenseFromModal() {
+  const token = $("#upgrade-license-token") ? $("#upgrade-license-token").value.trim() : "";
+  const st = $("#upgrade-license-status");
+  if (!token) {
+    if (st) st.innerHTML = '<span style="color:var(--danger, #ef4444);">请先粘贴授权 Token 激活码</span>';
+    return;
+  }
+  if (st) st.textContent = "正在校验激活…";
+  try {
+    const d = await api("/api/license/activate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    if (st) st.innerHTML = '<span style="color:var(--success, #10b981);">✅ 激活成功！已升级为 Pro 会员</span>';
+    toast("🎉 恭喜升级为 Pro 会员！");
+    setTimeout(() => {
+      closeProUpgradeModal();
+      loadLicenseStatus();
+    }, 1200);
+  } catch (e) {
+    if (st) st.innerHTML = `<span style="color:var(--danger, #ef4444);">❌ 激活失败：${e.message}</span>`;
+  }
+}
+window.activateLicenseFromModal = activateLicenseFromModal;
 
 async function activateLicense() {
   const st = $("#settings-status");
@@ -3573,3 +4448,272 @@ async function activateLicense() {
   }
 }
 window.activateLicense = activateLicense;
+
+/* =========================================================================
+   数据子标签切换 (Data Sub-tabs Controller)
+   ========================================================================= */
+function switchDataTab(tab) {
+  $$("#data-view-tabs .tab").forEach(b => {
+    b.classList.toggle("active", b.dataset.dtab === tab);
+  });
+  const pStats = $("#data-tab-stats");
+  const pQa = $("#data-tab-qa");
+  const pFeedback = $("#data-tab-feedback");
+
+  if (pStats) pStats.classList.toggle("hidden", tab !== "stats");
+  if (pQa) pQa.classList.toggle("hidden", tab !== "qa");
+  if (pFeedback) pFeedback.classList.toggle("hidden", tab !== "feedback");
+
+  if (tab === "qa") {
+    loadQaHistory();
+  } else if (tab === "feedback") {
+    loadTopicFeedbackReport();
+  }
+}
+window.switchDataTab = switchDataTab;
+
+/* =========================================================================
+   质检趋势可视化 (QA Trend Visualization & SVG Charts)
+   ========================================================================= */
+async function loadQaHistory() {
+  const timeEl = $("#qa-updated-at");
+  if (timeEl) timeEl.textContent = "正在加载质检趋势…";
+  try {
+    const d = await api("/api/qa/history");
+    if (timeEl) timeEl.textContent = "更新于：" + new Date().toLocaleTimeString();
+
+    const tr = d.trends || {};
+    const items = d.items || [];
+
+    // 1. KPI 概览卡片
+    const kpiEl = $("#qa-kpi-grid");
+    if (kpiEl) {
+      kpiEl.innerHTML = `
+        <div class="kpi-card">
+          <div class="kpi-label">累计自动化质检</div>
+          <div class="kpi-val">${tr.total_inspections || 0}<span class="unit">次</span></div>
+          <div class="kpi-sub">全门禁综合校验</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">全套门禁通过率</div>
+          <div class="kpi-val">${tr.overall_pass_rate || 0}<span class="unit">%</span></div>
+          <div class="kpi-sub">四重门禁一票否决</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">近 7 日通过率</div>
+          <div class="kpi-val" style="color:var(--primary);">${tr.pass_rate_7d || 0}<span class="unit">%</span></div>
+          <div class="kpi-sub">30日均值: ${tr.pass_rate_30d || 0}%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Harsh Critic 均分</div>
+          <div class="kpi-val" style="color:#10B981;">${tr.avg_harsh_score_7d || 0}<span class="unit">分</span></div>
+          <div class="kpi-sub">30日均分: ${tr.avg_harsh_score_30d || 0} 分</div>
+        </div>
+      `;
+    }
+
+    // 2. 里程碑勋章
+    const msEl = $("#qa-milestones");
+    if (msEl) {
+      const ms = d.milestones || [];
+      if (!ms.length) {
+        msEl.innerHTML = `<div class="muted" style="padding:10px 0;">暂无里程碑记录（完成更多任务后解锁）</div>`;
+      } else {
+        msEl.innerHTML = ms.map(m => `
+          <div class="qa-milestone-card">
+            <div class="qa-milestone-icon">${m.icon || "🛡️"}</div>
+            <div>
+              <div class="qa-milestone-title">${escapeHtml(m.title)}</div>
+              <div class="qa-milestone-desc">${escapeHtml(m.desc)}</div>
+            </div>
+          </div>
+        `).join("");
+      }
+    }
+
+    // 3. 准备折线图数据
+    const passPoints = items.map(it => ({
+      label: (it.date || "").slice(5),
+      value: it.overall ? 100 : 0,
+      tooltip: `${it.date}\n${it.theme}\n质检结论: ${it.overall ? "✅ 通过" : "❌ 未通过"}\nHarsh: ${it.harsh_score}分`,
+    }));
+
+    const harshPoints = items.map(it => ({
+      label: (it.date || "").slice(5),
+      value: it.harsh_score,
+      tooltip: `${it.date}\n${it.theme}\nHarsh评分: ${it.harsh_score}分`,
+    }));
+
+    renderSvgLineChart("qa-pass-chart", passPoints, {
+      unit: "%", minVal: 0, maxVal: 100, isSecondary: false, title: "通过率"
+    });
+
+    renderSvgLineChart("qa-harsh-chart", harshPoints, {
+      unit: "分", minVal: 50, maxVal: 100, isSecondary: true, title: "Harsh评分"
+    });
+
+    // 4. 高频失分项 TOP 5
+    const topEl = $("#qa-top-issues");
+    if (topEl) {
+      const issues = d.top_issues || [];
+      if (!issues.length) {
+        topEl.innerHTML = `<div class="muted" style="padding:16px 0; text-align:center;">🎉 近期无高频违规触发，质检质量极佳！</div>`;
+      } else {
+        topEl.innerHTML = issues.map(iss => `
+          <div class="qa-issue-item">
+            <span class="qa-issue-title">⚠️ ${escapeHtml(iss.rule)}</span>
+            <span class="qa-issue-badge">触发 ${iss.count} 次</span>
+          </div>
+        `).join("");
+      }
+    }
+
+    // 5. 质检历史表格
+    const tableEl = $("#qa-history-table");
+    if (tableEl) {
+      if (!items.length) {
+        tableEl.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center;padding:24px;">暂无历史质检记录</td></tr>`;
+      } else {
+        tableEl.innerHTML = items.slice().reverse().map(it => `
+          <tr>
+            <td>${escapeHtml(it.date || "-")}</td>
+            <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(it.theme)}">
+              ${escapeHtml(it.theme || it.job_id)}
+            </td>
+            <td>${it.contract_pass ? '<span class="status success">✅ PASS</span>' : '<span class="status error">❌ FAIL</span>'}</td>
+            <td><b>${it.harsh_score}</b> 分</td>
+            <td>${it.ai_pass ? '<span class="status success">✅ 合格</span>' : '<span class="status warn">⚠️ AI腔</span>'}</td>
+            <td>${it.compliance_pass ? '<span class="status success">✅ 合规</span>' : '<span class="status error">❌ 违规</span>'}</td>
+            <td>${it.overall ? '<span class="status success">✅ 全部通过</span>' : '<span class="status error">🔴 打回自愈</span>'}</td>
+          </tr>
+        `).join("");
+      }
+    }
+  } catch (e) {
+    if (timeEl) timeEl.textContent = "加载失败: " + e.message;
+  }
+}
+window.loadQaHistory = loadQaHistory;
+
+/**
+ * 纯 Vanilla JS + 动态 SVG 折线图生成器
+ */
+function renderSvgLineChart(containerId, points, opts = {}) {
+  const container = $(`#${containerId}`);
+  if (!container) return;
+
+  if (!points || points.length < 3) {
+    container.innerHTML = `
+      <div class="qa-chart-empty">
+        <span style="font-size:24px;">📊</span>
+        <span>暂无足够历史质检数据（至少需 3 条质检记录生成趋势折线图）</span>
+      </div>
+    `;
+    return;
+  }
+
+  const W = 540, H = 200;
+  const padL = 42, padR = 24, padT = 20, padB = 30;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const minV = opts.minVal !== undefined ? opts.minVal : Math.min(...points.map(p => p.value));
+  const maxV = opts.maxVal !== undefined ? opts.maxVal : Math.max(...points.map(p => p.value));
+  const rangeV = (maxV - minV) || 1;
+
+  const getX = i => padL + (i / (points.length - 1)) * plotW;
+  const getY = val => padT + plotH - ((val - minV) / rangeV) * plotH;
+
+  const coords = points.map((p, i) => ({
+    x: getX(i),
+    y: getY(p.value),
+    label: p.label,
+    value: p.value,
+    tooltip: p.tooltip,
+  }));
+
+  const linePath = coords.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(" ");
+  const areaPath = `${linePath} L ${coords[coords.length - 1].x.toFixed(1)} ${(padT + plotH).toFixed(1)} L ${coords[0].x.toFixed(1)} ${(padT + plotH).toFixed(1)} Z`;
+
+  const gradId = `chart-grad-${containerId}`;
+  const lineColorClass = opts.isSecondary ? "qa-chart-line secondary" : "qa-chart-line";
+  const pointColorClass = opts.isSecondary ? "qa-chart-point secondary" : "qa-chart-point";
+  const gradStopColor = opts.isSecondary ? "#10B981" : "var(--primary)";
+
+  // 生成 3 条水平参考线
+  const gridSteps = [0, 0.5, 1];
+  const gridLines = gridSteps.map(ratio => {
+    const val = minV + ratio * rangeV;
+    const y = getY(val);
+    return `
+      <line class="qa-chart-grid" x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" />
+      <text class="qa-chart-label" x="${padL - 6}" y="${(y + 4).toFixed(1)}" text-anchor="end">${Math.round(val)}${opts.unit || ""}</text>
+    `;
+  }).join("");
+
+  // X 轴标签（最多抽样 6 个）
+  const step = Math.ceil(points.length / 6);
+  const xLabels = coords.filter((_, i) => i === 0 || i === coords.length - 1 || i % step === 0).map(c => `
+    <text class="qa-chart-label" x="${c.x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${escapeHtml(c.label)}</text>
+  `).join("");
+
+  // 数据点
+  const pointCircles = coords.map(c => `
+    <circle class="${pointColorClass}" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}">
+      <title>${escapeHtml(c.tooltip || `${c.label}: ${c.value}`)}</title>
+    </circle>
+  `).join("");
+
+  container.innerHTML = `
+    <svg class="qa-svg-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${gradStopColor}" stop-opacity="0.32" />
+          <stop offset="100%" stop-color="${gradStopColor}" stop-opacity="0.0" />
+        </linearGradient>
+      </defs>
+      ${gridLines}
+      <path class="qa-chart-area" d="${areaPath}" fill="url(#${gradId})" />
+      <path class="${lineColorClass}" d="${linePath}" />
+      ${pointCircles}
+      ${xLabels}
+    </svg>
+  `;
+}
+
+/* =========================================================================
+   选题反馈模型报告 (Topic Feedback Report Controller)
+   ========================================================================= */
+async function loadTopicFeedbackReport() {
+  const contentEl = $("#topic-feedback-content");
+  const timeEl = $("#feedback-report-time");
+  if (!contentEl) return;
+  contentEl.innerHTML = `<p class="muted">正在生成选题评分模型复盘报告…</p>`;
+  try {
+    const d = await api("/api/topics/feedback-report");
+    if (timeEl) timeEl.textContent = "更新于：" + new Date().toLocaleTimeString();
+    if (d.report && d.report.markdown) {
+      if (typeof marked !== "undefined") {
+        contentEl.innerHTML = marked.parse(d.report.markdown);
+      } else {
+        contentEl.innerHTML = `<pre class="feedback-pre">${escapeHtml(d.report.markdown)}</pre>`;
+      }
+    }
+  } catch (e) {
+    contentEl.innerHTML = `<p class="error">加载复盘报告失败: ${escapeHtml(e.message)}</p>`;
+  }
+}
+window.loadTopicFeedbackReport = loadTopicFeedbackReport;
+
+async function triggerTopicCalibration() {
+  try {
+    const d = await api("/api/topics/calibrate", { method: "POST" });
+    const cal = d.calibration || {};
+    toast(cal.message || "权重校准完成！");
+    await loadTopicFeedbackReport();
+  } catch (e) {
+    toast("校准触发失败: " + e.message, false);
+  }
+}
+window.triggerTopicCalibration = triggerTopicCalibration;
+

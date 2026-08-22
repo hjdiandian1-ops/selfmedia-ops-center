@@ -1,8 +1,23 @@
 # -*- coding: utf-8 -*-
 """选题推荐器单测（纯函数，不读热点雷达文件、不触网）。"""
 from datetime import datetime, timedelta, timezone
+import json
+import os
 
 import suggest_topics as ST
+
+
+ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
+
+def test_short_video_niches_present():
+    """短视频平台必须有赛道词库，且包含 AI/投资/财经商业。"""
+    with open(os.path.join(ROOT, "data", "topics", "niches.json"), encoding="utf-8") as f:
+        niches = json.load(f)
+    short = niches.get("短视频")
+    assert short, "短视频 缺少赛道词库"
+    for name in ("AI", "投资", "财经商业"):
+        assert name in short and short[name], f"短视频 缺少赛道 {name}"
 
 
 def test_normalize_title():

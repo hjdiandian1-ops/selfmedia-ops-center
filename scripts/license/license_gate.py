@@ -10,7 +10,7 @@
     python3 scripts/license/license_gate.py quota --feature viral_breakdown --limit 3 --consume
 
 判定规则：
-- 本地授权文件 ~/.xiaowuliao-skills/license.json 存在且 mode=owner → 全部放行。
+- 本地授权文件 ~/.selfmedia-skills/license.json 存在且 mode=owner → 全部放行。
 - 无授权文件：免费功能放行（viral_breakdown 按月度额度），Pro 功能拒绝并提示升级。
 - 有 token：验签 + 到期 + 指纹比对 + tier/features 判定，全部通过才放行。
 
@@ -25,7 +25,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import license_lib as LL  # noqa: E402
 
-SKILLS_DIR = os.path.expanduser("~/.xiaowuliao-skills")
+SKILLS_DIR = os.path.expanduser(os.environ.get("SELFMEDIA_SKILLS_DIR", "~/.selfmedia-skills"))
 LICENSE_FILE = os.path.join(SKILLS_DIR, "license.json")
 QUOTA_FILE = os.path.join(SKILLS_DIR, "quota.json")
 UPGRADE_URL = os.environ.get(

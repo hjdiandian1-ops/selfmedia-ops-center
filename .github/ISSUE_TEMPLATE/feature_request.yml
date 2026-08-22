@@ -1,0 +1,52 @@
+name: "💡 新功能建议 (Feature Request)"
+description: "为自媒体运营工厂提议新功能、新信息源或改进想法"
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢为 selfmedia-ops-center 提供建设性创意！请详细描述你期望的新特性。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 解决的痛点 / 需求背景
+      description: 这个功能解决了自媒体运营中的什么问题？
+      placeholder: 例如：在多平台分发时，小红书和公众号需要不同的封面图尺寸...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 期望的解决方案
+      description: 你希望这个功能如何工作？
+      placeholder: 增加一个一键裁剪/排版选项...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: 关联模块
+      description: 该功能属于哪一个功能模块？
+      options:
+        - 运营中台 / 数据概览 (Overview)
+        - 热点雷达 / 选题推荐 (Topics)
+        - 爆款跟踪 / AI 拆解 (Themes)
+        - 数据飞轮 / 经验反哺 (Flywheel)
+        - 生产流水线 / Agent 协同 (Pipeline)
+        - 成品库 / 排版预览 (Outputs)
+        - 质检体系 / 门禁评估 (QA)
+        - 主题皮肤 / UI 交互 (UI/UX)
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 考虑过的替代方案
+      description: 是否有任何替代方法或现有工作流？
+    validations:
+      required: false

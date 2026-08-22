@@ -9,7 +9,7 @@
     python3 scripts/license/install.py --owner              # 卖家自用机标记（不校验）
     python3 scripts/license/install.py --activate <token>   # v2 在线激活（预留接口）
 
-授权文件写入 ~/.xiaowuliao-skills/license.json。
+授权文件写入 ~/.selfmedia-skills/license.json。
 """
 import argparse
 import json
@@ -19,7 +19,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import license_lib as LL  # noqa: E402
 
-SKILLS_DIR = os.path.expanduser("~/.xiaowuliao-skills")
+SKILLS_DIR = os.path.expanduser(os.environ.get("SELFMEDIA_SKILLS_DIR", "~/.selfmedia-skills"))
 LICENSE_FILE = os.path.join(SKILLS_DIR, "license.json")
 
 

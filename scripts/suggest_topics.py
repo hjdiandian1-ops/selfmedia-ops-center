@@ -35,15 +35,17 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 LEXICON_FILE = os.path.join(ROOT, "data", "topics", "lexicon.json")
 PREF_FILE = os.path.join(ROOT, "data", "topics", "preferences.json")
 NICHES_FILE = os.path.join(ROOT, "data", "topics", "niches.json")
+CALIBRATION_FILE = os.path.join(ROOT, "data", "topics", "weight_calibration.json")
+
 
 # 公开仓库兜底词库（完整精选词库在私有 data/topics/lexicon.json，不进公开仓库）
 GENERIC_LEXICON = {
-    "ip": {"AI": 1, "工具": 1, "创业": 1, "效率": 1},
-    "emotion": ["暴涨", "暴跌", "震惊", "突破", "新高"],
-    "search": ["教程", "怎么", "如何", "对比", "价格"],
-    "durable": ["清单", "步骤", "案例", "指南", "报告"],
-    "unique": ["风险", "争议", "警告", "真相", "没想到"],
-    "identity": ["普通人", "年轻人", "创业者", "打工人", "学生"],
+    "ip": {"AI": 2, "智能体": 3, "Agent": 3, "大模型": 3, "工具": 1, "创业": 1, "效率": 1, "自媒体": 1, "商业": 1, "副业": 1},
+    "emotion": ["暴涨", "暴跌", "震惊", "突破", "新高", "炸裂", "爆发", "横空出世"],
+    "search": ["教程", "怎么", "如何", "对比", "价格", "发布", "评测", "上手", "体验"],
+    "durable": ["清单", "步骤", "案例", "指南", "报告", "模型", "框架", "方法论", "避坑", "评测"],
+    "unique": ["风险", "争议", "警告", "真相", "没想到", "内幕", "避坑"],
+    "identity": ["普通人", "年轻人", "创业者", "打工人", "学生", "新手", "博主"],
 }
 
 
@@ -149,7 +151,10 @@ HEAT_SUFFIX_RE = re.compile(r"\s*（\s*([\d.]+)(万)?(\+)?(?:热度|浏览|阅�
 
 
 def normalize_title(t):
-    """去链接/序号/括号注解，压缩空白。"""
+    """去链接/序号/Markdown加粗/【出处】前缀/括号注解，压缩空白。"""
+    t = re.sub(r"^\s*\*+\s*", "", t)
+    t = re.sub(r"\s*\*+\s*$", "", t)
+    t = re.sub(r"^【[^】]+】\s*", "", t)
     t = re.sub(r"（\[链接\]\(.*?\)）", "", t)
     t = re.sub(r"^\d+[\.、．]\s*", "", t)
     t = re.sub(r"\s+", " ", t).strip()
@@ -177,8 +182,13 @@ def parse_radar(path):
     """解析热点雷达 md → [(title, source, link, rank, published_at, heat, summary)]"""
     rows = []
     source = ""
+    file_collect_time = ""
     for ln in open(path, encoding="utf-8"):
         ln = ln.rstrip("\n")
+        if "采集时间" in ln:
+            m_time = re.search(r"采集时间[：:]\s*([^\s｜]+(?:\s+[^\s｜]+)?)", ln)
+            if m_time:
+                file_collect_time = m_time.group(1).strip()
         if ln.startswith("## "):
             source = ln[3:].strip()
             continue
@@ -187,8 +197,9 @@ def parse_radar(path):
             r"(?:（发布于 ([^）]+)）)?(?:（摘要 ([^）]*)）)?(?:\s*｜.*)?$", ln)
         if m and source:
             title, heat_raw, heat = extract_heat(m.group(2).strip())
+            pub = (m.group(4) or "").strip() or file_collect_time
             rows.append((title, source, m.group(3) or "",
-                         int(m.group(1)), (m.group(4) or "").strip(), heat,
+                         int(m.group(1)), pub, heat,
                          (m.group(5) or "").strip()))
     return rows
 
@@ -359,8 +370,41 @@ def score_rows(rows):
     return scored
 
 
-def finalize_score(it, cross_bonus=0, source_count=1):
-    """写原始分拆解与双池排序分（IP 为准入门槛，不进入任何总分）。"""
+def load_calibrated_weights():
+
+    """读取 data/topics/weight_calibration.json 中经过历史数据反馈校准的权重，缺失或异常时回退到默认常量。"""
+    defaults = {
+        "daily": {"fresh_w": DAILY_FRESH_W, "heat_w": DAILY_HEAT_W, "quality_w": DAILY_QUALITY_W},
+        "weekly": {"quality_w": WEEKLY_QUALITY_W, "heat_w": WEEKLY_HEAT_W, "fresh_w": WEEKLY_FRESH_W},
+    }
+    try:
+        if os.path.isfile(CALIBRATION_FILE):
+            with open(CALIBRATION_FILE, encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and "weights" in data:
+                    w = data["weights"]
+                    d = w.get("daily", {})
+                    wk = w.get("weekly", {})
+                    return {
+                        "daily": {
+                            "fresh_w": float(d.get("fresh_w", DAILY_FRESH_W)),
+                            "heat_w": float(d.get("heat_w", DAILY_HEAT_W)),
+                            "quality_w": float(d.get("quality_w", DAILY_QUALITY_W)),
+                        },
+                        "weekly": {
+                            "quality_w": float(wk.get("quality_w", WEEKLY_QUALITY_W)),
+                            "heat_w": float(wk.get("heat_w", WEEKLY_HEAT_W)),
+                            "fresh_w": float(wk.get("fresh_w", WEEKLY_FRESH_W)),
+                        },
+                    }
+    except Exception:
+        pass
+    return defaults
+
+
+def finalize_score(it, cross_bonus=0, source_count=1, weights=None):
+    if weights is None:
+        weights = load_calibrated_weights()
     d = it["dims"]
     bd = {
         "freshness": round(it["fresh"]["score"], 1),
@@ -375,13 +419,17 @@ def finalize_score(it, cross_bonus=0, source_count=1):
     it["source_count"] = source_count
     it["score"] = round(sum(bd.values()), 1)  # 展示用原始合计
     it["quality"] = round(d["impact"] + d["search"] + d["durable"] + d["unique"] + cross_bonus, 1)
+    
+    dw = weights.get("daily", {})
+    ww = weights.get("weekly", {})
     it["daily_score"] = round(
-        it["fresh"]["score"] * DAILY_FRESH_W + it["heat_score"] * DAILY_HEAT_W
-        + it["quality"] * DAILY_QUALITY_W, 1)
+        it["fresh"]["score"] * dw.get("fresh_w", DAILY_FRESH_W) + it["heat_score"] * dw.get("heat_w", DAILY_HEAT_W)
+        + it["quality"] * dw.get("quality_w", DAILY_QUALITY_W), 1)
     it["weekly_score"] = round(
-        it["quality"] * WEEKLY_QUALITY_W + it["heat_score"] * WEEKLY_HEAT_W
-        + it["fresh"]["score"] * WEEKLY_FRESH_W, 1)
+        it["quality"] * ww.get("quality_w", WEEKLY_QUALITY_W) + it["heat_score"] * ww.get("heat_w", WEEKLY_HEAT_W)
+        + it["fresh"]["score"] * ww.get("fresh_w", WEEKLY_FRESH_W), 1)
     return it
+
 
 
 def _dedupe_key(title):
@@ -480,7 +528,7 @@ def main():
         radar_paths = sorted(
             os.path.join(root, f)
             for root, _, files in os.walk(MATERIALS_DIR)
-            for f in files if f.endswith("_热点雷达.md")
+            for f in files if f.endswith("_热点雷达.md") and not f.startswith("样例_")
         )
         candidates = radar_paths[-1:] if radar_paths else []
     if not candidates or not os.path.exists(candidates[0]):
@@ -500,11 +548,13 @@ def main():
         print(f"⚠️ 合规初筛剔除 {before - len(rows)} 条", file=sys.stderr)
 
     scored = [it for it in score_rows(rows) if it["dims"]["ip"] >= IP_GATE]
+    scored_all = list(scored)
     if len(scored) < len(rows):
         print(f"⚠️ IP 垂直度门槛（≥{IP_GATE}）剔除 {len(rows) - len(scored)} 条", file=sys.stderr)
     prefs = load_prefs()
     niches = load_niches()
     selected = prefs.get("platforms") or {}
+    prefs_active = False
     if selected:
         for it in scored:
             it["niches"] = match_niches(it["title"], it.get("summary"), prefs, niches)
@@ -513,13 +563,43 @@ def main():
         print(f"🎯 偏好赛道过滤：{total_sel} 个赛道 → 保留 {len(filtered)}/{len(scored)} 条")
         if filtered:
             scored = filtered
+            prefs_active = True
         else:
             print("⚠️ 偏好过滤后无候选，回退默认推荐", file=sys.stderr)
     deduped = dedupe_and_rank(scored)
     daily, weekly = build_pools(deduped, args.daily_top, args.weekly_top)
+
+    # 补充补齐逻辑：当精选偏好条目不足时，自动从备份榜单补齐至 daily_top / weekly_top
+    scored_raw_all = score_rows(rows)
+    for it in scored_raw_all:
+        if "niches" not in it:
+            it["niches"] = match_niches(it["title"], it.get("summary"), prefs, niches)
+    bpool_ip = dedupe_and_rank(scored_all)
+    bpool_all = dedupe_and_rank(scored_raw_all)
+
+    def supplement_pool(primary_pool, backup_pools, top_n):
+        seen_keys = {_dedupe_key(it["title"]) for it in primary_pool}
+        result = list(primary_pool)
+        for bpool in backup_pools:
+            for it in bpool:
+                if len(result) >= top_n:
+                    break
+                key = _dedupe_key(it["title"])
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    item_copy = dict(it)
+                    if not item_copy.get("niches"):
+                        item_copy["niches"] = ["热榜补齐候选"]
+                    result.append(item_copy)
+        return result
+
+    if len(daily) < args.daily_top:
+        daily = supplement_pool(daily, [bpool_ip, bpool_all], args.daily_top)
+    if len(weekly) < args.weekly_top:
+        weekly = supplement_pool(weekly, [bpool_ip, bpool_all], args.weekly_top)
+
     if not daily and not weekly:
-        print("❌ 合规/IP 门槛后无候选，请先检查热点雷达数据。", file=sys.stderr)
-        sys.exit(1)
+        print("⚠️ 当前无候选：时效/热度/IP/偏好过滤后无可用选题，将写入空推荐文件。", file=sys.stderr)
     today = datetime.now().strftime("%Y-%m-%d")
     month = today[:7]
 
@@ -542,6 +622,9 @@ def main():
         "> 📕 封面套路观察由采编在创作前按 `guizang-social-card-skill`/小红书对标补充。",
         "",
     ]
+    if not daily and not weekly:
+        lines.append("> ⚠️ 当前无候选：时效/热度/IP/偏好过滤后无可用选题；可放宽赛道偏好或等下一轮热点。")
+        lines.append("")
     lines += _candidate_lines("日选题", daily, "daily_score", "日分",
                               "时效×1.2 + 热度×1.2 + 质量×0.4 排序")
     lines += _candidate_lines("周选题", weekly, "weekly_score", "周分",

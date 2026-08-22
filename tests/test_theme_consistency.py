@@ -51,7 +51,7 @@ def test_theme_switcher_present():
     assert 'id="set-theme"' in html
     assert 'localStorage.setItem("selfmedia_theme"' in js
     assert "function applyTheme" in js
-    for theme_id in ("default", "midnight", "doraemon", "cyberpunk", "hermes", "chanel", "lv"):
+    for theme_id in ("default", "midnight", "doraemon", "fuji", "cyberpunk", "hermes", "chanel", "lv"):
         assert f'value="{theme_id}"' in html
 
 
@@ -78,3 +78,80 @@ def test_style_presets_present():
     assert 'localStorage.getItem("selfmedia_style")' in html
     assert "document.documentElement.dataset.style = s" in html
     assert 'class="style-preview"' in html and 'class="sp-sample"' in html
+
+
+def test_glass_config_present():
+    """透明毛玻璃无极调档：滑块、跟随开关、内联变量覆盖齐全。"""
+    css = _read(STYLE)
+    html = _read(INDEX)
+    js = _read(APPJS)
+    assert 'id="set-glass"' in html
+    assert 'type="range" id="set-glass"' in html
+    assert 'id="set-glass-follow"' in html
+    assert "selfmedia_glass" in js
+    assert 'setProperty("--style-glass-alpha"' in js
+    assert 'localStorage.getItem("selfmedia_glass")' in html
+    assert 'setProperty("--style-glass-alpha"' in html
+    assert 'input[type="range"].range' in css
+
+
+def test_lv_theme_decor_assets_and_tokens():
+    """LV 奢华风的 4 个 SVG 素材存在，且 palettes.json 与 style.css 同步。"""
+    css = _read(STYLE)
+    data = json.loads(_read(PALETTES))
+    lv = next(t for t in data["themes"] if t["id"] == "lv")
+    tokens = lv["tokens"]
+
+    assets = {
+        "lv-monogram.svg": "lv-asset-monogram",
+        "lv-chain.svg": "lv-asset-chain",
+        "lv-lock.svg": "lv-asset-lock",
+        "lv-bow.svg": "lv-asset-bow",
+    }
+    themes_dir = os.path.join(ROOT, "webapp", "static", "themes")
+    lv_block = _block(css, "lv")
+    for fname, token in assets.items():
+        assert os.path.isfile(os.path.join(themes_dir, fname)), f"缺少素材 {fname}"
+        assert token in tokens, f"palettes.json 缺少 {token}"
+        assert f"--{token}" in lv_block, f"style.css LV 块缺少 --{token}"
+
+    for key in ("lv-orange", "lv-orange-soft", "lv-gold-soft"):
+        assert key in tokens, f"palettes.json 缺少 {key}"
+        assert f"--{key}" in lv_block, f"style.css LV 块缺少 --{key}"
+    assert tokens["palette-3"] == "#d9772c"
+    assert "--palette-3: #d9772c" in lv_block
+
+
+def test_brand_theme_decor_assets_and_tokens():
+    """爱马仕/香奈儿的 5 个 SVG 素材存在，palettes.json 与 style.css 同步。"""
+    css = _read(STYLE)
+    data = json.loads(_read(PALETTES))
+    themes_dir = os.path.join(ROOT, "webapp", "static", "themes")
+    plan = {
+        "hermes": {
+            "assets": {
+                "hermes-ribbon.svg": "hermes-asset-ribbon",
+                "hermes-stitch.svg": "hermes-asset-stitch",
+            },
+            "extra": ("hermes-ribbon", "hermes-stitch", "hermes-ribbon-soft"),
+        },
+        "chanel": {
+            "assets": {
+                "chanel-camellia.svg": "chanel-asset-camellia",
+                "chanel-pearl.svg": "chanel-asset-pearl",
+                "chanel-chain.svg": "chanel-asset-chain",
+            },
+            "extra": ("chanel-pearl", "chanel-blush", "chanel-chain"),
+        },
+    }
+    for theme_id, spec in plan.items():
+        theme = next(t for t in data["themes"] if t["id"] == theme_id)
+        tokens = theme["tokens"]
+        block = _block(css, theme_id)
+        for fname, token in spec["assets"].items():
+            assert os.path.isfile(os.path.join(themes_dir, fname)), f"缺少素材 {fname}"
+            assert token in tokens, f"palettes.json {theme_id} 缺少 {token}"
+            assert f"--{token}" in block, f"style.css {theme_id} 块缺少 --{token}"
+        for key in spec["extra"]:
+            assert key in tokens, f"palettes.json {theme_id} 缺少 {key}"
+            assert f"--{key}" in block, f"style.css {theme_id} 块缺少 --{key}"

@@ -6,14 +6,26 @@
 <title>自媒体运营中心</title>
 <script>
   (function () {
-    var themes = ["default", "midnight", "doraemon", "cyberpunk", "hermes", "chanel"];
+    var themes = ["default", "midnight", "doraemon", "fuji", "cyberpunk", "hermes", "chanel", "lv"];
     var styles = ["google-rounded", "sharp-flat", "paper-layered", "neon-glow"];
     var t = localStorage.getItem("selfmedia_theme") || "default";
     var s = localStorage.getItem("selfmedia_style") || "google-rounded";
+    var g = localStorage.getItem("selfmedia_glass") || "follow";
     if (themes.indexOf(t) < 0) t = "default";
     if (styles.indexOf(s) < 0) s = "google-rounded";
     document.documentElement.dataset.theme = t;
     document.documentElement.dataset.style = s;
+    if (g !== "follow" && g !== "on" && g !== "off") {
+      var gn = Math.max(0, Math.min(100, parseInt(g, 10) || 0));
+      document.documentElement.style.setProperty("--style-glass-alpha", (100 - gn * 0.35).toFixed(1) + "%");
+      document.documentElement.style.setProperty("--style-glass-blur", (gn * 0.25).toFixed(1) + "px");
+    } else if (g === "on") {
+      document.documentElement.style.setProperty("--style-glass-alpha", "79%");
+      document.documentElement.style.setProperty("--style-glass-blur", "15px");
+    } else if (g === "off") {
+      document.documentElement.style.setProperty("--style-glass-alpha", "100%");
+      document.documentElement.style.setProperty("--style-glass-blur", "0px");
+    }
   })();
 </script>
     <link rel="stylesheet" href="/static/style.css?v=3.92">
@@ -22,10 +34,10 @@
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-      <span class="brand-logo" id="brand-avatar">吴</span>
+      <span class="brand-logo" id="brand-avatar">自</span>
       <span class="brand-text">
         <b>自媒体运营中心</b>
-        <small id="brand-nickname">小吴聊 · 运营工作台</small>
+        <small id="brand-nickname">自媒体 · 运营工作台</small>
       </span>
     </div>
     <nav class="nav" id="nav">
@@ -61,7 +73,7 @@
     <div class="sidebar-footer" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
       <span id="license-badge">授权状态加载中…</span>
       <span class="toolbar" style="gap:6px">
-        <button class="btn small tonal" onclick="showOnboarding(true)" title="新手指引">🚀</button>
+        <button class="btn small tonal" onclick="showOnboardingWizard(true)" title="新手首启向导">🚀</button>
         <button class="btn small tonal" onclick="openSettings()" title="API 与公众号配置">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="3"></circle>
@@ -79,7 +91,13 @@
         <h1 class="page-title" id="page-title">运营中台</h1>
         <p class="page-sub" id="page-sub">数据大盘 · 结果优先</p>
       </div>
-      <div class="topbar-meta" id="topbar-meta"></div>
+      <div class="topbar-meta" id="topbar-meta">
+        <div class="mobile-only" style="gap:6px; align-items:center;">
+          <button class="btn small tonal" onclick="showOnboardingWizard(true)" title="新手向导">🚀</button>
+          <button class="btn small tonal" onclick="openSettings()" title="设置">⚙️</button>
+        </div>
+      </div>
+
     </header>
 
     <main class="content">
@@ -381,86 +399,179 @@
 
       <!-- 数据 -->
       <section id="view-data" class="view">
-        <div class="toolbar">
-          <button class="btn tonal" id="btn-stats-refresh">刷新统计</button>
-          <button class="btn tonal" id="btn-dash-import" title="可一次选择：发布 / 观看 / 互动 / 涨粉 / 笔记明细（自动识别路由）">导入小红书数据表（可多选）</button>
-          <input type="file" id="dash-import-file" accept=".xlsx" multiple style="display:none">
-          <span class="muted" id="stats-updated-at"></span>
+        <div class="tabs" id="data-view-tabs" style="margin-bottom:16px">
+          <button class="tab active" data-dtab="stats" onclick="switchDataTab('stats')">📈 数据大盘</button>
+          <button class="tab" data-dtab="qa" onclick="switchDataTab('qa')">🛡️ 质检趋势与门禁</button>
+          <button class="tab" data-dtab="feedback" onclick="switchDataTab('feedback')">🎯 选题反馈模型</button>
         </div>
 
-        <div class="kpi-grid" id="stats-kpi"></div>
+        <!-- 子面板 1: 业务数据大盘 -->
+        <div id="data-tab-stats">
+          <div class="toolbar">
+            <button class="btn tonal" id="btn-stats-refresh">刷新统计</button>
+            <button class="btn tonal" id="btn-dash-import" title="可一次选择：发布 / 观看 / 互动 / 涨粉 / 笔记明细（自动识别路由）">导入小红书数据表（可多选）</button>
+            <input type="file" id="dash-import-file" accept=".xlsx" multiple style="display:none">
+            <span class="muted" id="stats-updated-at"></span>
+          </div>
 
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-head"><h3>回填平台数据</h3><span class="muted">阅读 / 赞 / 藏 / 评</span></div>
-            <form id="backfill-form" class="form">
-              <label class="field-label">任务</label>
-              <label class="field-label" style="margin:0"><input type="checkbox" onchange="setShowArchived(this.checked)"> 含已归档</label>
-              <select id="bf-job" class="select"></select>
-              <label class="field-label">平台</label>
-              <select id="bf-platform" class="select">
-                <option>小红书</option><option>公众号</option><option>短视频</option>
-              </select>
-              <div class="form-grid">
-                <div><label class="field-label">阅读/播放</label><input id="bf-reads" type="number" min="0" value="0"></div>
-                <div><label class="field-label">点赞</label><input id="bf-likes" type="number" min="0" value="0"></div>
-                <div><label class="field-label">收藏</label><input id="bf-collects" type="number" min="0" value="0"></div>
-                <div><label class="field-label">评论</label><input id="bf-comments" type="number" min="0" value="0"></div>
+          <div class="kpi-grid" id="stats-kpi"></div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head"><h3>回填平台数据</h3><span class="muted">阅读 / 赞 / 藏 / 评</span></div>
+              <form id="backfill-form" class="form">
+                <label class="field-label">任务</label>
+                <label class="field-label" style="margin:0"><input type="checkbox" onchange="setShowArchived(this.checked)"> 含已归档</label>
+                <select id="bf-job" class="select"></select>
+                <label class="field-label">平台</label>
+                <select id="bf-platform" class="select">
+                  <option>小红书</option><option>公众号</option><option>短视频</option>
+                </select>
+                <div class="form-grid">
+                  <div><label class="field-label">阅读/播放</label><input id="bf-reads" type="number" min="0" value="0"></div>
+                  <div><label class="field-label">点赞</label><input id="bf-likes" type="number" min="0" value="0"></div>
+                  <div><label class="field-label">收藏</label><input id="bf-collects" type="number" min="0" value="0"></div>
+                  <div><label class="field-label">评论</label><input id="bf-comments" type="number" min="0" value="0"></div>
+                </div>
+                <label class="field-label">作品链接（可选）</label>
+                <input id="bf-url" type="url" placeholder="https://…">
+                <button class="btn filled" type="submit">保存回填</button>
+              </form>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>数据来源与口径</h3><span class="muted">自有统计 · 不依赖第三方接口</span></div>
+              <div id="data-status" class="stack"></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head"><h3>主题表现</h3><span class="muted">按回填数据聚合</span></div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>主题</th><th class="num">发文</th><th class="num">回填</th><th class="num">阅读</th><th class="num">互动率</th><th>爆款</th></tr></thead>
+                  <tbody id="theme-table"></tbody>
+                </table>
               </div>
-              <label class="field-label">作品链接（可选）</label>
-              <input id="bf-url" type="url" placeholder="https://…">
-              <button class="btn filled" type="submit">保存回填</button>
-            </form>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>内容特征分析</h3><span class="muted">标题 / 图表 / 卡片 vs 表现（样本少仅供参考）</span></div>
+              <div id="content-insights" class="stack"></div>
+            </div>
           </div>
-          <div class="card">
-            <div class="card-head"><h3>数据来源与口径</h3><span class="muted">自有统计 · 不依赖第三方接口</span></div>
-            <div id="data-status" class="stack"></div>
-          </div>
-        </div>
 
-        <div class="grid-2">
           <div class="card">
-            <div class="card-head"><h3>主题表现</h3><span class="muted">按回填数据聚合</span></div>
+            <div class="card-head"><h3>最佳表现</h3><span class="muted">阅读 TOP5 / 互动率 TOP5</span></div>
+            <div id="best-list" class="stack"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>账号快照（粉丝总数）</h3><span class="muted">小红书导出表不含总粉丝，请每周/每月手动更新一次</span></div>
+            <div class="form-grid">
+              <div><label class="field-label">当前粉丝数</label><input id="snap-followers" type="number" min="0" value="0"></div>
+              <div><label class="field-label">关注数</label><input id="snap-following" type="number" min="0" value="0"></div>
+              <div><label class="field-label">赞藏数</label><input id="snap-likes-collects" type="number" min="0" value="0"></div>
+              <div style="display:flex;align-items:flex-end"><button class="btn filled" onclick="saveAccountSnapshot()">保存快照</button></div>
+            </div>
+            <p class="muted" id="snap-note" style="margin-top:8px"></p>
+            <p class="muted" style="margin-top:4px">哪里看：小红书 App「我」页顶部粉丝数，或创作者中心 → 粉丝数据分析。</p>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>发布表现明细</h3><span class="muted">全部回填记录</span></div>
             <div class="table-wrap">
               <table class="table">
-                <thead><tr><th>主题</th><th class="num">发文</th><th class="num">回填</th><th class="num">阅读</th><th class="num">互动率</th><th>爆款</th></tr></thead>
-                <tbody id="theme-table"></tbody>
+                <thead><tr><th>时间</th><th>标题</th><th>平台</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th></tr></thead>
+                <tbody id="perf-table"></tbody>
               </table>
             </div>
           </div>
+        </div>
+
+        <!-- 子面板 2: 质检趋势可视化 -->
+        <div id="data-tab-qa" class="hidden">
+          <div class="card set-card" style="margin-bottom:12px">
+            <div class="stack" style="font-size:13px;color:var(--text-muted)">
+              <div>🧭 <b>质检趋势与门禁是什么</b>：每篇产出归档前都要过 4 道机器门禁 —— ①素材契约（引用是否完整）② Harsh Critic 打分（≥80 分才放行）③ 去 AI 味（结构级 AI 腔一票否决）④ 内容合规（广告法/平台红线硬门槛）。</div>
+              <div>📈 本面板把历史所有 Job 的 4 道门禁结果汇成走势图，用来观察「AI 写作质量是否在变好」；通过率掉头向下时，说明需要去「数据飞轮」补经验或调整文风。</div>
+            </div>
+          </div>
+          <div class="toolbar">
+            <button class="btn tonal" onclick="loadQaHistory()">🔄 刷新质检数据</button>
+            <span class="muted" id="qa-updated-at"></span>
+          </div>
+
+          <div class="kpi-grid" id="qa-kpi-grid"></div>
+
+          <!-- 里程碑勋章 -->
+          <div class="card" id="qa-milestone-box">
+            <div class="card-head"><h3>🛡️ 质检里程碑与质量徽章</h3><span class="muted">工业级自动化质量演进记录</span></div>
+            <div id="qa-milestones" class="qa-milestone-grid"></div>
+          </div>
+
+          <!-- 折线图区域 -->
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <h3>📈 质检通过率走势 (%)</h3>
+                <span class="muted">四重门禁全通率走势</span>
+              </div>
+              <div id="qa-pass-chart" class="qa-chart-box"></div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <h3>⭐ Harsh Critic 评分走势</h3>
+                <span class="muted">深度打分与锐评走势 (/100)</span>
+              </div>
+              <div id="qa-harsh-chart" class="qa-chart-box"></div>
+            </div>
+          </div>
+
+          <!-- 高频失分项与质检历史表 -->
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <h3>⚠️ 高频失分与违规项 TOP 5</h3>
+                <span class="muted">契约遗漏 / AI腔句式 / 广告合规</span>
+              </div>
+              <div id="qa-top-issues" class="stack"></div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <h3>📜 质检历史记录</h3>
+                <span class="muted">各 Job 门禁明细</span>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr><th>日期</th><th>主题</th><th>契约</th><th>Harsh</th><th>去AI味</th><th>合规</th><th>结论</th></tr>
+                  </thead>
+                  <tbody id="qa-history-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 子面板 3: 选题反馈模型 -->
+        <div id="data-tab-feedback" class="hidden">
+          <div class="card set-card" style="margin-bottom:12px">
+            <div class="stack" style="font-size:13px;color:var(--text-muted)">
+              <div>🎯 <b>选题反馈模型是什么</b>：把「选题评分 → 生产 → 发布 → 回填阅读/赞/藏」串成闭环，用真实互动数据反推：哪个维度（质量/热度/时效/IP 垂直度）最影响你的账号表现，然后自动微调日/周选题的评分权重（幅度限制在 ±30% 内防过拟合）。</div>
+              <div>⚡ 用法：先在「发布」页回填几篇数据 → 点「立即执行权重校准」→ 再看复盘报告。有效回填样本 ≥10 条才会真正调权，否则保持默认权重。</div>
+            </div>
+          </div>
+          <div class="toolbar">
+            <button class="btn tonal" onclick="runWithSpin(this, triggerTopicCalibration)">⚡ 立即执行权重校准 (Calibrate)</button>
+            <button class="btn tonal" onclick="runWithSpin(this, loadTopicFeedbackReport)">📄 刷新复盘报告</button>
+            <span class="muted" id="feedback-report-time"></span>
+          </div>
           <div class="card">
-            <div class="card-head"><h3>内容特征分析</h3><span class="muted">标题 / 图表 / 卡片 vs 表现（样本少仅供参考）</span></div>
-            <div id="content-insights" class="stack"></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><h3>最佳表现</h3><span class="muted">阅读 TOP5 / 互动率 TOP5</span></div>
-          <div id="best-list" class="stack"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><h3>账号快照（粉丝总数）</h3><span class="muted">小红书导出表不含总粉丝，请每周/每月手动更新一次</span></div>
-          <div class="form-grid">
-            <div><label class="field-label">当前粉丝数</label><input id="snap-followers" type="number" min="0" value="0"></div>
-            <div><label class="field-label">关注数</label><input id="snap-following" type="number" min="0" value="0"></div>
-            <div><label class="field-label">赞藏数</label><input id="snap-likes-collects" type="number" min="0" value="0"></div>
-            <div style="display:flex;align-items:flex-end"><button class="btn filled" onclick="saveAccountSnapshot()">保存快照</button></div>
-          </div>
-          <p class="muted" id="snap-note" style="margin-top:8px"></p>
-          <p class="muted" style="margin-top:4px">哪里看：小红书 App「我」页顶部粉丝数，或创作者中心 → 粉丝数据分析。</p>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><h3>发布表现明细</h3><span class="muted">全部回填记录</span></div>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>时间</th><th>标题</th><th>平台</th><th>体裁</th><th class="num">曝光</th><th class="num">观看量</th><th class="num">点击率</th><th class="num">点赞</th><th class="num">评论</th><th class="num">收藏</th><th class="num">涨粉</th><th class="num">分享</th><th class="num">时长</th><th>状态</th></tr></thead>
-              <tbody id="perf-table"></tbody>
-            </table>
+            <div id="topic-feedback-content" class="markdown-body" style="padding:16px"></div>
           </div>
         </div>
       </section>
+
     </main>
   </div>
 </div>
@@ -474,49 +585,179 @@
     <div id="agent-doc-body" class="markdown-body"></div>
   </div>
 </div>
-<div id="onboard-modal" class="modal hidden" onclick="if(event.target===this)dismissOnboarding()">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3>🚀 快速开始 · 3 分钟跑通</h3>
-      <button class="btn small tonal" onclick="dismissOnboarding()">跳过</button>
+<div id="onboarding-wizard-modal" class="onboard-wizard-overlay hidden">
+  <div class="onboard-wizard-box">
+    <!-- 头部：标题与关闭/跳过 -->
+    <div class="onboard-wizard-header">
+      <div class="onboard-wizard-title-wrap">
+        <span class="onboard-wizard-badge">🚀 新手向导</span>
+        <h2 class="onboard-wizard-title">3 分钟跑通自媒体全自动工作台</h2>
+      </div>
+      <button class="btn small tonal onboard-btn-skip" onclick="skipOnboardingWizard()">跳过向导</button>
     </div>
-    <div class="stack" style="margin-top:8px">
-      <div class="onboard-step">
-        <span class="badge primary">1</span>
-        <div class="onboard-txt">
-          <b>配置 AI 引擎</b>
-          <div class="muted">左下角「⚙ 设置」→ 粘贴 DeepSeek / OpenAI Key → 测试连接。免费功能不需要 Key。</div>
-        </div>
-        <button class="btn small tonal" onclick="onboardGo('settings')">去设置</button>
+
+    <!-- 步骤进度条指示器 -->
+    <div class="onboard-stepper-container">
+      <div class="onboard-stepper-bar-bg">
+        <div class="onboard-stepper-bar-fill" id="onboard-progress-fill" style="width: 25%;"></div>
       </div>
-      <div class="onboard-step">
-        <span class="badge primary">2</span>
-        <div class="onboard-txt">
-          <b>看今日选题</b>
-          <div class="muted">选题页有「日选题」与「周选题」两个推荐池，评分明细已展开。</div>
+      <div class="onboard-stepper-steps">
+        <div class="onboard-step-item active" id="onboard-step-node-1" onclick="goToOnboardStep(1)">
+          <span class="onboard-step-num">1</span>
+          <span class="onboard-step-label">配置 LLM</span>
         </div>
-        <button class="btn small tonal" onclick="onboardGo('topics')">看选题</button>
-      </div>
-      <div class="onboard-step">
-        <span class="badge primary">3</span>
-        <div class="onboard-txt">
-          <b>采纳 → 自动生产</b>
-          <div class="muted">点「采纳生产」会创建真实任务，流水线页 3 秒自动刷新进度。</div>
+        <div class="onboard-step-item" id="onboard-step-node-2" onclick="goToOnboardStep(2)">
+          <span class="onboard-step-num">2</span>
+          <span class="onboard-step-label">体验雷达</span>
         </div>
-        <button class="btn small tonal" onclick="onboardGo('topics')">去选题</button>
-      </div>
-      <div class="onboard-step">
-        <span class="badge primary">4</span>
-        <div class="onboard-txt">
-          <b>查看成品并发布</b>
-          <div class="muted">成品库按平台预览；小红书手动发布后标记，公众号可推草稿（需认证号）。</div>
+        <div class="onboard-step-item" id="onboard-step-node-3" onclick="goToOnboardStep(3)">
+          <span class="onboard-step-num">3</span>
+          <span class="onboard-step-label">设置文风</span>
         </div>
-        <button class="btn small tonal" onclick="onboardGo('outputs')">去成品库</button>
+        <div class="onboard-step-item" id="onboard-step-node-4" onclick="goToOnboardStep(4)">
+          <span class="onboard-step-num">4</span>
+          <span class="onboard-step-label">开始使用</span>
+        </div>
       </div>
     </div>
-    <button class="btn filled" style="margin-top:14px" onclick="dismissOnboarding()">我知道了，开始使用</button>
+
+    <!-- 步骤主体内容区 -->
+    <div class="onboard-wizard-body">
+      <!-- Step 1: 欢迎 + 配置 LLM -->
+      <div class="onboard-panel active" id="onboard-panel-1">
+        <div class="onboard-welcome-banner">
+          <div class="onboard-welcome-icon">✨</div>
+          <div>
+            <div class="onboard-welcome-head">欢迎来到自媒体运营中心！</div>
+            <div class="onboard-welcome-sub">连接大模型 API 后，9 大 Agent 团队即可为你全自动采编、生成多平台文案、排版渲染与严格质检。</div>
+          </div>
+        </div>
+
+        <div class="onboard-form-group">
+          <div class="onboard-field-row">
+            <label class="field-label">LLM Base URL (API 端点)</label>
+            <input type="text" id="wiz-llm-base-url" placeholder="例如: https://api.deepseek.com" value="https://api.deepseek.com">
+          </div>
+          <div class="onboard-field-row">
+            <label class="field-label">LLM Model (模型名称)</label>
+            <input type="text" id="wiz-llm-model" placeholder="例如: deepseek-chat, gpt-4o" value="deepseek-chat">
+          </div>
+          <div class="onboard-field-row">
+            <label class="field-label">LLM API Key (密钥)</label>
+            <div class="onboard-input-btn-wrap">
+              <input type="password" id="wiz-llm-api-key" placeholder="粘贴 sk- 开头的 API 密钥 (本地 600 权限加密安全存储)">
+              <button class="btn tonal small" id="wiz-btn-test-llm" onclick="testOnboardLlmConnection()">⚡ 测试连接</button>
+            </div>
+            <div id="wiz-llm-test-feedback" class="onboard-test-feedback"></div>
+          </div>
+        </div>
+
+        <div class="onboard-notice-tip">
+          💡 提示：若您本机已安装配置好 Codex CLI，可直接点击「跳过此步」使用原生命令行免 Key 模式。
+        </div>
+      </div>
+
+      <!-- Step 2: 看选题 · 体验热点雷达 -->
+      <div class="onboard-panel" id="onboard-panel-2">
+        <div class="onboard-panel-intro">
+          <p class="muted">热点雷达会聚合今日热搜与趋势，经过去重降噪与质量打分，自动生成高爆发选题池：</p>
+          <button class="btn tonal small" id="wiz-btn-fetch-topics" onclick="triggerOnboardFetchTopics()">
+            🔄 一键模拟采集热点
+          </button>
+        </div>
+
+        <div id="wiz-topics-preview-list" class="onboard-topics-list">
+          <div class="onboard-topic-card highlight-card">
+            <div class="onboard-topic-title">
+              <span class="badge primary">日选题 #1</span>
+              一人公司实战：每天如何用自动化系统替代一个运营团队
+            </div>
+            <div class="onboard-topic-meta">
+              <span>🔥 热度 94</span> · <span>⏱️ 1小时前</span> · <span>全网多源聚合</span>
+            </div>
+            <div class="onboard-adopt-guide">
+              <span class="guide-arrow">👉</span> 真实场景下，点击此处的 <b>「采纳生产」</b> 即可将选题一键送入 9 大 Agent 流水线！
+              <button class="btn small filled disabled-look" title="新手引导演示中，不真正消耗额度">⚡ 采纳生产</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: 选文风 · 设置个人风格 -->
+      <div class="onboard-panel" id="onboard-panel-3">
+        <div class="onboard-panel-intro">
+          <p class="muted">选择最符合你账号调性的文风预设，系统会自动注入《个人文风指南》并杜绝一切 AI 烂梗味：</p>
+        </div>
+        <div class="onboard-presets-grid" id="wiz-presets-grid">
+          <div class="onboard-preset-card active" onclick="selectOnboardPreset('xiaowuliao-style')" id="wiz-preset-card-xiaowuliao-style">
+            <div class="onboard-preset-name">👑 小吴聊专属风</div>
+            <div class="onboard-preset-desc">19篇历史发文提炼、极客技术+实战操盘、四不原则与审美优先。</div>
+          </div>
+          <div class="onboard-preset-card" onclick="selectOnboardPreset('tech-hands-on')" id="wiz-preset-card-tech-hands-on">
+            <div class="onboard-preset-name">💻 科技实战风</div>
+            <div class="onboard-preset-desc">极客硬核评测、实操提效、代码与工具链，拒绝空话套话。</div>
+          </div>
+          <div class="onboard-preset-card" onclick="selectOnboardPreset('business-deep-dive')" id="wiz-preset-card-business-deep-dive">
+            <div class="onboard-preset-name">💼 深度商业风</div>
+            <div class="onboard-preset-desc">商业观察、单店模型测算、行业尽调、数字驱动与成本拆解。</div>
+          </div>
+          <div class="onboard-preset-card" onclick="selectOnboardPreset('xhs-lifestyle')" id="wiz-preset-card-xhs-lifestyle">
+            <div class="onboard-preset-name">🛍️ 小红书轻快风</div>
+            <div class="onboard-preset-desc">视觉高级种草、好物干货、闺蜜好友口吻、情绪价值饱满。</div>
+          </div>
+          <div class="onboard-preset-card" onclick="selectOnboardPreset('career-growth')" id="wiz-preset-card-career-growth">
+            <div class="onboard-preset-name">📈 职场认知风</div>
+            <div class="onboard-preset-desc">避坑指南、效率跃迁、认知通透、附带可抄作业的行动清单。</div>
+          </div>
+          <div class="onboard-preset-card" onclick="selectOnboardPreset('default-template')" id="wiz-preset-card-default-template">
+            <div class="onboard-preset-name">📝 通用填空向导</div>
+            <div class="onboard-preset-desc">人设/读者/平台/口吻/红线标准化基础骨架，支持自由调整。</div>
+          </div>
+        </div>
+        <div id="wiz-preset-save-feedback" class="onboard-test-feedback" style="margin-top: 10px;">
+          <span style="color:var(--success);">✅ 默认已激活：<b>👑 小吴聊专属风</b>（可点击上方卡片快速切换）</span>
+        </div>
+      </div>
+
+      <!-- Step 4: 完成 · 开始使用 -->
+      <div class="onboard-panel" id="onboard-panel-4">
+        <div class="onboard-summary-box">
+          <div class="onboard-summary-icon">🎉</div>
+          <h3>恭喜！基础配置已就绪</h3>
+          <p class="muted">你已完成工作台的初始配置，随时可在左下角「⚙ 设置」中微调各项参数。</p>
+          
+          <div class="onboard-status-checklist">
+            <div class="onboard-status-row" id="wiz-status-llm">
+              <span class="status-icon">⏳</span>
+              <span class="status-label">大模型引擎 (LLM API)</span>
+              <span class="status-value" id="wiz-status-llm-val">未配置 (可随时在设置中添加)</span>
+            </div>
+            <div class="onboard-status-row" id="wiz-status-style">
+              <span class="status-icon">✅</span>
+              <span class="status-label">内容文风规范</span>
+              <span class="status-value" id="wiz-status-style-val">科技实战风</span>
+            </div>
+            <div class="onboard-status-row">
+              <span class="status-icon">✅</span>
+              <span class="status-label">多平台分发排版引擎</span>
+              <span class="status-value">小红书瑞士卡片 / 公众号内联排版 / 120s 分镜</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部操作导航栏 -->
+    <div class="onboard-wizard-footer">
+      <button class="btn tonal" id="wiz-btn-prev" onclick="prevOnboardStep()" style="display:none;">⬅ 上一步</button>
+      <div style="flex:1;"></div>
+      <button class="btn tonal" id="wiz-btn-skip-step" onclick="skipCurrentOnboardStep()">跳过此步</button>
+      <button class="btn filled" id="wiz-btn-next" onclick="nextOnboardStep()">下一步 ➔</button>
+    </div>
   </div>
 </div>
+
+
 
 <div id="crop-modal" class="modal hidden" onclick="if(event.target===this)closeCrop()">
   <div class="modal-box crop-box">
@@ -527,7 +768,7 @@
     <div class="crop-wrap">
       <div class="crop-stage" id="crop-stage">
         <img id="crop-img" alt="待裁剪头像" draggable="false">
-        <div class="crop-frame"></div>
+        <div class="crop-frame" id="crop-frame"></div>
       </div>
       <div class="crop-controls">
         <div class="crop-zoom-row">
@@ -556,6 +797,8 @@
             <button class="set-menu-item" data-panel="templates" onclick="switchSettingsPanel('templates')">模板选择</button>
             <button class="set-menu-item" data-panel="style" onclick="switchSettingsPanel('style')">文风设置</button>
             <button class="set-menu-item" data-panel="llm" onclick="switchSettingsPanel('llm')">AI 引擎</button>
+            <button class="set-menu-item" data-panel="scheduler" onclick="switchSettingsPanel('scheduler')">定时任务</button>
+            <button class="set-menu-item" data-panel="proxy" onclick="switchSettingsPanel('proxy')">网络与代理</button>
             <button class="set-menu-item" data-panel="gzh" onclick="switchSettingsPanel('gzh')">公众号</button>
             <button class="set-menu-item" data-panel="license" onclick="switchSettingsPanel('license')">Pro 授权</button>
             <button class="set-menu-item" data-panel="data" onclick="switchSettingsPanel('data')">数据管理</button>
@@ -564,7 +807,7 @@
             <div class="set-panel active" id="panel-profile">
               <p class="muted set-hint">显示在左上角的头像与昵称，保存后即时生效。</p>
               <label class="field-label">昵称（显示在左上角）</label>
-              <input id="set-nickname" placeholder="小吴聊">
+              <input id="set-nickname" placeholder="例如：我的自媒体">
               <label class="field-label">头像图片（本地上传，≤2MB，可裁剪）</label>
               <input type="file" id="set-avatar-file" accept="image/*" onchange="handleAvatarUpload(this)">
               <img id="set-avatar-preview" class="set-avatar-preview hidden" alt="头像预览">
@@ -572,24 +815,31 @@
               <input id="set-avatar" placeholder="https://example.com/avatar.png">
             </div>
             <div class="set-panel" id="panel-theme">
-              <p class="muted set-hint">选择工作台皮肤，立即生效并记住。</p>
+              <p class="muted set-hint">选择工作台皮肤（免费版提供默认皮肤，Pro 会员解锁全部高级主题与质感）。</p>
               <label class="field-label">外观主题</label>
               <select id="set-theme" class="select" onchange="applyTheme(this.value)" title="切换工作台皮肤">
                 <option value="default">蓝白默认</option>
-                <option value="midnight">深空暗黑</option>
-                <option value="doraemon">哆啦A梦（蓝胖）</option>
-                <option value="cyberpunk">赛博朋克·霓虹风暴</option>
-                <option value="hermes">爱马仕橙奢侈风</option>
-                <option value="chanel">香奈儿蔚蓝香精风</option>
-                <option value="lv">LV奢华风</option>
+                <option value="midnight">深空暗黑（Pro）</option>
+                <option value="doraemon">哆啦A梦（Pro）</option>
+                <option value="fuji">和风·藤菫紫（Pro）</option>
+                <option value="cyberpunk">赛博朋克·霓虹风暴（Pro）</option>
+                <option value="hermes">爱马仕橙奢侈风（Pro）</option>
+                <option value="chanel">香奈儿可可闪蜜（Pro）</option>
+                <option value="lv">LV奢华风（Pro）</option>
               </select>
               <label class="field-label">质感档位（与颜色主题独立组合）</label>
               <select id="set-style" class="select" onchange="applyStyle(this.value)" title="切换卡片质感">
                 <option value="google-rounded">谷歌圆润（默认）</option>
-                <option value="sharp-flat">极简直角</option>
-                <option value="paper-layered">纸张叠影</option>
-                <option value="neon-glow">霓虹光晕</option>
+                <option value="sharp-flat">极简直角（Pro）</option>
+                <option value="paper-layered">纸张叠影（Pro）</option>
+                <option value="neon-glow">霓虹光晕（Pro）</option>
               </select>
+              <label class="field-label">透明毛玻璃强度（无极调档）</label>
+              <div class="glass-row">
+                <label class="glass-follow"><input type="checkbox" id="set-glass-follow" checked onchange="onGlassFollowChange(this)"> 跟随质感档位（默认）</label>
+                <span class="muted" id="set-glass-val">跟随质感档位</span>
+              </div>
+              <input type="range" id="set-glass" class="range" min="0" max="100" step="1" value="60" disabled oninput="applyGlassStrength(this.value)" title="0=不透明关闭，100=最强毛玻璃">
               <label class="field-label">质感预览</label>
               <div class="style-preview">
                 <div class="sp-sample">
@@ -613,6 +863,14 @@
               <p class="muted set-hint">可个性化设置的 md 文档（文风、SOP、工作流、去 AI 味规则）。</p>
               <label class="field-label">选择文档</label>
               <select id="style-doc-select" class="select" onchange="loadStyleDoc()"></select>
+              <div class="style-doc-toolbar">
+                <span class="badge" id="style-doc-badge">默认模板</span>
+                <select id="style-preset-select" class="select small" onchange="applyStylePreset(this.value)" title="套用预设文风模板">
+                  <option value="">-- 套用预设文风模板 --</option>
+                </select>
+                <button class="btn small tonal" onclick="openStyleGuide()" title="回答几个问题，自动生成个人文风指南">AI 初始化向导</button>
+                <button class="btn small" id="btn-style-reset" onclick="resetStyleDoc()" title="恢复默认模板（当前内容会备份）">恢复默认模板</button>
+              </div>
               <textarea id="style-doc-text" class="style-doc-text" spellcheck="false"></textarea>
               <div class="set-toolbar">
                 <button class="btn filled" onclick="saveStyleDoc()">保存文风文档</button>
@@ -620,14 +878,59 @@
               </div>
             </div>
             <div class="set-panel" id="panel-llm">
-              <p class="muted set-hint">LLM API Key 保存到本机 .env，留空表示保持原值。</p>
-              <label class="field-label">LLM API Key（DeepSeek / OpenAI 等）</label>
-              <input id="set-llm-key" type="password" placeholder="sk-..." autocomplete="off">
-              <span class="muted" id="set-key-mask"></span>
-              <label class="field-label">API 地址</label>
-              <input id="set-llm-base" placeholder="https://api.deepseek.com/v1">
-              <label class="field-label">模型名</label>
-              <input id="set-llm-model" placeholder="deepseek-chat">
+              <p class="muted set-hint">选择 AI 引擎接入方式，并配置对应参数（保存到本机 .env）。<br>💡 <b>推荐优先接入 Codex / WorkBuddy 等 Agent</b>：Agent 自带联网搜索与工具链，采编能抓到真实原文，成文质量明显优于纯 API 直连（API 直连无联网、只能靠模型记忆）。</p>
+              <label class="field-label">引擎接入模式</label>
+              <select id="set-llm-mode" class="select" onchange="onEngineModeChange(this.value)" title="选择用什么引擎驱动生产与拆解">
+                <option value="auto">自动（有 Codex 用 Codex，否则用 API）</option>
+                <option value="api">API 直连大模型（DeepSeek / OpenAI / 兼容端点）</option>
+                <option value="codex">Codex CLI（本机安装的 ChatGPT Codex）</option>
+                <option value="workbuddy">WorkBuddy / 其他 Agent 接入</option>
+              </select>
+              <div class="muted" id="set-engine-mode-hint" style="margin-top:6px"></div>
+              <div class="card set-card" style="margin-top:12px" id="set-llm-api-fields">
+                <label class="field-label">LLM API Key（API 模式需要）</label>
+                <input id="set-llm-key" type="password" placeholder="sk-..." autocomplete="off">
+                <span class="muted" id="set-key-mask"></span>
+                <label class="field-label">API 地址</label>
+                <input id="set-llm-base" placeholder="https://api.deepseek.com/v1">
+                <label class="field-label">模型名</label>
+                <input id="set-llm-model" placeholder="deepseek-chat">
+              </div>
+              <div class="card set-card" style="margin-top:12px">
+                <div class="muted" style="font-size:13px">当前引擎状态：<b id="set-engine-now"></b> ｜ 当前模型：<b id="set-model-now"></b></div>
+                <div class="muted" style="font-size:13px;margin-top:4px">累计 Token 消耗：<b id="set-token-usage"></b></div>
+                <div class="set-toolbar" style="margin-top:10px">
+                  <button class="btn small tonal" onclick="runWithSpin(this, testLlm)">测试 AI 连接</button>
+                  <button class="btn small danger" onclick="clearLlmConfig()">清空 LLM 配置</button>
+                </div>
+              </div>
+            </div>
+            <div class="set-panel" id="panel-scheduler">
+              <p class="muted set-hint">让工作台在应用打开期间按时间自动抓取/拆解/聚合。配置保存在 data/scheduler.json，仅本机生效。</p>
+              <label class="field-label" style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="sched-enabled" onchange="onSchedEnabledChange(this.checked)"> 启用自动定时任务
+              </label>
+              <div id="sched-task-list" style="margin-top:12px"></div>
+              <div class="set-toolbar" style="margin-top:14px">
+                <button class="btn filled" onclick="runWithSpin(this, saveScheduler)">保存定时设置</button>
+                <span class="muted" id="sched-save-status"></span>
+              </div>
+              <div class="muted" style="margin-top:8px;font-size:13px">💡 应用关闭时到期的任务会在下次启动补跑当分钟的任务；生产/采纳仍由你在选题页手动拍板，定时器只负责「抓取与推荐」。</div>
+            </div>
+            <div class="set-panel" id="panel-proxy">
+              <p class="muted set-hint">配置网络代理（可选）：国内热榜直连秒开无需代理；仅启用海外源（谷歌趋势等）时需配置。</p>
+              <label class="field-label">HTTP / SOCKS5 代理服务器（如 http://127.0.0.1:7897）</label>
+              <div class="set-toolbar set-toolbar-input">
+                <input id="set-proxy-url" placeholder="http://127.0.0.1:7897" autocomplete="off">
+                <button class="btn tonal" onclick="runWithSpin(this, testProxyConnection)">⚡ 测试代理连通性</button>
+              </div>
+              <div class="muted" id="set-proxy-status" style="margin-top:8px"></div>
+              <div class="card set-card" style="margin-top:16px;">
+                <div class="stack" style="font-size:13px; color:var(--text-muted);">
+                  <div>💡 <b>国内热榜</b>：微博、知乎、B站、百度、36氪、少数派等均国内公网直连秒开，<b>完全不需要代理</b>。</div>
+                  <div>🌍 <b>海外源</b>：仅在启用谷歌趋势 (Google Trends) 或 X 趋势时使用本代理；留空时海外源将自动跳过且不报错。</div>
+                </div>
+              </div>
             </div>
             <div class="set-panel" id="panel-gzh">
               <p class="muted set-hint">公众号凭据（可选，认证号自动推草稿用）。</p>
@@ -701,18 +1004,97 @@
     </div>
     <div class="form" style="padding:8px 22px 18px">
       <p class="muted" style="margin-top:0">先选平台，再勾选赛道；不勾选任何赛道 = 默认模式（当前行为）。热点采集与选题推荐将按偏好过滤。</p>
-      <label class="field-label">平台</label>
-      <select id="pref-platform" class="select" onchange="renderPrefNiches()">
-        <option value="小红书">小红书</option>
-        <option value="公众号">公众号</option>
-        <option value="短视频">短视频</option>
-      </select>
-      <div id="pref-niches" class="stack" style="margin-top:10px"></div>
+      <div class="pref-split">
+        <div class="pref-plats" id="pref-plats">
+          <button type="button" class="pref-plat active" data-platform="小红书" onclick="selectPrefPlatform('小红书')">小红书<span class="pref-count"></span></button>
+          <button type="button" class="pref-plat" data-platform="公众号" onclick="selectPrefPlatform('公众号')">公众号<span class="pref-count"></span></button>
+          <button type="button" class="pref-plat" data-platform="短视频" onclick="selectPrefPlatform('短视频')">短视频<span class="pref-count"></span></button>
+        </div>
+        <div class="pref-panel">
+          <p class="muted pref-limit">采集赛道（单平台最多 5 个赛道）</p>
+          <div id="pref-niches" class="pref-niche-list"></div>
+        </div>
+      </div>
       <div class="toolbar" style="margin-top:14px">
         <button class="btn filled" onclick="savePrefs()">保存偏好</button>
         <button class="btn tonal" onclick="clearPrefs()">清除偏好（默认模式）</button>
       </div>
       <p class="muted" id="pref-status" style="margin-top:8px"></p>
+    </div>
+  </div>
+</div>
+
+<div id="style-guide-modal" class="modal hidden" onclick="if(event.target===this)closeStyleGuide()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>文风初始化引导</h3>
+      <button class="btn small tonal" onclick="closeStyleGuide()">取消</button>
+    </div>
+    <div class="form" style="padding:8px 22px 18px">
+      <p class="muted" style="margin-top:0">回答下面几个问题（可留空），生成后会填入文风文档，记得点「保存文风文档」生效。</p>
+      <label class="field-label">你的目标读者是谁？</label>
+      <input id="sg-audience" placeholder="例如：想学 AI 但没时间研究的上班族">
+      <label class="field-label">主要在哪些平台发？</label>
+      <input id="sg-platforms" placeholder="例如：小红书、公众号、短视频">
+      <label class="field-label">你希望是什么说话风格？</label>
+      <input id="sg-tone" placeholder="例如：口语化、直接、不端着">
+      <label class="field-label">一定要避免的表达？</label>
+      <input id="sg-avoid" placeholder="例如：月入过万、躺赚、首先其次最后">
+      <label class="field-label">你常用的术语/黑话？</label>
+      <input id="sg-keywords" placeholder="例如：Agent、工作流、AIGC">
+      <label class="field-label">你的硬红线？</label>
+      <input id="sg-redlines" placeholder="例如：不虚构案例、不承诺收益、不搬运洗稿">
+      <div class="toolbar" style="margin-top:14px">
+        <button class="btn filled" onclick="submitStyleGuide()">生成文风指南</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pro-upgrade-modal" class="modal hidden" onclick="if(event.target===this)closeProUpgradeModal()">
+  <div class="modal-box" style="max-width:620px;">
+    <div class="modal-head">
+      <h3 style="display:flex; align-items:center; gap:8px;">👑 升级到 Pro 旗舰版 · 释放全自动生产力</h3>
+      <button class="icon-btn" onclick="closeProUpgradeModal()" style="border:none; background:transparent; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div class="stack" style="padding:12px 20px 20px;">
+      <p style="color:var(--text-muted); font-size:14px; margin:0;">
+        感谢使用自媒体运营工厂！开通 Pro 即可解锁全自动流水线、无限次爆款拆解与高审美全套皮肤：
+      </p>
+
+      <div style="background:var(--bg-subtle, #f8fafc); border:1px solid var(--border); border-radius:12px; padding:16px; margin:12px 0;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:13px; line-height:1.7;">
+          <div><b>免费开源版 (当前)</b></div>
+          <div style="color:var(--primary, #2563eb);"><b>👑 Pro 旗舰版 (¥29/月 或 ¥199/年)</b></div>
+          <div>• 基础选题雷达与打分</div>
+          <div style="color:var(--primary, #2563eb);">• ⚡ 一键采纳 ➔ 9大Agent全自动投产</div>
+          <div>• 去AI味 22条质检规则</div>
+          <div style="color:var(--primary, #2563eb);">• ♾️ 无限次全网爆款 AI 深度拆解</div>
+          <div>• 每月 3 次爆款拆解</div>
+          <div style="color:var(--primary, #2563eb);">• 🔄 数据飞轮 SOP 自动进化升级</div>
+          <div>• 默认经典蓝白皮肤</div>
+          <div style="color:var(--primary, #2563eb);">• 💎 8 套奢华质感皮肤 + 毛玻璃无级调节</div>
+          <div>• 本地草稿双端排版预览</div>
+          <div style="color:var(--primary, #2563eb);">• 🚀 公众号官方草稿箱一键直推</div>
+        </div>
+      </div>
+
+      <label class="field-label" style="font-weight:bold; margin-top:8px;">已有激活码？粘贴卡密一键激活：</label>
+      <div class="set-toolbar set-toolbar-input" style="display:flex; gap:8px;">
+        <input id="upgrade-license-token" type="text" placeholder="粘贴专属 Pro 激活 Token 码" style="flex:1;">
+        <button class="btn filled" onclick="runWithSpin(this, activateLicenseFromModal)">立即激活</button>
+      </div>
+      <div id="upgrade-license-status" style="font-size:13px; margin-top:4px;"></div>
+
+      <div style="border-top:1px dashed var(--border); padding-top:16px; margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:13px; color:var(--text-muted);">
+          还没有激活码？前往官方渠道订阅：
+        </div>
+        <div style="display:flex; gap:8px;">
+          <a href="https://afdian.com/a/xiaowuliao" target="_blank" rel="noopener" class="btn tonal" style="text-decoration:none;">⚡ 爱发电购买</a>
+          <a href="https://mbd.pub" target="_blank" rel="noopener" class="btn tonal" style="text-decoration:none;">🍞 面包多购买</a>
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -14,13 +14,52 @@ __pycache__/
 
 # 环境变量与凭据（禁止入库）
 .env
-nas-n8n/.env
 xiaohongshu_cookies.json
-nas-n8n/shared_files/*.json
+nas-n8n/
 
-# 本地用户偏好与编辑备份（个人数据，禁止入库）
+# 数据目录（排除真实运行数据与凭据，保留内置通用模板与赛道预设）
+data/*
+!data/templates.json
+!data/templates/
+!data/templates/**
+!data/topics/
+!data/topics/niches.json
+!data/compliance/
+!data/compliance/**
+!data/flywheel/
+!data/production/
+!data/stats/
+!data/**/.gitkeep
+!materials/*
+!materials/.gitkeep
+!materials/样例_热点雷达.md
 data/user_prefs.json
 data/style_backups/
+data/topics/preferences.json
+data/topics/lexicon.json
+skills/personal-style-guide.md
+
+# 个人/业务数据与运行日志（禁止入库）
+jobs/
+materials/
+outputs/
+data/stats/
+data/flywheel/breakdowns/*.log
+data/flywheel/lessons.json
+data/flywheel/pipeline_feedback.md
+data/flywheel/platform_virals.json
+data/flywheel/viral_candidates.json
+data/flywheel/viral_videos.json
+data/flywheel/viral_weekly_*.md
+data/flywheel/breakdown_batch.json
+
+# NAS/飞书运维脚本（本地专用，不入库）
+scripts/test_nas_*.py
+scripts/test_feishu_*.py
+scripts/update_nas_feishu_env.py
+scripts/import_n8n_workflow_nas.py
+scripts/_archive/fix_nas_*.py
+scripts/_archive/
 
 # 大体积产出（图片/视频/音频）；文案/HTML/JSON 报告保留入库
 outputs/**/*.png

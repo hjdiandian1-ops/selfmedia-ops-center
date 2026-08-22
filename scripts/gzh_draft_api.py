@@ -4,14 +4,14 @@
 公众号官方草稿箱 API（draft/add）—— 不依赖浏览器编辑器
 =========================================================
 流程：access_token → 上传封面（material/add_material）→ draft/add 存草稿。
-凭据从 nas-n8n/.env 的 GZH_APP_ID / GZH_APP_SECRET 读取（禁止硬编码）。
+凭据从项目根 .env 的 GZH_APP_ID / GZH_APP_SECRET 读取（禁止硬编码）。
 
 用法：
     python3 scripts/gzh_draft_api.py \
         --title "标题" \
         --content-file outputs/<job>/公众号/<排版>.html \
         --cover outputs/<job>/小红书/封面.png \
-        --author "小吴聊" \
+        --author "博主名" \
         --digest "摘要（可选）" \
         --job-id 2026-08-06_主题名
 """
@@ -164,13 +164,13 @@ def main():
     ap.add_argument("--title", required=True)
     ap.add_argument("--content-file", required=True, help="gzh-design 输出的 HTML 文件")
     ap.add_argument("--cover", required=True, help="封面图片（PNG/JPG）")
-    ap.add_argument("--author", default="小吴聊")
+    ap.add_argument("--author", default="自媒体博主")
     ap.add_argument("--digest", default="")
     ap.add_argument("--job-id", default="")
     args = ap.parse_args()
 
     if not (NC.GZH_APP_ID and NC.GZH_APP_SECRET):
-        print("❌ 缺少 GZH_APP_ID / GZH_APP_SECRET，请在 nas-n8n/.env 配置。")
+        print("❌ 缺少 GZH_APP_ID / GZH_APP_SECRET，请在项目根 .env 配置。")
         return 2
     with open(args.content_file, "r", encoding="utf-8") as f:
         content = f.read()

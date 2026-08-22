@@ -135,10 +135,18 @@ def _api_breakdown(vid, title, content, link, platform):
     if not isinstance(bd, dict):
         update_record(vid, {"status": "tracked", "notes": "AI 拆解 API 返回格式异常"})
         return False
+    # 明确依据级别：有原文=真实分析；无原文=仅标题级推断，前端与报告显著标注
+    has_content = bool((content or "").strip())
+    bd["evidence_level"] = "content" if has_content else "title_only"
     os.makedirs(BREAKDOWN_DIR, exist_ok=True)
     write_json(os.path.join(BREAKDOWN_DIR, f"{vid}.json"), bd)
+    infer_note = ""
+    if not has_content:
+        infer_note = ("\n> ⚠️ 本条为**标题级推断拆解**：仅依据标题/链接推断，未读取原文正文，"
+                      "结论置信度较低，建议粘贴原文/逐字稿后重新拆解。\n")
     md = (f"# 拆解报告：{title}\n\n"
-          f"- 平台：{platform or '未知'}\n- 依据级别：{bd.get('evidence_level', 'title_only')}\n\n"
+          f"- 平台：{platform or '未知'}\n- 依据级别：{bd.get('evidence_level')}\n"
+          f"{infer_note}\n"
           f"## 前3秒钩子\n{bd.get('hook', '')}\n\n## 结构\n{bd.get('structure', '')}\n\n"
           f"## 为什么火\n{bd.get('why_viral', '')}\n\n## 公式\n{bd.get('formula', '')}\n\n"
           f"## 可复用指令\n{bd.get('summary', '')}\n")

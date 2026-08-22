@@ -1,290 +1,383 @@
-# 🚀 自媒体发布 Agent 项目使用说明书 (自媒体运营工厂)
+# 自媒体运营工厂 · 从选题到发布的全自动内容工厂
 
-> 本项目是一个高效、美观、可落地的 **自媒体内容生成与自动化发布 Agent 系统**，专注于 **小红书 + 微信公众号** 双平台运营。  
-> 核心方法论来源于品牌内容营销操盘手 **@bbkirstry（小晚不在）**：**以个人 IP 为核、审美优先、通俗翻译、AI 放大人的判断力**。
+> **一句话介绍**：把 选题 → 生产 → 质检 → 发布 → 数据复盘 → 经验反哺 这条自媒体运营闭环，做成一个可视化工作台加 AI Agent 流水线。个人博主和小团队用它持续产出高质量内容，而且系统越用越懂你的账号。
 
----
+![MIT](https://img.shields.io/badge/license-MIT-blue) ![CI](https://github.com/hjdiandian1-ops/selfmedia-ops-center/actions/workflows/security.yml/badge.svg) ![Python 3.13](https://img.shields.io/badge/python-3.13-green)
 
-## 目录 (Table of Contents)
-1. [项目定位与核心原则](#1-项目定位与核心原则)
-2. [系统总体架构与报社岗位分工](#2-系统总体架构与报社岗位分工)
-3. [核心 Skill 技能库与双轨视觉系统](#3-核心-skill-技能库与双轨视觉系统)
-4. [环境准备与 NAS 部署指南](#4-环境准备与-nas-部署指南)
-5. [标准工作流程 (SOP) 与操作命令](#5-标准工作流程-sop-与操作命令)
-6. [运维脚本与命令行速查](#6-运维脚本与命令行速查)
-7. [项目目录结构与路线图](#7-项目目录结构与路线图)
+**本仓库 = 免费版完整工作台**：clone 下来一键启动，浏览器打开 http://127.0.0.1:8787 即可使用（选题、爆款榜单、质检、成品库）。免费版与付费版功能有区别，付费解锁全部功能，见第五节对比表与第八节购买方式。
 
 ---
 
-## 1. 项目定位与核心原则
+## 📸 界面速览 (Showcase & Screenshots)
 
-### 1.1 IP 人设定位
-- **IP 账号**：小吴聊（AI / 科技实战操盘手）
-- **核心调性**：直爽、实战、极客感、商业敏锐、用通俗语言拆解复杂 AI 技术。
-- **三不原则**：
-  1. 不说虚头八脑的套话与泛泛空谈
-  2. 不输出未经实战验证的理论
-  3. 不做低质视觉排版与丑陋对齐
+<p align="center">
+  <img src="docs/screenshots/00-onboarding-demo.png" alt="3分钟首启向导与全自动生产演示" width="92%" />
+  <br>
+  <em>🎬 3分钟首启向导与全自动内容生产流水线演示（当前为占位图，正式发布替换为 1280×720 GIF 实录，见 docs/screenshots/README.md）</em>
+</p>
 
-### 1.2 平台差异化策略
-- **📕 小红书**：
-  - **定位**：生活化、强视觉、痛点驱动、爆款卡片。
-  - **视觉**：采用 3:4 比例的高审美 HTML 结构化卡片或 FLUX/DALL-E 3 艺术插画封面。
-- **📰 微信公众号**：
-  - **定位**：深度长文、高排版审美、体系化思考。
-  - **视觉/排版**：结合 `gzh-design-skill` 与 `xiaowan-wechat-layout-skill` 生成具备深色模式、无孤行、首屏震撼的精致 HTML。
+<table align="center" width="100%">
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/01-dashboard-overview.png" alt="工作台全貌与数据大盘" width="100%"/>
+      <br>
+      <b>📊 1. 工作台全貌与数据中台</b>
+      <br>
+      <small>四维分析（观看/互动/涨粉/发布）+ 智能薄弱点诊断引擎 (1920×1080)</small>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/02-topics-radar.png" alt="多源热点雷达与双池选题推荐" width="100%"/>
+      <br>
+      <b>🎯 2. 多源热点雷达与双池推荐</b>
+      <br>
+      <small>日选题/周选题双池打分 + 平台与细分赛道智能过滤 (1920×1080)</small>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/03-viral-breakdown.png" alt="爆款跟踪与 AI 结构化拆解" width="100%"/>
+      <br>
+      <b>🔥 3. 爆款跟踪与 AI 拆解报告</b>
+      <br>
+      <small>前3秒钩子/叙事结构/情绪共鸣/爆点归因/金句公式沉淀 (1920×1080)</small>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/04-production-pipeline.png" alt="流水线多步生产与状态机" width="100%"/>
+      <br>
+      <b>⚙️ 4. 流水线多步解耦生产</b>
+      <br>
+      <small>8态状态机 + 4阶段独立上下文推进 + 产物落盘实时流式日志 (1920×1080)</small>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/05-outputs-preview.png" alt="成品库三平台排版预览" width="100%"/>
+      <br>
+      <b>📱 5. 成品库三平台排版预览</b>
+      <br>
+      <small>小红书图文轮播 / 公众号富文本排版 / 短视频分镜台本 (1920×1080)</small>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/06-qa-trends.png" alt="质检四合一门禁与趋势可视化" width="100%"/>
+      <br>
+      <b>🛡️ 6. 四重质检门禁与趋势可视化</b>
+      <br>
+      <small>契约校验 + Harsh Critic 80分红线 + 去AI味 + 合规审核 + SVG走势图 (1920×1080)</small>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="docs/screenshots/07-theme-showcase.png" alt="8套高审美主题与无级毛玻璃" width="100%"/>
+      <br>
+      <b>🎨 7. 8 套高审美主题与质感无级调节</b>
+      <br>
+      <small>LV 奢华棋盘格、香奈儿蔚蓝、爱马仕橙、赛博霓虹、日系奶油等全色系无缝切换 (1920×720)</small>
+    </td>
+  </tr>
+</table>
 
 ---
 
-## 2. 系统总体架构与报社岗位分工 (Teamwork)
 
-系统采用 **“大脑思考/视觉设计（Local Agent Teamwork） + 自动化分发/基础设施（NAS n8n Engine）”** 的双层解耦架构：
+## 一、项目总体介绍
+
+### 1.1 它解决什么问题
+
+做自媒体的人每天面对五个断点：
+
+1. 选题没有方向。今天追什么热点？追了又怎么写才有人看？
+2. 生产全靠硬写。素材、初稿、配图、排版全手工，一篇三小时起步。
+3. 质量只能靠感觉。写完不知道有没有 AI 味，也不知道会不会踩平台红线。
+4. 数据发完就忘。没人回填，搞不清哪篇为什么火。
+5. 经验留不下来。这次踩的坑，下次照样踩。
+
+自媒体运营工厂把五个断点连成一条流水线，并把经验沉淀成可执行规则，让系统自己进化。
+
+### 1.2 它是什么
+
+- **一个本地工作台**（Web UI，仅绑定 127.0.0.1）：概览、选题、爆款跟踪、数据飞轮、流水线、成品库、数据管理、设置八大模块，内置 8 套高审美主题（LV 奢华、香奈儿蔚蓝、爱马仕橙、日系奶油等）与毛玻璃无级调节；
+- **一套 Agent 流水线**：总编、采编、小红书主编、公众号主编、短视频导演、美术总监、资深校对、合规审核、归档发布 9 个角色分工协作；
+- **一套机器可算的质检体系**：素材契约校验 + Harsh Critic 双轨评分 + 去 AI 味 22 条规则 + 三平台合规审核；
+- **一套可商用的授权体系**：Ed25519 签名 token + 设备指纹绑定，免费/Pro 分级。
+
+### 1.3 适用人群
+
+| 人群 | 典型用法 |
+|---|---|
+| 个人博主（小红书/公众号/短视频） | 每天 30 分钟：看选题 → 采纳 → 自动生产 → 人工复核发布 |
+| 小团队/代运营 | 用统一 SOP 与预设文风保证多人交付质量一致 |
+| 自媒体创作者/学员 | 拿到就能跑的运营工厂，开箱即用体验完整闭环 |
+
+---
+
+## 二、核心模块介绍与按钮功能
+
+### 2.1 概览（数据分析 + 薄弱点诊断 + 首启向导）
+
+小红书式四页签分析（观看 / 互动 / 涨粉 / 发布），支持 **近7日 / 近30日** 切换，每页含 KPI、趋势折线、来源/时段/体裁分解、笔记明细聚合。下方的薄弱点诊断会按规则引擎自动指出问题，并给出提升方向。新用户首次启动时提供「3 分钟跑通」4 步向导（侧边栏 🚀 随时重开）。
+
+| 按钮/交互 | 功能 |
+|---|---|
+| 观看 / 互动 / 涨粉 / 发布 | 切换四类分析页签 |
+| 近7日 / 近30日 | 切换统计窗口 |
+| 沉淀为经验 | 把某条薄弱点诊断一键写入数据飞轮经验库 |
+| 刷新统计 | 重新扫描 jobs/ + outputs/ 生成最新统计 |
+| 导入小红书明细表 | 上传小红书导出 xlsx，明细进入大盘统计 |
+| 导入看板导出表 | 上传观看/互动/涨粉/发布四类导出 xlsx（自动识别页签类型） |
+| 保存回填 | 手动回填某任务在指定平台的阅读/赞/藏/评/链接 |
+
+### 2.2 选题（热点雷达 + 双池评分 + 平台赛道偏好）
+
+多信息源热点雷达（今日热榜、知乎/微博/36氪公网 RSS、hex2077 AI 日报、推楼 1 号等）→ 评分模型分 **日选题**（重时效热度）和 **周选题**（重内容质量）两个池子，每个推荐带评分明细表。支持左侧多平台、右侧细分赛道偏好勾选与保存。
+
+| 按钮/交互 | 功能 |
+|---|---|
+| 采集热点 + 推荐 | 拉取信息源 → 生成热点雷达 → 跑评分 → 刷新推荐表 |
+| 采纳生产 | 把该选题创建为生产任务（真实入队流水线），一键开始全自动生产 |
+| 偏好设置（平台/赛道） | 勾选关注的平台与细分赛道，保存后精准过滤推荐 |
+| 信息源启用开关 | 每类信息源独立开关 + 显示最近采集时间与成功/失败状态 |
+| 进行中 / 最近采纳 | 已采纳任务实时状态，点击跳转流水线 |
+
+### 2.3 爆款跟踪（三平台每日榜单 + AI 拆解）
+
+采集小红书 / 抖音 / 微信公众号三个平台 Top10（标题 + 热度 + 链接），热度前 5 自动 AI 拆解，输出前 3 秒钩子、选题角度、结构、情绪人群、金句留存、剪辑节奏、转化设计、公式标签等结构化字段；每周聚合为平台经验包反哺数据飞轮。可在「设置 → 定时任务」开启内置定时器，按你选的时间点每日自动采集 + 拆解。
+
+| 按钮/交互 | 功能 |
+|---|---|
+| KPI 卡片 | 跟踪总数 / 拆解中 / 已拆解 / 已应用，一眼看全库状态 |
+| 采集今日榜单 | 立即重拉三平台当日榜单（含各源成功/失败状态与时间） |
+| 自动拆解 Top5 | 每平台热度前 5 自动走 AI 拆解（Pro 无限，免费 3 次/月） |
+| 开始拆解 / 已拆解·重新拆 | 单条手动拆解或重拆 |
+| 查看报告 | 弹窗阅读该条拆解报告（Markdown 渲染） |
+| 转入跟踪并拆解 | 自家爆款复盘：把已发布高表现内容转入跟踪库并直接拆解 |
+| ＋添加爆款 | 手工录入外部爆款（标题/链接/正文/逐字稿） |
+| 生成本周经验包 | 聚合近 7 天拆解 → 写经验库 + 自动升级对应 Agent SOP |
+
+### 2.4 数据飞轮（越用越强的引擎）
+
+把 账户数据反馈、市场数据快照、已沉淀经验、爆款公式 汇总成反哺指令包，自动映射并写入 9 个 Agent 的 SOP 文档（版本递增 + changelog），下次生产即时生效。
+
+| 按钮/交互 | 功能 |
+|---|---|
+| 重新生成反哺指令包 | 汇总四类输入 → 生成 pipeline_feedback.md → 自动升级全部 Agent SOP |
+| 生成本周经验包 | 手动触发周度爆款经验聚合（定时任务里可设为周一自动） |
+| 保存经验 / 编辑 / 删除 | 经验库 CRUD（每条经验含结论/证据/apply_to 映射） |
+| 应用到 Agent | 查看/预览经验将如何写入对应 Agent 文档 |
+| 展开历史经验 | 查看更早的经验条目 |
+
+### 2.5 流水线（生产状态机 + 实时进度）
+
+采纳选题后任务真实入队（`data/production/queue.json`），串行执行：素材 → 初稿 → 视觉 → 质检 → 归档，每阶段按你在「设置 → AI 引擎」里选的引擎（API 直连 / Codex CLI）推进状态；页面 3 秒轮询 + 手动刷新实时跟踪。
+
+| 按钮/交互 | 功能 |
+|---|---|
+| 刷新 | 手动刷新队列、当前任务、状态机进度、日志与产物 |
+| 取消 | 终止当前运行中的生产任务（SIGTERM） |
+| 重新生产 | 把已完成/失败任务重新入队再跑一遍 |
+| 查看成品/进度 | 跳转成品库查看该任务产出 |
+| 查看 SOP 文档 | 弹窗阅读任意 Agent 的版本化 SOP（Markdown 阅读模式） |
+
+### 2.6 成品库（三平台产物 + 质检报告）
+
+小红书卡片轮播 / 公众号排版预览（桌面+移动）/ 短视频分镜脚本，右侧同屏显示任务状态、质检报告（契约 / Harsh Critic / 去 AI 味 / 合规）、发布记录。
+
+| 按钮/交互 | 功能 |
+|---|---|
+| 小红书 / 公众号 / 短视频 | 切换产物类型 |
+| 已发布 / 未发布 / 全部 + 月份筛选 | 按发布状态与月份过滤任务 |
+| 复制标题 / 复制正文 | 一键复制小红书标题（≤20 字）与正文（≤1000 字） |
+| 标记已手动发布 | 人工发布后记录动作，保住 48h 数据回收闭环 |
+| 查看规则 | 弹窗查看去 AI 味 22 条规则全文 |
+
+### 2.7 数据（自有数据统计）
+
+平台对比（发布动作/回填/阅读/互动率/爆款数）、主题表现、内容特征分析（标题含数字 vs 不含、体裁、公众号图表数、小红书卡片数 vs 表现）、最佳表现 TOP、发布表现明细与数据来源口径（发布动作自动记录 + 人工回填，不依赖第三方接口）。
+
+### 2.8 设置（外观皮肤 + 文风预设 + 数据生命周期 + 凭据）
+
+| 按钮/交互 | 功能 |
+|---|---|
+| 外观皮肤与质感 | 8 套高审美主题（LV 奢华、香奈儿蔚蓝、爱马仕橙等）+ 4 档质感 + 毛玻璃无级调节 |
+| 文风预设与向导 | 5 套开箱即用预设模板（科技实战/深度商业/小红书轻快/职场认知/通用填空）+ AI 生成 |
+| 数据管理（呈现/清理）| 存储占用可视化、一键安全释放过期日志与未成爆款图片 |
+| 定时任务 | 内置调度器：选题抓取 / 爆款采集拆解 / 周经验聚合 / 48h 回收，各自独立设置每天几点跑（默认关闭，应用打开期间生效） |
+| LLM / 公众号凭据 | 引擎接入模式选择（自动 / API 直连 / Codex / WorkBuddy）+ 累计 token 用量 + 本地 .env 密钥保存（掩码、一键测试、可清空）与 Pro 授权 token 激活 |
+
+---
+
+## 三、模块怎么联动（数据流）
 
 ```mermaid
-graph TD
-    subgraph Chief_Editor["总编室"]
-        A[总编 Orchestrator] -->|1. 下发选题指示| B[资深采编 Senior Researcher]
-    end
-
-    subgraph Content_Creation["自媒体生产线 (并发协作)"]
-        B -->|2. 输出选题与BOM素材清单| C[小红书主编 Xiaohongshu Editor]
-        B -->|2. 输出选题与BOM素材清单| D[公众号主编 WeChat Editor]
-        B -->|2. 输出选题与BOM素材清单| E[短视频导演 Video Director]
-        
-        C & D --> F[美术总监 Visual Director]
-    end
-
-    subgraph Quality_Control["质量把控与归档发布"]
-        C & D & E & F -->|3. 初稿与视觉资产| G[资深校对排版 Chief Reviewer]
-        G -->|4. 定稿通过| H[归档发布员 Asset & Distro Ops]
-        H -->|5. 存盘规范目录| I["outputs/YYYY-MM-DD_主题名/{小红书,公众号,短视频}/"]
-        H -->|6. 清扫过程文件| J[彻底删除 process_* 及散落临时缓存]
-        H -->|7. 一键唤醒发布| K[NAS n8n 自动发布中枢]
-    end
+flowchart LR
+    A[热点雷达/信息源] --> B[选题评分推荐]
+    B -->|采纳生产| C[流水线 Agent 工厂]
+    C --> D[三平台成品]
+    D --> E[质检链：契约/Harsh/去AI味/合规]
+    E -->|通过| F[发布 + 数据回收]
+    F --> G[概览数据看板/薄弱点]
+    G -->|沉淀为经验| H[数据飞轮经验库]
+    H -->|反哺指令包| I[9 个 Agent SOP 自动升级]
+    I --> C
+    J[爆款跟踪: 三平台榜单] --> K[AI 拆解]
+    K -->|每周经验包| H
 ```
 
-### Agent 报社岗位职责分工
-| 岗位名称 | 英文 Role | 主要职责 |
-| :--- | :--- | :--- |
-| **总编** | Orchestrator | 总体流程调度、指令解析、下发选题要求、控制人机确认节点、指挥发布。 |
-| **资深采编** | Senior Researcher & Planner | 搜集热点雷达、竞品数据分析、拆解 BOM 成本，输出 3-5 个爆款选题大纲与素材包。 |
-| **小红书主编** | Xiaohongshu Chief Editor | 专职小红书短平快痛点文案、Hook 语料与爆款标题撰写。 |
-| **公众号主编** | WeChat Longform Chief Editor | 专职公众号结构化深度长文创作，注入极客操盘手观点。 |
-| **短视频导演** | Video Director | 制作 120s 黄金分镜脚本（含画面、运镜、台词、花字、音效）。 |
-| **美术总监** | Visual Design Director | 调用 `guizang-social-card-skill` 渲染 3:4 HTML 视觉卡片，驱动 `generate_ai_image.py` 生图。 |
-| **资深校对排版** | Chief Reviewer & Layout Editor | 执行移动端首屏校验、消除孤行/断行、审查个人 IP 黑白词汇表并二次精修。 |
-| **归档发布员** | Asset & Distribution Ops | 创建标准三级子目录存盘定稿、**清扫删除 process_* 中间临时文件**，一键调用 NAS 发布。 |
+闭环一句话：**热点进 → 推荐出 → 采纳即生产 → 质检才归档 → 数据回来 → 经验升级 Agent → 下一次写得更好**。
 
 ---
 
-## 3. 核心 Skill 技能库与双轨视觉系统
+## 四、对比市面其他产品
 
-本项目集成了 7 个专业级 Skill 技能库与双轨视觉渲染系统：
+| 方案 | 选题 | 生产 | 质检 | 数据反哺 | 商业模式 |
+|---|---|---|---|---|---|
+| **本产品（运营工厂）** | ✅ 多源雷达+双池评分 | ✅ 9 Agent 流水线自动生产 | ✅ 4 道机器质检 | ✅ 数据飞轮自动升级 SOP | 开源核心 + 付费订阅 |
+| 普通 AI 写作工具/提示词模板 | ❌ 无选题 | ✅ 单次生成 | ❌ 无 | ❌ 无 | 一次性买断/订阅 |
+| 内容中台/数据平台（新榜、蝉小红等） | ✅ 热榜 | ❌ 不生产 | ❌ 无 | ⚠️ 只有报表 | 按年付费，面向机构 |
+| Claude Skill 市场（Loreto/AgentPowers） | ❌ 只做分发 | ⚠️ 单 skill | ❌ 无 | ❌ 无 | 平台抽成 |
+| 自建 n8n/RSS 工作流 | ✅ 采集 | ⚠️ 需自己写 | ❌ 无 | ❌ 无 | 时间成本极高 |
 
-### 3.1 技能库清单 (Skills)
-1. **小晚公众号排版 Lite Skill (最高优先级 No.1)**：[xiaowan-wechat-layout-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/xiaowan-wechat-layout-skill/SKILL.md)
-   - *作者*：@bbkirstry（小晚不在）
-   - *功能*：主导审美与视觉 SOP，提供移动端首屏校验、消除孤行/断行及装饰预算控制。
-2. **公众号排版 Skill (HTML 转换 No.2)**：[gzh-design-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/gzh-design-skill/SKILL.md)
-   - *作者*：甲木老师 × 摸鱼小李
-   - *功能*：底层 Markdown 一键转换为公众号精致 HTML（支持多种审美主题与深色模式）。
-3. **社交图文卡片 Skill**：[guizang-social-card-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/guizang-social-card-skill/SKILL.md)
-   - *GitHub*: [https://github.com/op7418/guizang-social-card-skill](https://github.com/op7418/guizang-social-card-skill)
-   - *功能*：生成高审美 3:4 HTML 网页卡片，完美适配小红书封面与图文。
-4. **小吴聊爆款图文与短视频 Skill**：[viral-content-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/viral-content-skill/SKILL.md)
-   - *作者*：小吴聊
-   - *功能*：提供【硬核拆解】（BOM成本与AI/硬件拆解）、【商业对话】（单店模型与尽调拷问）、【商业观察】（底层逻辑与人文升华）三大爆款专栏视角及 120s 短视频黄金分镜脚本生成。
-5. **商业诊断 Skill**：[dbskill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/dbskill)
-   - *作者*：小吴聊
-   - *功能*：爆款内容结构拆解、商业切入点诊断。
-6. **个人 IP 写作风格指南**：[personal-style-guide.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/personal-style-guide.md)
-   - *来源*：通过 [analyze_xiaowuliao_style.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/analyze_xiaowuliao_style.py) 提取 19 篇历史微信文章总结的独家 Hook 库、口吻与黑白词汇表。
-7. **去 AI 味写作规范 Skill**：[anti-ai-flavor-skill](file:///Users/xiaowuliao/Projects/自媒体发布agent/skills/anti-ai-flavor-skill/SKILL.md)
-   - *来源*：整合 [zero-click/avoid-ai-writing-zh](https://github.com/zero-click/avoid-ai-writing-zh)（MIT）、[liuliu-66-create/ll-humanizer-zh](https://github.com/liuliu-66-create/ll-humanizer-zh)、[B1lli/remove-ai-flavor-writing-skill](https://github.com/B1lli/remove-ai-flavor-writing-skill)，调研见 [research/去AI味开源调研.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/research/去AI味开源调研.md)
-   - *功能*：把结构级 AI 腔（二元对比壳/三拍/报幕式过渡/对称收束/本质断言/助手路线标记/正文引号/修辞破折号等）变成可执行检查；机器初筛 [ai_flavor_check.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/ai_flavor_check.py) 输出 `ai_flavor_report.json`，已接入 `run_daily_pipeline.py --qa` 质检链与流水线生产门禁。
-
-### 3.2 视觉生图双轨系统
-- **轨 A (结构化知识卡片)**：美术总监调用 `guizang-social-card-skill` 动态生成 3:4 比例的 HTML/CSS 卡片，截图作为小红书正文卡片。
-- **轨 B (AI 艺术/真实摄影封面)**：使用 [generate_ai_image.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/generate_ai_image.py) 脚本调用 FLUX / DALL-E 3 等 API 生成高冲击力艺术封面。
+**核心差异**：
+- 竞品只负责生成，我们负责从生产到复盘的整个闭环：质检、发布、数据回收、经验进化都包含在内。
+- 质检可以计算：契约引用率、评分公式、22 条去 AI 味规则、合规词库，不靠感觉拍脑袋。
+- 数据飞轮让系统越用越懂你的账号，这是模板和插件给不了的。
 
 ---
 
-## 4. 环境准备与 NAS 部署指南
+## 五、免费版 vs 付费版（Pro）
 
-完整的 NAS 部署包在 [nas-n8n](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n) 目录下：
-
-### 4.1 NAS 服务一键启动
-1. **配置文件**：修改 [nas-n8n/.env.example](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/.env.example) 为 `.env` 并配置 IP 与密码。
-2. **启动 Compose 服务**：
-   ```bash
-   cd nas-n8n
-   docker-compose up -d
-   ```
-   *服务清单*：
-   - `n8n`：中文版工作流引擎 (`http://<NAS_IP>:5678`)
-   - `postgres`：工作流持久化数据库
-   - `rsshub`：热点雷达 RSS 抓取引擎 (`docker-compose-rsshub.yml`)
-
-### 4.2 公众号官方草稿箱 API（推荐，稳定）
-浏览器自动化受微信新版编辑器限制时，改用官方 `draft/add` 接口存草稿：
-```bash
-python3 scripts/gzh_draft_api.py \
-  --title "标题" \
-  --content-file outputs/<job>/公众号/<排版>.html \
-  --cover outputs/<job>/小红书/封面.png \
-  --author "小吴聊" \
-  --job-id <job_id>
-```
-凭据从 `nas-n8n/.env` 读取 `GZH_APP_ID` / `GZH_APP_SECRET`；调用机器 IP 需加入公众号「IP 白名单」。
-
-### 4.3 小红书发布（人工模式，风控合规）
-
-小红书账号存在风控要求，**禁止任何自动化工具写入/发布**，已下线全部自动发布链路（NAS `xhs_publisher`、n8n 小红书工作流、Playwright 脚本均已归档/删除）。发布改为人工：
-
-```bash
-# 1. 直接使用产出文件夹 outputs/<job_id>/小红书/（xhs-01~05.png + 文案.md），手机/网页端手动上传
-# 2. 发布完成后标记记录（保住 48h 回收闭环）
-python3 scripts/record_manual_publish.py <job_id> --platform 小红书
-```
-
-成品库「发布记录」卡片提供「标记已手动发布」按钮。
-
-### 4.4 飞书多维表格与 n8n 工作流导入
-- **飞书结构规范**：详见 [FEISHU_TABLE_SCHEMA.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/nas-n8n/FEISHU_TABLE_SCHEMA.md)。
-- **一键导入工作流**：
-  ```bash
-  python3 scripts/import_n8n_workflow_nas.py
-  python3 scripts/activate_n8n_workflows.py
-  ```
-
-### 4.5 海外热度源与代理（谷歌趋势 / X 热点）
-
-- 热度源覆盖类目：AI/大模型、财经/股票/投资、AI 应用、创业/副业/出海、自媒体/短视频。国内 RSSHub 源含微博/知乎/36氪/华尔街见闻/金十数据/少数派/B站/掘金；谷歌趋势走官方趋势 RSS（`scripts/fetch_hot_topics.py` 内置），X 热点复用 personal-website 的 NAS `x_scraper` 容器（twikit + clash 代理 + cookie）。
-- 代理配置与 personal-website 的 `X_SCRAPER_PROXY` 同模式：`nas-n8n/.env` 可设 `SELFMEDIA_PROXY=http://127.0.0.1:7897`（本机 clash 混合端口；未设时自动回退 `X_SCRAPER_PROXY` → `HTTPS_PROXY` → `HTTP_PROXY`）。
-- 海外源条目自动打「海外源·需人工复核」标记并做关键词合规初筛；**入选选题前必须人工确认国内可合规发布**。
-- X 热点默认「中文热议」模式：X 官方趋势接口不提供中国内地/港台地区（404），因此用中文推文 Top 搜索按互动热度聚合（已过滤营销征集话术），并打「海外源·需人工复核」标记；可通过 `X_TRENDS_MODE=region` + `X_TRENDS_WOEID` 切换为地区趋势榜（US/JP）。
-- X 热点依赖 NAS 在线且 `x_scraper` 容器可达；失败时自动跳过，不影响国内源。
-
----
-
-## 5. 标准工作流程 (SOP) 与操作命令
-
-详细的标准工作流程包含在 [workflows/](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows) 目录：
-- 🌟 [自媒体运营工厂.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/自媒体运营工厂.md) - 自媒体运营工厂主流程（Teamwork 拟真报社多 Agent 协同）
-- 🎬 [video-script.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/video-script.md) - 短视频黄金分镜脚本流程
-- 📕 [xiaohongshu-note.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/xiaohongshu-note.md) - 小红书笔记专项流程
-- 📰 [gzh-longpost.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/gzh-longpost.md) - 公众号长图文专项流程
-- 📅 [weekly-plan.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/weekly-plan.md) - 本周内容计划工作流
-- 🛠️ [content-optimize.md](file:///Users/xiaowuliao/Projects/自媒体发布agent/workflows/content-optimize.md) - 内容与排版优化工作流
-
-### 5.1 日常使用 5 步流程 (报社岗位协同)
-1. **触发选题**：向总编输入主题或专栏需求，资深采编收集素材并输出选题大纲与 BOM 素材包。
-   - 热点雷达每条带发布时间；选题推荐按时效加权（≤24h +1、>72h 降权 2 分并标天数），过时新闻自动沉底。
-2. **专职创作**：小红书主编、公众号主编与短视频导演并发创作各自平台的正文与脚本。
-3. **视觉生成**：美术总监渲染 3:4 视觉卡片 HTML 或使用 AI 接口生图。
-4. **校对与归档清扫**：资深校对排版完成移动端孤行打磨；归档发布员存盘定稿，**并强制清扫彻底删除 process_* 等中间过程临时文件夹**。
-5. **人工审核与发布**：你在对话框中预览并检查，确认无误后回复 `确认发布`。公众号由 Agent 调用 `scripts/gzh_draft_api.py` 存入官方草稿箱（人工手机终审）；小红书直接交付 `outputs/<job_id>/小红书/`（卡片 PNG + 文案），你手动上传发布后调用 `scripts/record_manual_publish.py` 标记记录；发布动作统一落盘 `publish_log.json`。
-
-### 5.2 常用自然语言指令速查表
-| 需求描述 | 对话指令示例 |
-| :--- | :--- |
-| **每日开工** | `开工`（主触发词；采集热点 → 推荐选题 → 等用户拍板 → 三平台创作） |
-| **指定主题开工** | `开工，主题「XXX」` 或 `启动自媒体运营工厂，主题「DeepSeek R1 零成本搭建」` |
-| **【硬核拆解】专栏** | `主题「问界 M9 智能化配置」，使用【硬核拆解】视角拆解 BOM 成本并生成短视频脚本` |
-| **【商业对话】专栏** | `主题「对话新茶饮创业者」，使用【商业对话】视角灵魂拷问单店模型与现金流` |
-| **【商业观察】专栏** | `主题「蜜雪冰城出海」，使用【商业观察】视角进行硬核底层拆解与反常识升华` |
-| **公众号精细长文** | `主题「NAS 部署 n8n 的避坑指南」，生成高审美公众号长文` |
-| **小红书爆款图文** | `做一篇小红书笔记，主题是「AI工具推荐」，使用 3:4 视觉卡片` |
-| **排版美化与孤行优化** | `优化这篇文章的视觉和排版，检查移动端孤行` |
-| **公众号草稿** | `确认发布` 或 `同步公众号草稿` |
-| **小红书人工发布** | `生成小红书素材包` → 手动上传发布 → `标记已手动发布` |
-| **小红书数据导入** | `导入小红书明细表`（看板按钮）或 `python3 scripts/import_xhs_notes.py --file 笔记列表明细表.xlsx`，自动回填观看/赞藏评/涨粉并匹配 Job |
-| **生成本周内容计划** | `制定本周自媒体内容计划` |
-
-### 5.3 内容归档与文件夹整理规范 (Outputs Folder Standard)
-每次创作完成的内容均遵循三级结构自动创建与归档：
-```text
-outputs/YYYY-MM-DD_主题名/
-├── 📕 小红书/
-│   ├── 文案.md                        # 小红书笔记正文、标题建议与标签
-│   ├── rednote_<主题>_slides.html     # 3:4 网页视觉卡片
-│   └── 封面.png                        # FLUX / DALL-E 3 生成的封面图
-├── 📰 公众号/
-│   ├── 文案.md                        # 公众号深度文章草稿
-│   ├── gzh_<主题>.html                # gzh-design 排版 HTML
-│   └── gzh_<主题>_预览.html            # 移动端预览卡片 HTML
-└── 🎬 短视频/
-    └── 120s黄金分镜脚本.md            # 包含画面/运镜/台词/花字/音效的标准分镜表
-```
-
----
-
-## 6. 运维脚本与命令行速查
-
-所有的核心工具脚本均收录在 [scripts/](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts) 目录；历史一次性修复脚本（24 个 `fix_*` 等）已归档至 `scripts/_archive/`，日常使用请勿调用。
-
-### 6.1 版本管理（P1 起）
-
-- 项目已初始化 Git（基线提交 `b11c08c`）；每个 Job 归档后提交一次。
-- `.env`、`nas-n8n/shared_files/*.json`（Cookie）、图片/视频产物已加入 [.gitignore](file:///Users/xiaowuliao/Projects/自媒体发布agent/.gitignore)，禁止入库。
-- 发布/部署凭据统一从 `nas-n8n/.env` 或环境变量读取（见 [nas_config.py](file:///Users/xiaowuliao/Projects/自媒体发布agent/scripts/nas_config.py)），代码中不保存任何明文密码。
-
----
-
-## 7. 🖥️ 自媒体运营中心看板（本地 WebUI）
-
-> 结果导向的运营看板：数据大盘、选题、Agent 流水线、三平台成品预览、平台数据回收。创作与修改仍在 Codex 对话框完成，看板只做「看结果、选选题、回填数据」。仅绑定 `127.0.0.1`，零构建（原生 HTML/JS + FastAPI，Google Material 3 风格）。
-
-### 7.1 启动
-
-```bash
-bash webapp/start.sh          # 默认端口 8787
-bash webapp/start.sh 9000     # 指定端口
-# 打开 http://127.0.0.1:8787
-```
-
-### 7.2 功能
-
-| 视图 | 内容 | 一键操作 |
+| 功能 | 免费版 | Pro（¥29/月，¥199/年） |
 |---|---|---|
-| 概览 | 小红书式四页签看板（观看/互动/涨粉/发布，近7/30日切换）+ 薄弱点诊断（点击率/互动率/完播率/涨粉率/发布节奏/体裁结构） | 薄弱点一键“沉淀为经验”写入数据飞轮 |
-| 选题 | 热点雷达 + 选题推荐 + 信息源状态（新增今日热榜AI/推楼1号/hex2077 AI 日报）；左侧推荐+任务、右侧折叠雷达 | 采纳选题 → 自动建任务并后台跑完整生产（codex CLI，串行队列可取消） |
-| 爆款跟踪 | 外部爆款录入/拆解（平台/数据/钩子/结构/公式）+ 待拆解候选（自动采集）+ 自家爆款自动复盘 | 候选一键带入表单；AI 拆解（后台 codex CLI，按 viral-breakdown-skill 输出结构化 JSON）；标记已拆解/已应用 |
-| 数据飞轮 | 写稿发布 → 账户数据反馈 → 结合市场数据学习 → 总结经验 → 反哺流水线 Agent 五段闭环；经验库 + 自动生成反哺指令包 | 沉淀/编辑/标记应用经验；一键重新生成反哺包并**自动升级 agents/ 下 8 份 Agent SOP**（版本+changelog）；生成周报入口 |
-| 流水线 | 8 个 Agent 角色职责（含 SOP 文档链接）、活跃任务、最近产出；生产状态机 + 生产队列 + 实时日志 | 3 秒自动轮询；刷新/取消/重新生产；点击任务跳转成品库 |
-| 成品库 | 小红书卡片轮播（有卡片截图时不再重复展示 slides HTML，仅无截图时兜底）、公众号排版预览（桌面/移动）、短视频分镜脚本 | 按任务查看质检与发布状态 |
-| 数据 | 自有数据统计：发布动作/回填/阅读/互动率/爆款大盘；平台对比、主题表现、内容特征分析、最佳表现、待回填清单 | 刷新统计；保存回填；导入小红书明细表；导入四页签看板导出 xlsx（发布/观看/互动/涨粉） |
+| 选题雷达（基础信息源） | ✅ | ✅ 全源 + 评分双池 |
+| 基础排版模板与文风 | ✅ 通用填空向导 | ✅ 5 大赛道预设文风模板（科技/商业/小红书/职场等） |
+| 外观皮肤与质感系统 | 仅第一款皮肤（蓝白默认） | ✅ 8 套高级主题 + 4 档质感 + 毛玻璃无级调节 |
+| 爆款 AI 拆解 | 3 次/月 | ✅ 无限 + 每日 Top5 自动拆解 |
+| 一键全自动生产（素材→初稿→视觉→质检→归档） | ❌ | ✅ |
+| 数据飞轮（经验自动升级 Agent SOP） | ❌ | ✅ |
+| 合规审核 + 去 AI 味全套 | 仅基础合规提示 | ✅ 完整套件 |
+| 公众号草稿推送 / 发布数据回收 | ❌ | ✅ |
+| 优先更新 / 客服 | ❌ | ✅ |
 
-### 7.3 与 NAS 的关系
+**授权机制**：Ed25519 签名 token 绑定单台设备，到期续费；换设备免费重绑一次。开源核心（质检 + 授权模块）永远 MIT 免费。
 
-- 公众号草稿走官方 `draft/add` API（`scripts/gzh_draft_api.py`），凭据 `GZH_APP_ID/GZH_APP_SECRET`，不依赖 NAS 浏览器自动化。
-- 小红书为人工发布：直接使用产出文件夹 `outputs/<job_id>/小红书/`（与成品同源，不另建素材包），人工上传后用 `scripts/record_manual_publish.py` 标记（工作台也可操作）。
-- 采集热点调用 `scripts/fetch_hot_topics.py`（RSSHub）；NAS 离线时自动降级用最近雷达 + WebSearch。
-- 数据（jobs/outputs/materials）均在本仓库，工作台只读展示 + 白名单脚本调用，不落第三方。
-- 一键全自动生产：`采纳选题` 后调用本机 codex CLI（PATH 或 `/Applications/ChatGPT.app/Contents/Resources/codex`）后台执行完整流水线（素材→初稿→视觉→质检→归档）；队列串行（`data/production/queue.json`），日志在 `jobs/<job_id>/production.log`，可取消/重跑；每次生产会先读 `agents/*.md` 与 `data/flywheel/pipeline_feedback.md`。
+---
 
-### 7.4 API 速查（前端同源调用）
+## 六、从零开始使用（约 5 分钟，小白版）
 
-```
-GET  /api/overview            # 统计概览
-GET  /api/stats               # 自有数据统计（KPI/平台/主题/趋势/内容特征/待回收）
-GET  /api/agents              # Agent 职责 + 活跃 Job + 最近产出
-GET  /api/themes              # 引流内容主题库
-GET  /api/topics              # 热点雷达 + 选题推荐
-GET  /api/jobs                # 任务列表
-GET  /api/jobs/{job_id}       # 任务详情（state/质检/发布日志）
-GET  /api/outputs/{job_id}    # 产出文件树
-GET  /api/skills/anti-ai-flavor  # 去 AI 味规范全文（成品库质检区弹窗）
-POST /api/topics/adopt        # 采纳选题建任务
-POST /api/qa                  # 跑质检链（需 output_dir）
-POST /api/pipeline/run        # 触发流水线（action: topics|recycle|weekly|qa）
-POST /api/publish/manual      # 标记已手动发布（写 publish_log）
-POST /api/stats/backfill      # 平台数据回填（落盘 publish_log.json）
-POST /api/stats/refresh       # 重新扫描并生成 data/stats/summary.json + 统计报告
+### 第一步：确认电脑环境（只做一次）
+
+需要一台 macOS 或 Linux 电脑，装有 Python 3.11 以上。在终端里运行：
+
+```bash
+python3 --version
 ```
 
-### 7.5 自有数据统计（不依赖第三方接口）
+能打印出版本号就说明没问题。
 
-- 引擎：`scripts/data_stats.py`，只统计本仓库自己产生的数据——发布动作（`publish_log.json` 的 `publish[]`，公众号草稿推送/小红书发布时自动落盘）、人工回填（`records[]`）、内容特征（公众号 `data-viz` 组件数/字数、小红书卡片数）与任务状态。
-- 聚合结果：`data/stats/summary.json`（工作台 `/api/stats` 直接复用）；人类可读报告：`data/stats/数据统计报告.md`。
-- 数据口径：公众号 datacube 未开通权限、小红书无官方开放 API，因此当前以「发布动作自动记录 + 人工回填」为准；爆款趋势跟踪为下一阶段功能，将在此数据基座上扩展。
+### 第二步：下载本仓库
+
+```bash
+git clone https://github.com/hjdiandian1-ops/selfmedia-ops-center.git
+cd selfmedia-ops-center
+```
+
+### 第三步：一键安装（只做一次）
+
+```bash
+python3 scripts/workbench_install.py
+```
+
+安装器会自动创建虚拟环境、安装依赖、生成 `.env` 配置文件。全程不需要你手动敲任何别的命令。
+
+### 第四步：启动工作台
+
+```bash
+./start.sh
+```
+
+浏览器会自动打开 http://127.0.0.1:8787 ，这就是你的工作台：左侧七个模块（概览/选题/爆款跟踪/数据飞轮/流水线/成品库/数据）全部可用。
+
+### 第五步：解锁 AI 能力（可选，2 分钟）
+
+免费版不用配任何东西就能用：选题雷达、三平台爆款榜单、质检、成品库。想用 AI 拆解和一键生产时，编辑仓库根目录的 `.env`：
+
+```text
+LLM_API_KEY=sk-你的key
+LLM_BASE_URL=https://api.deepseek.com/v1
+LLM_MODEL=deepseek-chat
+```
+
+支持任何 OpenAI 兼容接口（DeepSeek / OpenAI / Moonshot / 本地 Ollama 等），填完重启 `./start.sh` 即可。AI 引擎接入方式可在「设置 → AI 引擎」里显式选择：**自动**（装了 Codex CLI 优先 Codex，否则 API）、**API 直连**、**Codex CLI**、**WorkBuddy** 四种模式，并实时查看当前模型与累计 token 消耗。
+
+> 💡 **效果提示**：推荐优先接入 Codex / WorkBuddy 等 Agent 来驱动生产。Agent 自带联网搜索和工具链，采编阶段能抓取真实原文，成文质量明显高于纯 API 直连——纯 API 直连只是无联网的文本补全，只能靠模型记忆，容易空泛或编造数据。
+
+### 第六步：了解免费/付费怎么切
+
+免费版直接使用；点击生产、数据飞轮、自动拆解等 Pro 功能时，页面会提示升级，左侧底部也常驻显示你的授权状态（免费版/Pro 已激活）。
+
+### 在 WorkBuddy 中部署
+
+把本仓库作为工作区加载到 WorkBuddy（或任何 Codex/Claude 兼容环境），同样先运行 `workbench_install.py` 并在 `.env` 填好 `LLM_API_KEY`。之后可以在 WorkBuddy 对话里直接指挥本仓库的脚本：
+
+```text
+运行 python3 scripts/run_daily_pipeline.py --topics
+```
+
+WorkBuddy 负责对话与调度，工作台与数据仍在本仓库内，两者共用同一套产物和质检链。
+
+## 七、安全与隐私
+
+- 本仓库**不包含**任何真实账号数据、发布内容、NAS 配置或第三方 skill；
+- 报告/日志中的路径一律相对化；发布前必须通过 [SECURITY_CHECKLIST.md](SECURITY_CHECKLIST.md) 全部检查；
+- CI 六道闸门：gitleaks / pip-audit / bandit / semgrep / CodeQL / pytest；
+- 漏洞报告请走 [SECURITY.md](SECURITY.md) 的流程。
+- 使用约定：开源核心遵循 MIT；请勿使用本项目代码或文档训练/蒸馏 AI 模型，或直接打包转售。Pro 授权协议另行明确禁止对授权内容做 AI 训练/蒸馏。
+
+## 八、购买与激活（付费版）
+
+### 9.1 价格
+
+| 档位 | 价格 | 说明 |
+|---|---|---|
+| 免费版 | ¥0 | 注册即可用基础功能（选题/排版/每月 3 次拆解） |
+| Pro 月付 | ¥29/月 | 全功能，随时取消 |
+| Pro 年付 | ¥199/年 | 约 7 折，推荐 |
+| 企业版 | ¥999/年/席位 | 商用许可 + 部署支持（联系作者） |
+
+### 9.2 购买流程（5 步）
+
+1. 在面包多拍下 Pro 月付或年付商品（链接见 9.5）；
+2. 付款后，在终端获取你的设备码：
+   ```bash
+   python3 scripts/license/install.py --show-fingerprint
+   ```
+   会输出一串类似 `mac_xxxx...` 的设备码；
+3. 把设备码发给客服（微信/订单留言，见 9.5）；
+4. 客服在 24 小时内（通常 1 小时）发回绑定 token；
+5. 激活：
+   ```bash
+   python3 scripts/license/install.py --bind-token <客服发来的token>
+   ```
+   看到「授权激活成功」即可使用全部 Pro 功能；工作台左下角会立即显示「Pro 已激活 · 到期日期」（也可点 ⚙ 设置 →「刷新授权状态」手动刷新）。
+
+> 到期后 Pro 功能自动拦截；续费后客服发新 token，重新激活即恢复会员。公众号自动推草稿需已认证公众号并在微信公众平台配置 AppID/Secret 与电脑公网 IP 白名单（详见「发布指引」，平台无法代办）。
+
+### 9.3 换设备 / 续费
+
+- 换设备：在新设备上运行 `install.py --show-fingerprint`，把新设备码发给客服免费重绑一次；之后每次收取 ¥10 服务费。
+- 续费：到期前联系客服续费并领取新 token；到期后未续费时，Pro 功能会被授权门禁自动拦截。
+
+### 9.4 售后服务
+
+- 购买后一年内免费更新；
+- 遇到安装问题，把终端输出截图发给客服，通常当天解决；
+- 虚拟授权服务不支持无理由退款；因质量问题无法激活的，全额退款。
+
+### 9.5 商品入口与联系方式（上线前必填）
+
+> 免费版不需要付款，直接下载开源核心即可；付费只针对 Pro 工作台功能。
+> 下面 4 项请作者在发布前替换为真实信息（商品文案参考 `docs/商品页文案.md`）。
+
+- 面包多商品链接：`<TODO: 在 https://mbd.pub/ 创建商品后粘贴商品地址>`
+- 客服微信二维码：`<TODO: 粘贴二维码图片>`（可直接在 README 同目录放 `docs/qr.png` 后引用）
+- 公众号 / 邮箱：`<TODO>`
+- 企业版咨询：`<TODO>`

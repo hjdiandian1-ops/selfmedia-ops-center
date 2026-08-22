@@ -21,8 +21,9 @@ import re
 import sys
 from datetime import datetime
 
-FORBIDDEN_DIRS = ("jobs", "outputs", "materials", "data", "nas-n8n",
-                  "skills/范文库")
+FORBIDDEN_DIRS = ("jobs", "outputs", "materials", "data/stats", "data/flywheel",
+                  "data/production", "data/compliance", "data/style_backups",
+                  "nas-n8n", "skills/范文库")
 FORBIDDEN_FILES = (".env", "license_private.pem", "*.key", "*cookies*",
                    "xiaohongshu_cookies.json")
 
@@ -53,7 +54,7 @@ def walk_files(root):
             yield os.path.join(dirpath, fn)
 
 
-SCAFFOLD_ALLOWED_FILES = {".gitkeep", "pipeline_feedback.md"}
+SCAFFOLD_ALLOWED_FILES = {".gitkeep", "pipeline_feedback.md", "样例_热点雷达.md", "样例_选题推荐.md"}
 
 
 def _has_real_files(root):

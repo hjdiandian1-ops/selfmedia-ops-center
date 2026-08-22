@@ -1,0 +1,46 @@
+name: "🎯 选题 / 内容方向建议 (Topic & Source Suggestion)"
+description: "推荐优质热点信息源、爆款分析案例或高价值赛道词库"
+title: "[Topic/Source]: "
+labels: ["content-ops"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提供高价值信息源、爆款样本或赛道词库，帮助自媒体运营工厂构建更精准的推荐系统！
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 建议类别
+      options:
+        - 新增热点采集源 (RSS / 开放榜单 API)
+        - 细分赛道 IP 词库扩充 (Niches Lexicon)
+        - 优质爆款拆解案例推荐
+        - 去 AI 味高频套话补充
+    validations:
+      required: true
+
+  - type: input
+    id: source_name
+    attributes:
+      label: 信息源 / 赛道名称
+      placeholder: 例如：少数派 RSS / AI 编程提效赛道
+    validations:
+      required: true
+
+  - type: input
+    id: source_url
+    attributes:
+      label: 链接或地址（如有）
+      placeholder: 例如：https://sspai.com/feed
+    validations:
+      required: false
+
+  - type: textarea
+    id: details
+    attributes:
+      label: 详细说明与价值分析
+      description: 为什么推荐此内容？对哪类自媒体博主有帮助？
+      placeholder: 提供了最新的开发者效率工具评测，适合科技实战风博主...
+    validations:
+      required: true

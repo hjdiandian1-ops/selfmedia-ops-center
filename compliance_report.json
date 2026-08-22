@@ -1,0 +1,31 @@
+{
+  "verdict": "REJECTED",
+  "checks": [
+    {
+      "rule": "ad_absolute",
+      "platform": "通用",
+      "severity": "high",
+      "keyword": "最佳",
+      "message": "广告法绝对化用语，涉嫌违反《广告法》第九条",
+      "evidence": "征分析（标题含数字 vs 不含、体裁、公众号图表数、小红书卡片数 vs 表现）、最佳表现 TOP、发布表现明细与数据来源口径（发布动作自动记录 + 人工回填，不依赖"
+    },
+    {
+      "rule": "medical",
+      "platform": "通用",
+      "severity": "high",
+      "keyword": "诊断",
+      "message": "医疗功效宣称：个人账号无资质发布高风险内容，需删改或取得相应资质",
+      "evidence": " ## 二、核心模块介绍与按钮功能  ### 2.1 概览（数据分析 + 薄弱点诊断 + 首启向导）  小红书式四页签分析（观看 / 互动 / 涨粉 / 发布），支"
+    }
+  ],
+  "summary": {
+    "high": 2,
+    "medium": 0,
+    "warn": 0,
+    "platforms": [
+      "通用"
+    ]
+  },
+  "generated_at": "2026-08-17 11:27:13",
+  "rules_note": "机器初筛，高风险项禁止发布；中风险人工复核；词库见 data/compliance/words/"
+}

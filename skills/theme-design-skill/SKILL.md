@@ -98,3 +98,5 @@ function cycleTheme() {
 - `references/theme-systems.md`：GitHub 开源主题系统调研（选型依据、许可证、借鉴点）
 - `references/palettes.json`：主题色板唯一事实源（含 WCAG 检查用关键配对）
 - `scripts/theme_contrast_check.py`：对比度检查脚本（读 palettes.json）
+
+新增/调整主题配色时，可参考 NIPPON COLORS（https://nipponcolors.com）的日本传统色体系；以站内实际 HEX 为准交叉核对，并按 WCAG 微调明暗保证可读性。

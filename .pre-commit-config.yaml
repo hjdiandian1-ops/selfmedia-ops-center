@@ -1,0 +1,12 @@
+# 提交前检查：每次 git commit 自动运行完整测试套件，失败即阻止提交。
+# 安装：pip install pre-commit && pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest tests/ -q
+        entry: pytest
+        args: ["tests/", "-q"]
+        language: system
+        pass_filenames: false
+        always_run: true
