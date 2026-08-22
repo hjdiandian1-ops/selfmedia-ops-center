@@ -478,17 +478,23 @@ def test_fetch_tophub_parser(monkeypatch):
 
 
 def test_fetch_tl1_parser(monkeypatch):
-    def fake(url, **kw):
-        if "hours" in url:
-            return b'[{"hour_key":"2026081216","count":10}]'
-        return json.dumps({"items": [{
-            "rank": 1, "score": 9, "topic": "英伟达AI基建融资",
-            "url": "https://x.com/a/status/1", "source": "@a",
-        }]}, ensure_ascii=False).encode("utf-8")
-    monkeypatch.setattr(fetch_hot_topics, "fetch_http", fake)
+    import selfmedia.radar.tl1_hotspot as tl1_mod
+    monkeypatch.setattr(tl1_mod, "fetch_tl1_hotspots", lambda **kw: {
+        "ok": True,
+        "items": [{
+            "title": "英伟达AI基建融资",
+            "url": "https://x.com/a/status/1",
+            "author": "@a",
+            "heat": "9",
+            "score": 9.0,
+            "hour": "2026082216",
+            "compliance": "海外源·需人工复核（推楼1号/X）",
+        }]
+    })
     items = fetch_hot_topics.fetch_tl1(5)
     assert items[0]["title"] == "英伟达AI基建融资"
     assert "海外源" in items[0]["compliance"]
+
 
 
 def test_fetch_hex2077_parser(monkeypatch):

@@ -42,9 +42,13 @@ def build_parser() -> argparse.ArgumentParser:
     search_cmd = radar_sub.add_parser("search", help="跨平台社媒搜索")
     search_cmd.add_argument("keyword", nargs="?", default="AI工具", help="搜索关键词")
 
+    tl1_cmd = radar_sub.add_parser("tl1", help="推楼1号 (TL1.com) X中文区热点雷达与AI脉搏")
+    tl1_cmd.add_argument("--limit", type=int, default=10, help="最多返回数量")
+
     trans_cmd = radar_sub.add_parser("transcribe", help="音视频链接转录")
     trans_cmd.add_argument("url", help="音视频链接 (YT/B站/播客/抖/红)")
     trans_cmd.add_argument("--out", default="./outputs/transcripts", help="输出目录")
+
 
     # 2. Produce
     prod_parser = subparsers.add_parser("produce", help="✍️ 工业化内容生产")
@@ -128,9 +132,19 @@ def main():
                 print(f"\n📌 【{p}】找到 {len(items)} 条内容：")
                 for it in items:
                     print(f"  - {it['title']} ({it.get('author', '')}) -> {it.get('url', '')}")
+        elif args.action == "tl1":
+            from .radar import fetch_tl1_hotspots
+            res = fetch_tl1_hotspots(max_items=args.limit)
+            print(f"🔥 推楼1号 (https://tl1.com/) X中文区热点雷达（共 {res['count']} 条）：\n")
+            for idx, item in enumerate(res["items"], 1):
+                print(f"  [{idx}] 【{item['source']}】{item['title']}")
+                print(f"      热度: {item['heat']} | 作者: {item['author']} | 链接: {item['url']}")
+                if item.get("summary"):
+                    print(f"      摘要: {item['summary']}")
         elif args.action == "transcribe":
             res = process_url_transcript(args.url, output_dir=args.out)
             print(f"✅ 转录完成！产物路径：{res['md_path']}")
+
 
     elif args.subcommand == "produce":
         if args.action == "xhs":

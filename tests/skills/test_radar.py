@@ -121,3 +121,21 @@ class TestTranscriptExtractor:
         assert res["ok"] is True
         assert res["platform"] == "bilibili"
         assert Path(res["md_path"]).exists()
+
+
+class TestTL1Radar:
+    """推楼1号 (https://tl1.com/) X中文区热点雷达质检"""
+
+    def test_fetch_tl1_hotspots(self):
+        from src.selfmedia.radar.tl1_hotspot import fetch_tl1_hotspots
+
+        res = fetch_tl1_hotspots(max_items=5)
+        assert res["ok"] is True
+        assert "items" in res
+        assert len(res["items"]) >= 1
+        first = res["items"][0]
+        assert "title" in first
+        assert "url" in first
+        assert "compliance" in first
+        assert "海外源" in first["compliance"]
+

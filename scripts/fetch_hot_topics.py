@@ -384,27 +384,30 @@ def fetch_tophub(top=10):
 
 
 def fetch_tl1(top=10):
-    url = "https://example.com/tl1/hours"
-    raw = fetch_http(url, timeout=10)
-    hours = json.loads(raw.decode("utf-8"))
-    if not hours:
-        raise RuntimeError("推楼1号暂无小时热点")
-    hour_key = hours[0].get("hour_key", "") if isinstance(hours, list) else ""
-    data = json.loads(fetch_http(
-        f"https://tl1.com/api/hotspot?hour={hour_key}", proxy=None, timeout=20).decode("utf-8"))
+    """抓取推楼1号 (https://tl1.com/) X 中文区热点与 AI 灵感脉搏"""
+    sys.path.insert(0, os.path.normpath(os.path.join(ROOT, "src")))
+    from selfmedia.radar.tl1_hotspot import fetch_tl1_hotspots
+
+    res = fetch_tl1_hotspots(max_items=top, timeout=20)
+    if not res.get("ok"):
+        raise RuntimeError("推楼1号 (tl1.com) 数据抓取失败或暂无热点")
+
     items = []
-    for it in (data.get("items") or [])[:top]:
-        title = (it.get("topic") or "").strip()
-        if not title:
+    for it in res.get("items", []):
+        t = it.get("title", "").strip()
+        if not t:
             continue
         items.append({
-            "title": re.sub(r"\s+", " ", title),
-            "link": it.get("url", ""),
-            "traffic": str(it.get("score") or ""),
-            "published_at": hour_key,
+            "title": re.sub(r"\s+", " ", t),
+            "link": it.get("url", "https://tl1.com/"),
+            "traffic": str(it.get("heat") or it.get("score") or ""),
+            "published_at": it.get("hour", ""),
+            "author": it.get("author", ""),
+            "summary": it.get("summary", ""),
             "compliance": "海外源·需人工复核（推楼1号/X）",
         })
     return items
+
 
 
 def fetch_hex2077(top=10):
