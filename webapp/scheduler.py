@@ -32,10 +32,12 @@ SCHEDULER_FILE = os.path.join(ROOT, "data", "scheduler.json")
 
 TASKS_META = {
     "topics": {"label": "热点采集 + 选题推荐", "hint": "抓取多源热点雷达并生成日/周选题推荐", "default_times": ["08:00", "12:00", "20:00"]},
+    "autopilot": {"label": "日更无人值守投产（自动选题+入队生产）", "hint": "自动选取高分热点建任务并投入生产队列保障不断更", "default_times": ["08:30"]},
     "viral": {"label": "三平台爆款榜单 + Top5 拆解", "hint": "采集小红书/抖音/公众号 Top10 并自动拆解热度前 5", "default_times": ["09:00", "21:00"]},
     "weekly": {"label": "爆款周经验包聚合", "hint": "聚合近 7 天拆解为经验包并升级 Agent SOP（周一）", "default_times": ["21:00"], "weekday": 0},
     "recycle": {"label": "48h 数据回收检查", "hint": "扫描发布超 48h 未回填的任务，提醒补录数据", "default_times": ["21:30"]},
 }
+
 
 # 记录本次进程内已触发的 (task, YYYY-MM-DD HH:MM)，避免同一分钟重复触发
 _last_fired = {}
@@ -150,6 +152,13 @@ def run_action(key):
     if key == "topics":
         _run_sync(["fetch_hot_topics.py"])
         _run_sync(["suggest_topics.py"])
+    elif key == "autopilot":
+        _run_sync(["run_daily_pipeline.py", "--topics", "--auto-select"])
+        try:
+            import core
+            core._kick_production()
+        except Exception:
+            pass
     elif key == "viral":
         _run_sync(["collect_platform_virals.py", "--json"])
         _run_bg(["run_viral_breakdown_daily.py", "--json"])
@@ -159,6 +168,7 @@ def run_action(key):
         _run_sync(["run_daily_pipeline.py", "--recycle"])
     else:
         return {"ok": False, "error": f"未知调度动作: {key}"}
+
     _record_last_run(key)
     return {"ok": True, "task": key, "at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 

@@ -44,6 +44,6 @@ def api_output_file(job_id: str, rel: str):
     if not full.startswith(os.path.normpath(jdir)) or not os.path.isfile(full):
         raise HTTPException(status_code=404, detail="文件不存在")
     try:
-        return {"job_id": job_id, "rel": rel, "content": core.read_text(full)[:8000]}
+        return {"job_id": job_id, "rel": rel, "content": core.read_text(full)[:100000]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

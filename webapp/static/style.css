@@ -2438,4 +2438,771 @@ textarea {
   border-radius: 999px;
 }
 
+/* ==================== 封面提示词库 (Cover Prompt Templates) ==================== */
+.cover-categories {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+}
+.cover-cat-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface-dim);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.cover-cat-btn:hover {
+  background: var(--hover-bg);
+  color: var(--on-surface);
+  border-color: var(--primary);
+}
+.cover-cat-btn.active {
+  background: var(--primary-container);
+  color: var(--primary-strong);
+  border-color: var(--primary);
+  font-weight: 600;
+}
+.cover-cat-btn .count {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-left: 4px;
+}
+
+.cover-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.cover-card {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.cover-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary);
+}
+
+.cover-card-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: var(--surface-dim);
+  overflow: hidden;
+  cursor: pointer;
+}
+.cover-card-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.cover-card:hover .cover-card-preview img {
+  transform: scale(1.03);
+}
+
+.cover-card-badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  z-index: 2;
+}
+.cover-badge-pill {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.cover-badge-ratio {
+  background: rgba(56, 189, 248, 0.85);
+  color: #0f172a;
+}
+
+.cover-card-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.cover-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.4;
+  margin: 0 0 6px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cover-card-summary {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.cover-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--outline-variant);
+}
+
+.cover-card-tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.cover-tag-item {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--surface-dim);
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.cover-tag-item:hover {
+  background: var(--primary-container);
+  color: var(--primary-strong);
+  border-color: var(--primary);
+}
+
+.cover-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+.cover-card-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Modal Specs Styling */
+.cover-modal-spec-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--surface-dim);
+  border-radius: 6px;
+  border: 1px solid var(--outline-variant);
+}
+.cover-modal-spec-label {
+  font-weight: 500;
+  color: var(--on-surface-variant);
+}
+.cover-modal-spec-value {
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+/* =========================================================================
+   Skills 技能库 (Skills Repository) 样式
+   ========================================================================= */
+.skills-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.skill-card {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.skill-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.skill-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.skill-card-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--outline-variant);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-dim);
+}
+
+.skill-card-head-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.skill-card-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.skill-badge-pill {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 600;
+  background: var(--primary-container);
+  color: var(--primary-strong);
+}
+
+.skill-badge-rating {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+.skill-badge-ver {
+  font-size: 10px;
+  color: var(--on-surface-variant);
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-dim);
+}
+
+.skill-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.4;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.skill-card-slug {
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--on-surface-variant);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.skill-card-summary {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.skill-card-author-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed var(--outline-variant);
+}
+
+.skill-card-tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.skill-tag-item {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--surface-dim);
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.skill-tag-item:hover {
+  background: var(--primary-container);
+  color: var(--primary-strong);
+  border-color: var(--primary);
+}
+
+.skill-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.skill-card-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+/* =========================================================================
+   封面与 Skills 模态弹窗高质感设计规范 (Repo Modals & Code Terminal)
+   ========================================================================= */
+.repo-modal-box {
+  background: var(--surface) !important;
+  border: 1px solid var(--outline) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+.repo-modal-author-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--surface-hover);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+}
+
+.repo-modal-author-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--on-surface);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.repo-modal-meta-text {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  margin-top: 2px;
+}
+
+.repo-modal-risk-pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  background: rgba(61, 122, 79, 0.14);
+  color: var(--success);
+}
+
+.repo-modal-summary-box {
+  font-size: 13.5px;
+  color: var(--on-surface);
+  line-height: 1.65;
+  background: var(--surface-hover);
+  border: 1px solid var(--outline-variant);
+  border-left: 3px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+}
+
+.repo-modal-tags-box {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.repo-modal-tag {
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--surface-dim);
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.repo-modal-tag:hover {
+  background: var(--primary-container);
+  color: var(--primary-strong);
+  border-color: var(--primary);
+}
+
+.repo-code-container {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.repo-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #242c38;
+  border: 1px solid #374151;
+  border-bottom: 1px solid #2d3748;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  padding: 10px 14px;
+}
+
+.repo-code-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.repo-code-chars {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+.repo-code-body {
+  background: #141a24 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #374151 !important;
+  border-top: none !important;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
+  padding: 16px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.repo-code-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.repo-code-body::-webkit-scrollbar-track {
+  background: #141a24;
+}
+.repo-code-body::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 4px;
+}
+.repo-code-body::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* ==================== Agent 技能插槽与视觉封面工坊 (Pipeline Slots & Workshop) ==================== */
+.pipeline-slots-card {
+  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  padding: 16px 20px 20px;
+}
+
+.slot-card {
+  background: var(--surface-dim);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.slot-card:hover {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.slot-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.slot-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.slot-stage-tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+  font-weight: 600;
+}
+
+.slot-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.slot-active-badge {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(14, 165, 233, 0.12);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.slot-item-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.slot-item-desc {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.slot-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--outline-variant);
+}
+
+.slot-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.slot-picker-item:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+  transform: translateX(2px);
+}
+
+.slot-picker-item.active {
+  border-color: var(--primary);
+  background: rgba(14, 165, 233, 0.08);
+}
+
+/* 🌐 全球前沿科技热点雷达 分区 Tab 与卡片 */
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cat-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--outline-variant, #e2e8f0);
+  background: var(--surface-dim, #f8fafc);
+  color: var(--on-surface-variant, #64748b);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cat-tab-btn:hover {
+  background: var(--hover-bg, #f1f5f9);
+  color: var(--on-surface, #1e293b);
+  border-color: var(--primary, #0284c7);
+}
+
+.cat-tab-btn.active {
+  background: var(--primary-container, #e0f2fe);
+  color: var(--primary-strong, #0369a1);
+  border-color: var(--primary, #0284c7);
+  box-shadow: var(--shadow-1);
+}
+
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cat-tab-btn.active .cat-badge {
+  background: var(--primary, #0284c7);
+  color: #fff;
+}
+
+.overseas-hot-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline-variant, #e2e8f0);
+  border-radius: var(--radius-sm, 8px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.overseas-hot-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary, #0284c7);
+  box-shadow: var(--shadow-2);
+}
+
+.overseas-hot-card .card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.overseas-hot-card .title-link {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--on-surface, #0f172a);
+  text-decoration: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.overseas-hot-card .title-link:hover {
+  color: var(--primary, #0284c7);
+  text-decoration: underline;
+}
+
+.overseas-hot-card .snippet {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--on-surface-variant, #64748b);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.overseas-hot-card .card-bot {
+  border-top: 1px solid var(--outline-variant, #f1f5f9);
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.badge-source {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-hn { background: rgba(255, 102, 0, 0.12); color: #d95300; border: 1px solid rgba(255, 102, 0, 0.3); }
+.badge-gh { background: rgba(88, 166, 255, 0.12); color: #238636; border: 1px solid rgba(35, 134, 54, 0.3); }
+.badge-ph { background: rgba(218, 85, 47, 0.12); color: #da552f; border: 1px solid rgba(218, 85, 47, 0.3); }
+.badge-rd { background: rgba(255, 69, 0, 0.12); color: #e03d00; border: 1px solid rgba(255, 69, 0, 0.3); }
+.badge-x { background: rgba(56, 189, 248, 0.12); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.3); }
+.badge-gt { background: rgba(66, 133, 244, 0.12); color: #1a73e8; border: 1px solid rgba(26, 115, 232, 0.3); }
+
+
+
 

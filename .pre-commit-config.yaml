@@ -5,7 +5,7 @@ repos:
     hooks:
       - id: pytest
         name: pytest tests/ -q
-        entry: pytest
+        entry: python3 -m pytest
         args: ["tests/", "-q"]
         language: system
         pass_filenames: false

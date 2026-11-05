@@ -138,6 +138,9 @@ const PAGE_META = {
   flywheel: ["数据飞轮", "写稿发布 → 账户反馈 → 市场学习 → 总结经验 → 反哺 Agent"],
   pipeline: ["流水线", "Agent 角色职责与任务状态机"],
   outputs: ["成品库", "小红书 / 公众号 / 短视频成品预览"],
+  "cover-templates": ["封面提示词", "Beav 爆款封面提示词库 · 灵感沉淀与一键套用"],
+  "skills-repo": ["Skills 技能库", "Beav 爆款创作与商业诊断 AI Skills · 灵感沉淀与一键套用"],
+  "matrix-ops": ["矩阵与商业化中台", "日更 SLA 监控 · 矩阵号一鱼多吃裂变 · 私域/商单/课程变现 ROI 闭环"],
   data: ["数据", "自有数据统计 · 发布动作自动记录 + 人工回填"],
 };
 
@@ -153,6 +156,9 @@ function switchView(name) {
   if (name === "flywheel") loadFlywheel();
   if (name === "pipeline") loadPipeline();
   if (name === "outputs") loadOutputsView();
+  if (name === "cover-templates") loadCoverTemplates();
+  if (name === "skills-repo") loadSkillsRepo();
+  if (name === "matrix-ops") loadMatrixOps();
   if (name === "data") loadData();
 }
 window.switchView = switchView;
@@ -1883,8 +1889,20 @@ function renderSuggestPool(tbodySel, cands, countSel, poolLabel) {
         const titleHtml = (rawLink && /^https?:\/\//i.test(rawLink))
           ? `<a href="${esc(rawLink)}" target="_blank" rel="noopener" class="topic-link" title="点击跳转原文：${esc(rawTitle)}">${esc(rawTitle)}</a>`
           : `<span class="topic-title" title="${esc(rawTitle)}">${esc(rawTitle)}</span>`;
+
+        let badgeHtml = "";
+        if (c.badge === "𝕏 大V精选" || c.is_kol || rawTitle.startsWith("@")) {
+          badgeHtml = `<span class="badge" style="background:rgba(56,189,248,0.18);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;margin-right:6px;display:inline-block;">𝕏 大V精选</span>`;
+        } else if (c.badge === "🔥 谷歌暴增" || (c.source && c.source.includes("谷歌趋势"))) {
+          badgeHtml = `<span class="badge" style="background:rgba(249,115,22,0.18);color:#f97316;border:1px solid rgba(249,115,22,0.4);font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;margin-right:6px;display:inline-block;">🔥 谷歌暴增</span>`;
+        } else if (c.badge === "𝕏 热搜" || (c.source && /X|推楼/.test(c.source))) {
+          badgeHtml = `<span class="badge" style="background:rgba(99,102,241,0.18);color:#818cf8;border:1px solid rgba(99,102,241,0.4);font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;margin-right:6px;display:inline-block;">𝕏 热搜</span>`;
+        } else if (c.compliance) {
+          badgeHtml = '<span class="badge hit" style="margin-right:6px;display:inline-block;">海外源</span>';
+        }
+
         const titleCell = `
-          <div class="t">${titleHtml}${c.compliance ? '<span class="badge hit">海外源</span>' : ""}</div>`;
+          <div class="t" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${badgeHtml}${titleHtml}</div>`;
         return `
         <tr>
           <td class="title-col">${titleCell}</td>
@@ -1898,14 +1916,310 @@ function renderSuggestPool(tbodySel, cands, countSel, poolLabel) {
     : `<tr><td class="muted" colspan="${SCORE_DIMS.length + 2}">暂无${poolLabel}选题（先运行“采集热点 + 推荐”）</td></tr>`;
 }
 
+let currentKols = [];
+let currentKolPosts = [];
+
+async function loadKols() {
+  try {
+    const d = await api("/api/topics/kols");
+    currentKols = d.kols || [];
+    currentKolPosts = d.posts || [];
+    renderKols();
+  } catch (e) {
+    console.error("加载关注大V失败:", e);
+  }
+}
+
+function renderKols() {
+  const listEl = $("#kol-list");
+  const feedEl = $("#kol-feed-container");
+  const statText = $("#kol-stat-text");
+  const kolChip = $("#kol-chip");
+
+  const enabledCount = currentKols.filter(k => k.enabled !== false).length;
+  if (statText) {
+    statText.textContent = `已关注 ${currentKols.length} 位行业专家（${enabledCount} 启用） · 监控 ${currentKolPosts.length} 条高热动态`;
+  }
+  if (kolChip) {
+    kolChip.textContent = `𝕏 大V监控：${enabledCount}/${currentKols.length} 人`;
+  }
+
+  if (listEl) {
+    if (!currentKols.length) {
+      listEl.innerHTML = '<span class="muted" style="font-size:12px;">暂无关注大V，点击右上角「＋ 添加关注大V」添加监控博主。</span>';
+    } else {
+      listEl.innerHTML = currentKols.map(k => {
+        const isEnabled = k.enabled !== false;
+        const initial = (k.name || k.handle || "?").slice(0, 1).toUpperCase();
+        return `
+          <div class="kol-chip ${isEnabled ? 'active' : 'disabled'}" style="display:inline-flex;align-items:center;gap:6px;background:${isEnabled ? 'var(--primary-container, #e3f2fb)' : 'var(--surface-dim, #f1f5f9)'};border:1px solid ${isEnabled ? 'var(--outline, #cfe0ef)' : 'var(--outline-variant, #e2e8f0)'};border-radius:18px;padding:4px 10px;font-size:12px;color:var(--on-surface, #1a1a1a);transition:all .2s;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${isEnabled ? 'var(--primary, #165e83)' : 'var(--outline, #94a3b8)'};color:var(--on-primary, #ffffff);font-weight:700;font-size:10px;">${esc(initial)}</span>
+            <span style="font-weight:600;color:${isEnabled ? 'var(--on-surface, #1a1a1a)' : 'var(--on-surface-variant, #64748b)'};">${esc(k.name || k.handle)}</span>
+            <span style="font-size:11px;color:var(--on-surface-variant, #64748b);opacity:0.8;">@${esc(k.handle)}</span>
+            <span style="font-size:10px;padding:1px 5px;border-radius:3px;background:var(--hover-bg, rgba(22,94,131,0.08));color:var(--primary, #165e83);">${esc(k.category || '综合')}</span>
+            <label style="display:inline-flex;align-items:center;margin-left:4px;cursor:pointer;" title="${isEnabled ? '点击暂停监控该大V' : '点击启用监控该大V'}">
+              <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleKol('${esc(k.handle)}', this.checked)" style="cursor:pointer;accent-color:var(--primary, #165e83);">
+            </label>
+            <button onclick="deleteKol('${esc(k.handle)}')" style="background:transparent;border:none;color:var(--on-surface-variant, #94a3b8);font-size:14px;cursor:pointer;padding:0 2px;line-height:1;" title="取消关注该大V">×</button>
+          </div>
+        `;
+      }).join("");
+    }
+  }
+
+  if (feedEl) {
+    if (!currentKolPosts.length) {
+      feedEl.innerHTML = '<div class="muted" style="grid-column:1/-1;padding:16px;background:var(--surface-dim,#f6f9fc);border-radius:8px;text-align:center;font-size:13px;color:var(--on-surface-variant,#556b82);">暂无抓取的推文动态，点击「🔄 即时抓取动态」拉取关注博主最新高热内容。</div>';
+    } else {
+      feedEl.innerHTML = currentKolPosts.map(p => {
+        const h = p.handle || "";
+        const name = p.author_name || h;
+        const text = p.text || "";
+        const url = p.url || `https://x.com/${h}`;
+        const views = p.views ? `${(p.views / 1000).toFixed(0)}k 阅` : "";
+        const likes = p.likes ? `${p.likes} 赞` : "";
+        const vph = p.views_per_hour ? `${Math.round(p.views_per_hour)}/h` : "";
+        const metricsStr = [views, likes, vph ? `⚡ ${vph}` : ""].filter(Boolean).join(" · ");
+
+        return `
+          <div class="card kol-post-card" style="background:var(--surface, #ffffff);border:1px solid var(--outline-variant, #e4eef7);border-radius:var(--radius-sm, 8px);padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;box-shadow:var(--shadow-1);">
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-weight:700;font-size:13px;color:var(--primary, #165e83);">${esc(name)}</span>
+                  <span style="font-size:11px;color:var(--on-surface-variant, #556b82);">@${esc(h)}</span>
+                </div>
+                <span style="font-size:10px;padding:1px 5px;background:var(--primary-container, #e3f2fb);color:var(--on-primary-container, #223a70);border-radius:3px;font-weight:600;">${esc(p.category || 'AI')}</span>
+              </div>
+              <div style="font-size:12.5px;line-height:1.55;color:var(--on-surface, #1a1a1a);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;" title="${esc(text)}">
+                ${esc(text)}
+              </div>
+            </div>
+            
+            <div style="border-top:1px solid var(--outline-variant, #e4eef7);padding-top:8px;display:flex;align-items:center;justify-content:space-between;font-size:11px;">
+              <span style="color:var(--deco-accent, #a16207);font-weight:600;">${metricsStr || '高热观点'}</span>
+              <div style="display:flex;gap:6px;">
+                <a href="${esc(url)}" target="_blank" rel="noopener" class="btn small" style="padding:2px 6px;font-size:11px;text-decoration:none;">🔗 原文</a>
+                <button class="btn small tonal" style="padding:2px 8px;font-size:11px;font-weight:700;" onclick="adopt(this, '@${esc(h)}：${esc(text.slice(0,40)).replace(/'/g, "\\'")}', '${esc(url).replace(/'/g, "\\'")}')">💡 采纳</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+  }
+}
+
+function openKolModal() {
+  const modal = $("#kol-modal");
+  if (modal) modal.classList.remove("hidden");
+  const handleInp = $("#kol-input-handle");
+  if (handleInp) {
+    handleInp.value = "";
+    handleInp.focus();
+  }
+}
+window.openKolModal = openKolModal;
+
+function closeKolModal() {
+  const modal = $("#kol-modal");
+  if (modal) modal.classList.add("hidden");
+}
+window.closeKolModal = closeKolModal;
+
+async function submitAddKol() {
+  const handleInp = $("#kol-input-handle");
+  const nameInp = $("#kol-input-name");
+  const catInp = $("#kol-input-category");
+  const noteInp = $("#kol-input-note");
+
+  const handle = (handleInp?.value || "").trim().replace(/^@/, "");
+  if (!handle) return toast("请输入 X 用户名 Handle", false);
+
+  const payload = {
+    handle: handle,
+    name: (nameInp?.value || "").trim() || handle,
+    category: (catInp?.value || "AI大模型").trim(),
+    enabled: true,
+    note: (noteInp?.value || "").trim(),
+  };
+
+  try {
+    const res = await api("/api/topics/kols", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    toast(`已成功添加关注大V @${handle}`);
+    closeKolModal();
+    await loadKols();
+  } catch (e) {
+    toast(`添加失败: ${e.message}`, false);
+  }
+}
+window.submitAddKol = submitAddKol;
+
+async function toggleKol(handle, enabled) {
+  try {
+    await api(`/api/topics/kols/${encodeURIComponent(handle)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    });
+    toast(`已${enabled ? '启用' : '暂停'}监控 @${handle}`);
+    await loadKols();
+  } catch (e) {
+    toast(`操作失败: ${e.message}`, false);
+  }
+}
+window.toggleKol = toggleKol;
+
+async function deleteKol(handle) {
+  if (!confirm(`确定取消关注并停止监控大V @${handle} 吗？`)) return;
+  try {
+    await api(`/api/topics/kols/${encodeURIComponent(handle)}`, {
+      method: "DELETE",
+    });
+    toast(`已取消关注 @${handle}`);
+    await loadKols();
+  } catch (e) {
+    toast(`删除失败: ${e.message}`, false);
+  }
+}
+window.deleteKol = deleteKol;
+
+async function fetchKolFeed(btn) {
+  await runWithSpin(btn, async () => {
+    try {
+      toast("正在多通道抓取大V最新动态与全网热点…");
+      await api("/api/topics/kols/fetch", { method: "POST" });
+      toast("大V动态与选题推荐更新完成！");
+      await Promise.all([loadKols(), loadTopics()]);
+    } catch (e) {
+      toast(`更新失败: ${e.message}`, false);
+    }
+  });
+}
+window.fetchKolFeed = fetchKolFeed;
+
+let currentTopicCategory = "x_trends";
+let cachedTopicCategories = {
+  x_trends: [],
+  google_trends: [],
+  geek_dev: [],
+  product_community: [],
+};
+
+function renderTopicCategories(cats) {
+  if (!cats) return;
+  const xCount = (cats.x_trends || []).length;
+  const gtCount = (cats.google_trends || []).length;
+  const devCount = (cats.geek_dev || []).length;
+  const prodCount = (cats.product_community || []).length;
+
+  const bX = $("#cat-badge-x_trends");
+  const bGt = $("#cat-badge-google_trends");
+  const bDev = $("#cat-badge-geek_dev");
+  const bProd = $("#cat-badge-product_community");
+  const statText = $("#cat-stat-text");
+
+  if (bX) bX.textContent = xCount;
+  if (bGt) bGt.textContent = gtCount;
+  if (bDev) bDev.textContent = devCount;
+  if (bProd) bProd.textContent = prodCount;
+
+  if (statText) {
+    statText.textContent = `已聚合 4 大海外生态 · 实时监控 ${xCount + gtCount + devCount + prodCount} 条前沿科技热点`;
+  }
+
+  const container = $("#topic-cat-content");
+  if (!container) return;
+
+  const items = cats[currentTopicCategory] || [];
+  if (!items.length) {
+    container.innerHTML = '<div class="muted" style="grid-column: 1/-1; text-align: center; padding: 24px; background: var(--surface-dim, #f8fafc); border-radius: 8px;">该分类下暂无热点数据，点击右上角「🔄 立即探测全网热点」进行刷新。</div>';
+    return;
+  }
+
+  container.innerHTML = items.map((it) => {
+    const src = it.source || "";
+    const badge = it.badge || "";
+    let badgeClass = "badge-x";
+    if (src === "HackerNews" || badge.includes("Hacker")) badgeClass = "badge-hn";
+    else if (src === "GitHub" || badge.includes("GitHub")) badgeClass = "badge-gh";
+    else if (src === "ProductHunt" || badge.includes("Product")) badgeClass = "badge-ph";
+    else if (src === "Reddit" || badge.includes("Reddit")) badgeClass = "badge-rd";
+    else if (src.includes("谷歌") || badge.includes("谷歌")) badgeClass = "badge-gt";
+
+    const title = it.title || "未命名热点";
+    const link = it.link || "";
+    const heat = it.heat || "热门";
+    const summary = it.summary || "";
+
+    return `
+      <div class="overseas-hot-card">
+        <div>
+          <div class="card-top">
+            <span class="badge-source ${badgeClass}">${esc(badge || src)}</span>
+            <span style="font-size:11px;font-weight:600;color:var(--deco-accent, #a16207);">${esc(heat)}</span>
+          </div>
+          <div style="margin-top:8px;">
+            ${link ? `<a href="${esc(link)}" target="_blank" rel="noopener" class="title-link">${esc(title)}</a>` : `<span class="title-link">${esc(title)}</span>`}
+          </div>
+          ${summary ? `<div class="snippet" style="margin-top:6px;">${esc(summary)}</div>` : ""}
+        </div>
+        <div class="card-bot">
+          <span class="muted" style="font-size:11px;">来源: ${esc(src)}</span>
+          <div style="display:flex;gap:6px;">
+            ${link ? `<a href="${esc(link)}" target="_blank" rel="noopener" class="btn small" style="padding:2px 7px;font-size:11px;text-decoration:none;">🔗 原文</a>` : ""}
+            <button class="btn small tonal" style="padding:2px 9px;font-size:11px;font-weight:700;" onclick="adopt(this, '${esc(title).replace(/'/g, "\\'")}', '${esc(link).replace(/'/g, "\\'")}')">💡 采纳生产</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function switchTopicCategory(cat) {
+  currentTopicCategory = cat;
+  $$(".cat-tab-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-cat") === cat);
+  });
+  renderTopicCategories(cachedTopicCategories);
+}
+window.switchTopicCategory = switchTopicCategory;
+
+async function fetchAllOverseasHotspots(btn) {
+  await runWithSpin(btn, async () => {
+    try {
+      toast("正在多源并行探测全球前沿热点（𝕏/Google/HN/GitHub/PH/Reddit）…");
+      const d = await api("/api/topics/fetch", { method: "POST" });
+      if (d.categories) {
+        cachedTopicCategories = d.categories;
+        renderTopicCategories(d.categories);
+      }
+      toast("全球热点探测完成，已刷新 4 大分区榜单与推荐池！", true);
+      await loadTopics();
+    } catch (e) {
+      toast("热点探测失败: " + e.message, false);
+    }
+  });
+}
+window.fetchAllOverseasHotspots = fetchAllOverseasHotspots;
+
 async function loadTopics() {
   loadPrefData();
+  loadKols();
   try {
     const [d, jobsRes, prodRes] = await Promise.all([
       api("/api/topics"), api("/api/jobs"), api("/api/production/status"),
     ]);
     $("#radar-path").textContent = d.radar.path ? "(" + d.radar.path + ")" : "";
     $("#suggest-path").textContent = d.suggest.path ? "(" + d.suggest.path + ")" : "";
+    if (d.categories) {
+      cachedTopicCategories = d.categories;
+      renderTopicCategories(d.categories);
+    }
     renderSuggestPool("#suggest-daily", d.suggest.daily || [], "#suggest-daily-count", "日");
     renderSuggestPool("#suggest-weekly", d.suggest.weekly || [], "#suggest-weekly-count", "周");
     const sources = d.radar.sources || [];
@@ -2765,6 +3079,7 @@ async function loadPipeline(silent) {
       `<option value="${esc(j.job_id)}">${esc(j.job_id)} · ${esc(j.theme || "")}</option>`).join("");
     if (prev && visibleJobs(pipelineJobs).some((j) => j.job_id === prev)) sel.value = prev;
     renderPipelineJob();
+    loadPipelineSlots(sel ? sel.value : null);
     renderAgents(agentsRes.agents);
     renderProduction(prodRes);
     const active = (prodRes.queue || []).some((q) => ["queued", "running"].includes(q.status));
@@ -2862,6 +3177,7 @@ function renderPipelineJob() {
       <span class="agent">${esc(STATE_AGENTS[st])}</span>
     </div>`;
   }).join("");
+  loadPipelineSlots(jobId);
 }
 window.renderPipelineJob = renderPipelineJob;
 
@@ -3416,6 +3732,9 @@ $("#backfill-form").addEventListener("submit", async (e) => {
     likes: parseInt($("#bf-likes").value, 10) || 0,
     collects: parseInt($("#bf-collects").value, 10) || 0,
     comments: parseInt($("#bf-comments").value, 10) || 0,
+    leads: parseInt(($("#bf-leads") && $("#bf-leads").value) || "0", 10) || 0,
+    conversions: parseInt(($("#bf-conversions") && $("#bf-conversions").value) || "0", 10) || 0,
+    revenue_yuan: parseFloat(($("#bf-revenue") && $("#bf-revenue").value) || "0") || 0,
     url: $("#bf-url").value.trim(),
   };
   if (!payload.job_id) return toast("请选择任务", false);
@@ -4832,4 +5151,1707 @@ async function exploreGzhNiche() {
 }
 window.exploreGzhNiche = exploreGzhNiche;
 
+// ==================== 封面提示词库 (Cover Prompt Templates) ====================
+let coverTemplatesState = {
+  items: [],
+  categories: [],
+  categoryCounts: {},
+  activeCategory: "全部",
+  searchQuery: "",
+  selectedTemplate: null,
+  isSyncing: false,
+};
+
+async function loadCoverTemplates() {
+  const grid = $("#cover-templates-grid");
+  if (!grid) return;
+
+  if (!coverTemplatesState.items || coverTemplatesState.items.length === 0) {
+    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; color: var(--on-surface-variant);">
+      <div class="spinner" style="margin: 0 auto 12px;"></div>
+      正在加载封面提示词库...
+    </div>`;
+  }
+
+  try {
+    const res = await api("/api/cover-templates");
+    if (res.ok) {
+      coverTemplatesState.items = res.items || [];
+      coverTemplatesState.categories = res.categories || ["全部"];
+      coverTemplatesState.categoryCounts = res.category_counts || {};
+      coverTemplatesState.isSyncing = !!res.is_syncing;
+
+      const badge = $("#cover-count-badge");
+      if (badge) {
+        badge.textContent = `共 ${coverTemplatesState.items.length} 个模板`;
+      }
+
+      renderCoverCategories();
+      filterCoverTemplates();
+    }
+  } catch (e) {
+    console.error("加载封面模板失败:", e);
+    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; color: var(--error);">
+      加载封面模板失败: ${esc(e.message)}
+      <div style="margin-top:10px;"><button class="btn tonal small" onclick="loadCoverTemplates()">重试</button></div>
+    </div>`;
+  }
+}
+window.loadCoverTemplates = loadCoverTemplates;
+
+function renderCoverCategories() {
+  const bar = $("#cover-category-bar");
+  if (!bar) return;
+
+  const cats = coverTemplatesState.categories || ["全部"];
+  bar.innerHTML = cats.map(cat => {
+    const isActive = coverTemplatesState.activeCategory === cat;
+    const count = cat === "全部" 
+      ? coverTemplatesState.items.length 
+      : (coverTemplatesState.categoryCounts[cat] || 0);
+    return `<button class="cover-cat-btn ${isActive ? 'active' : ''}" onclick="selectCoverCategory('${esc(cat)}')">
+      ${esc(cat)} <span class="count">(${count})</span>
+    </button>`;
+  }).join("");
+}
+window.renderCoverCategories = renderCoverCategories;
+
+function selectCoverCategory(cat) {
+  coverTemplatesState.activeCategory = cat;
+  renderCoverCategories();
+  filterCoverTemplates();
+}
+window.selectCoverCategory = selectCoverCategory;
+
+function filterCoverTemplates() {
+  const inp = $("#cover-search-input");
+  const query = inp ? inp.value.trim().toLowerCase() : "";
+  const cat = coverTemplatesState.activeCategory;
+
+  let list = coverTemplatesState.items || [];
+
+  if (cat && cat !== "全部") {
+    list = list.filter(t => t.category === cat);
+  }
+
+  if (query) {
+    list = list.filter(t => {
+      const matchTitle = (t.title || "").toLowerCase().includes(query);
+      const matchSummary = (t.summary || "").toLowerCase().includes(query);
+      const matchPrompt = (t.prompt || "").toLowerCase().includes(query);
+      const matchIndustries = (t.industries || "").toLowerCase().includes(query);
+      const matchTags = (t.tags || []).some(tag => tag.toLowerCase().includes(query));
+      return matchTitle || matchSummary || matchPrompt || matchIndustries || matchTags;
+    });
+  }
+
+  renderCoverGrid(list);
+}
+window.filterCoverTemplates = filterCoverTemplates;
+
+function clearCoverFilters() {
+  const inp = $("#cover-search-input");
+  if (inp) inp.value = "";
+  coverTemplatesState.activeCategory = "全部";
+  renderCoverCategories();
+  filterCoverTemplates();
+}
+window.clearCoverFilters = clearCoverFilters;
+
+function filterByCoverTag(tag) {
+  const inp = $("#cover-search-input");
+  if (inp) inp.value = tag;
+  filterCoverTemplates();
+}
+window.filterByCoverTag = filterByCoverTag;
+
+function renderCoverGrid(items) {
+  const grid = $("#cover-templates-grid");
+  const empty = $("#cover-empty-state");
+  if (!grid) return;
+
+  if (!items || items.length === 0) {
+    grid.innerHTML = "";
+    if (empty) empty.classList.remove("hidden");
+    return;
+  }
+
+  if (empty) empty.classList.add("hidden");
+
+  grid.innerHTML = items.map(t => {
+    const thumb = t.local_thumbnail || t.thumbnail_url || "";
+    const tagsHtml = (t.tags || []).slice(0, 4).map(tg => 
+      `<span class="cover-tag-item" onclick="event.stopPropagation(); filterByCoverTag('${esc(tg)}')">#${esc(tg)}</span>`
+    ).join("");
+
+    return `
+      <div class="cover-card" onclick="openCoverModal('${esc(t.id)}')">
+        <div class="cover-card-preview">
+          <img src="${esc(thumb)}" alt="${esc(t.title)}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 300 400\\'%3E%3Crect width=\\'100%25\\' height=\\'100%25\\' fill=\\'%23222\\'/ %3E%3Ctext x=\\'50%25\\' y=\\'50%25\\' fill=\\'%23666\\' text-anchor=\\'middle\\'%3E暂无封面%3C/text%3E%3C/svg%3E'">
+          <div class="cover-card-badges">
+            <span class="cover-badge-pill">${esc(t.category || "模板")}</span>
+            ${t.aspect_ratio ? `<span class="cover-badge-pill cover-badge-ratio">📐 ${esc(t.aspect_ratio)}</span>` : ""}
+          </div>
+        </div>
+        <div class="cover-card-body">
+          <h4 class="cover-card-title" title="${esc(t.title)}">${esc(t.title)}</h4>
+          <p class="cover-card-summary" title="${esc(t.summary)}">${esc(t.summary || "暂无简介")}</p>
+
+          <div class="cover-card-meta">
+            <span>🖼️ ${esc(t.reference_images || "需参考图")}</span>
+            <span>📏 ${esc(t.recommended_size || "标准尺寸")}</span>
+          </div>
+
+          <div class="cover-card-tags">
+            ${tagsHtml}
+          </div>
+
+          <div class="cover-card-actions">
+            <button class="btn tonal small" onclick="event.stopPropagation(); copyCoverPrompt('${esc(t.id)}')">📋 复制提示词</button>
+            <button class="btn tonal small" onclick="event.stopPropagation(); openCoverModal('${esc(t.id)}')">🔍 详情与原图</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+window.renderCoverGrid = renderCoverGrid;
+
+function copyCoverPrompt(templateId) {
+  const item = (coverTemplatesState.items || []).find(t => t.id === templateId);
+  if (!item || !item.prompt) {
+    toast("该模板暂无提示词", false);
+    return;
+  }
+  const text = item.prompt;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      toast(`✅ 已复制【${item.title}】提示词！`);
+    }).catch(() => fallbackCopy(text, item.title));
+  } else {
+    fallbackCopy(text, item.title);
+  }
+}
+window.copyCoverPrompt = copyCoverPrompt;
+
+function fallbackCopy(text, title) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    toast(`✅ 已复制【${title || '封面'}】提示词！`);
+  } catch (e) {
+    toast("复制失败，请手动选取复制", false);
+  } finally {
+    document.body.removeChild(ta);
+  }
+}
+
+function openCoverModal(templateId) {
+  const item = (coverTemplatesState.items || []).find(t => t.id === templateId);
+  if (!item) return;
+
+  coverTemplatesState.selectedTemplate = item;
+
+  const catEl = $("#cover-modal-category");
+  if (catEl) catEl.textContent = item.category || "小红书";
+
+  const titleEl = $("#cover-modal-title");
+  if (titleEl) titleEl.textContent = item.title;
+
+  const imgEl = $("#cover-modal-img");
+  if (imgEl) {
+    imgEl.src = item.local_original || item.local_thumbnail || item.original_image_url || item.thumbnail_url || "";
+  }
+
+  const specsEl = $("#cover-modal-specs");
+  if (specsEl) {
+    specsEl.innerHTML = `
+      <div class="cover-modal-spec-row">
+        <span class="cover-modal-spec-label">📐 画面比例</span>
+        <span class="cover-modal-spec-value">${esc(item.aspect_ratio || "3:4")}</span>
+      </div>
+      <div class="cover-modal-spec-row">
+        <span class="cover-modal-spec-label">🖼️ 参考图要求</span>
+        <span class="cover-modal-spec-value">${esc(item.reference_images || "暂无")}</span>
+      </div>
+      <div class="cover-modal-spec-row">
+        <span class="cover-modal-spec-label">📏 建议尺寸</span>
+        <span class="cover-modal-spec-value">${esc(item.recommended_size || "1K")}</span>
+      </div>
+      <div class="cover-modal-spec-row">
+        <span class="cover-modal-spec-label">🏢 适用行业</span>
+        <span class="cover-modal-spec-value">${esc(item.industries || "通用")}</span>
+      </div>
+    `;
+  }
+
+  const summaryEl = $("#cover-modal-summary");
+  if (summaryEl) {
+    summaryEl.textContent = item.summary || "点击一键复制提示词，直接输入 Midjourney / Flux / 即梦 AI 生图。";
+  }
+
+  const tagsEl = $("#cover-modal-tags");
+  if (tagsEl) {
+    tagsEl.innerHTML = (item.tags || []).map(tg => 
+      `<span class="repo-modal-tag" onclick="filterByCoverTag('${esc(tg)}'); closeCoverModal();">#${esc(tg)}</span>`
+    ).join("");
+  }
+
+  const promptEl = $("#cover-modal-prompt");
+  if (promptEl) {
+    promptEl.textContent = item.prompt || "暂无提示词文本";
+  }
+
+  const modal = $("#cover-detail-modal");
+  if (modal) modal.classList.remove("hidden");
+}
+window.openCoverModal = openCoverModal;
+
+function closeCoverModal() {
+  const modal = $("#cover-detail-modal");
+  if (modal) modal.classList.add("hidden");
+}
+window.closeCoverModal = closeCoverModal;
+
+function copyModalPrompt() {
+  const item = coverTemplatesState.selectedTemplate;
+  if (!item || !item.prompt) {
+    toast("暂无提示词可复制", false);
+    return;
+  }
+  const btn = $("#btn-copy-modal-prompt");
+  const origText = btn ? btn.textContent : "";
+  const text = item.prompt;
+
+  const onCopied = () => {
+    toast(`✅ 完整生图提示词已复制到剪贴板！`);
+    if (btn) {
+      btn.textContent = "✅ 已成功复制";
+      setTimeout(() => { if (btn) btn.textContent = origText; }, 2500);
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(onCopied).catch(() => fallbackCopy(text, item.title));
+  } else {
+    fallbackCopy(text, item.title);
+  }
+}
+window.copyModalPrompt = copyModalPrompt;
+
+async function syncCoverTemplates() {
+  const btn = $("#btn-sync-covers");
+  await runWithSpin(btn, async () => {
+    try {
+      const res = await api("/api/cover-templates/sync", { method: "POST" });
+      if (res.ok) {
+        toast("🚀 封面提示词库后台同步已启动，正在实时爬取！");
+        setTimeout(loadCoverTemplates, 3000);
+        setTimeout(loadCoverTemplates, 8000);
+      } else {
+        toast(res.message || "同步请求失败", false);
+      }
+    } catch (e) {
+      toast("同步异常: " + e.message, false);
+    }
+  });
+}
+window.syncCoverTemplates = syncCoverTemplates;
+
+// ==================== Skills 技能库 (Beav AI Skills Repository) ====================
+let skillsRepoState = {
+  items: [],
+  categories: [],
+  categoryCounts: {},
+  activeCategory: "全部",
+  searchQuery: "",
+  selectedSkill: null,
+  isSyncing: false,
+};
+
+async function loadSkillsRepo() {
+  const grid = $("#skills-repo-grid");
+  if (!grid) return;
+
+  if (!skillsRepoState.items || skillsRepoState.items.length === 0) {
+    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; color: var(--on-surface-variant);">
+      <div class="spinner" style="margin: 0 auto 12px;"></div>
+      正在加载 Beav AI Skills 技能库...
+    </div>`;
+  }
+
+  try {
+    const res = await api("/api/skills-repo");
+    if (res.ok) {
+      skillsRepoState.items = res.items || [];
+      skillsRepoState.categories = res.categories || ["全部"];
+      skillsRepoState.categoryCounts = res.category_counts || {};
+      skillsRepoState.isSyncing = !!res.is_syncing;
+
+      renderSkillsCategoryBar();
+      filterSkillsRepo();
+    } else {
+      toast("加载技能库失败: " + (res.detail || "未知错误"), false);
+    }
+  } catch (e) {
+    toast("加载技能库异常: " + e.message, false);
+  }
+}
+window.loadSkillsRepo = loadSkillsRepo;
+
+function renderSkillsCategoryBar() {
+  const bar = $("#skills-category-bar");
+  if (!bar) return;
+
+  const cats = skillsRepoState.categories || ["全部"];
+  const counts = skillsRepoState.categoryCounts || {};
+  const allCount = skillsRepoState.items ? skillsRepoState.items.length : 0;
+
+  bar.innerHTML = cats.map(c => {
+    const isActive = c === skillsRepoState.activeCategory;
+    const count = c === "全部" ? allCount : (counts[c] || 0);
+    return `
+      <button class="tab ${isActive ? "active" : ""}" style="border-radius:20px;padding:5px 14px;font-size:13px;display:inline-flex;align-items:center;gap:6px;" onclick="setSkillsCategory('${esc(c)}')">
+        <span>${esc(c)}</span>
+        <span class="badge ${isActive ? "primary" : "tonal"}" style="font-size:11px;padding:1px 6px;border-radius:10px;">${count}</span>
+      </button>
+    `;
+  }).join("");
+}
+
+function setSkillsCategory(cat) {
+  skillsRepoState.activeCategory = cat;
+  renderSkillsCategoryBar();
+  filterSkillsRepo();
+}
+window.setSkillsCategory = setSkillsCategory;
+
+function filterSkillsRepo() {
+  const inp = $("#skills-search-input");
+  const query = (inp ? inp.value : "").trim().toLowerCase();
+  skillsRepoState.searchQuery = query;
+
+  let filtered = skillsRepoState.items || [];
+
+  if (skillsRepoState.activeCategory && skillsRepoState.activeCategory !== "全部") {
+    filtered = filtered.filter(s => s.category === skillsRepoState.activeCategory);
+  }
+
+  if (query) {
+    filtered = filtered.filter(s => {
+      const title = (s.title || "").toLowerCase();
+      const slug = (s.slug || "").toLowerCase();
+      const summary = (s.summary || "").toLowerCase();
+      const author = (s.author || "").toLowerCase();
+      const tags = (s.tags || []).map(t => t.toLowerCase());
+      const skillMd = (s.skill_md || "").toLowerCase();
+      return title.includes(query) || slug.includes(query) || summary.includes(query) || author.includes(query) || skillMd.includes(query) || tags.some(t => t.includes(query));
+    });
+  }
+
+  const badge = $("#skills-count-badge");
+  if (badge) {
+    const totalAll = skillsRepoState.items ? skillsRepoState.items.length : 0;
+    badge.textContent = `共 ${filtered.length} 个技能 (总计 ${totalAll})`;
+  }
+
+  renderSkillsGrid(filtered);
+}
+window.filterSkillsRepo = filterSkillsRepo;
+
+function clearSkillsFilters() {
+  const inp = $("#skills-search-input");
+  if (inp) inp.value = "";
+  skillsRepoState.searchQuery = "";
+  skillsRepoState.activeCategory = "全部";
+  renderSkillsCategoryBar();
+  filterSkillsRepo();
+}
+window.clearSkillsFilters = clearSkillsFilters;
+
+function filterBySkillTag(tag) {
+  const inp = $("#skills-search-input");
+  if (inp) inp.value = tag;
+  filterSkillsRepo();
+}
+window.filterBySkillTag = filterBySkillTag;
+
+function renderSkillsGrid(items) {
+  const grid = $("#skills-repo-grid");
+  const empty = $("#skills-empty-state");
+  if (!grid) return;
+
+  if (!items || items.length === 0) {
+    grid.innerHTML = "";
+    if (empty) empty.classList.remove("hidden");
+    return;
+  }
+
+  if (empty) empty.classList.add("hidden");
+
+  grid.innerHTML = items.map(s => {
+    const avatar = s.local_avatar || s.avatar_url || "";
+    const tagsHtml = (s.tags || []).slice(0, 4).map(tg =>
+      `<span class="skill-tag-item" onclick="event.stopPropagation(); filterBySkillTag('${esc(tg)}')">#${esc(tg)}</span>`
+    ).join("");
+
+    return `
+      <div class="skill-card" onclick="openSkillModal('${esc(s.slug)}')">
+        <div class="skill-card-head">
+          <img class="skill-card-avatar" src="${esc(avatar)}" alt="${esc(s.title)}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'%3E%3Crect width=\\'100%25\\' height=\\'100%25\\' fill=\\'%23334155\\'/ %3E%3Ctext x=\\'50%25\\' y=\\'55%25\\' fill=\\'%2394a3b8\\' font-size=\\'36\\' text-anchor=\\'middle\\'%3E⚡%3C/text%3E%3C/svg%3E'">
+          <div class="skill-card-head-content">
+            <div class="skill-card-badges-row">
+              <span class="skill-badge-pill">${esc(s.category || "Skill")}</span>
+              ${s.badge ? `<span class="badge" style="font-size:10px;padding:1px 6px;background:rgba(255,36,66,0.15);color:#ff2442;">${esc(s.badge)}</span>` : ""}
+              <span class="skill-badge-rating">⭐ ${esc(s.rating || "5.0")}</span>
+              <span class="skill-badge-ver">v${esc(s.version || "1.0")}</span>
+            </div>
+            <h4 class="skill-card-title" title="${esc(s.title)}">${esc(s.title)}</h4>
+            <div class="skill-card-slug">${esc(s.slug)}</div>
+          </div>
+        </div>
+
+        <p class="skill-card-summary" title="${esc(s.summary)}">${esc(s.summary || "暂无简介")}</p>
+
+        <div class="skill-card-author-row">
+          <span>👤 ${esc(s.author || "社区精选")}</span>
+          <span>${esc(s.updated_at || "2026年")} · <span style="color:#22c55e;">${esc(s.risk_level || "低风险")}</span></span>
+        </div>
+
+        <div class="skill-card-tags">
+          ${tagsHtml}
+        </div>
+
+        <div class="skill-card-actions">
+          <button class="btn tonal small" onclick="event.stopPropagation(); copySkillPromptBySlug('${esc(s.slug)}')">📋 复制 Prompt</button>
+          <button class="btn primary small" onclick="event.stopPropagation(); openSkillModal('${esc(s.slug)}')">🔍 完整规则</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+window.renderSkillsGrid = renderSkillsGrid;
+
+async function openSkillModal(slug) {
+  let skill = (skillsRepoState.items || []).find(s => s.slug === slug || s.id === slug);
+  try {
+    const res = await api(`/api/skills-repo/${slug}`);
+    if (res.ok && res.skill) {
+      skill = res.skill;
+    }
+  } catch (e) {
+    console.warn("加载详情异常，使用缓存数据:", e);
+  }
+
+  if (!skill) {
+    toast("未找到该 Skill 数据", false);
+    return;
+  }
+
+  skillsRepoState.selectedSkill = skill;
+
+  // 绑定数据到模态窗口
+  $("#skill-modal-title").textContent = skill.title || skill.slug;
+  $("#skill-modal-category").textContent = skill.category || "Skill";
+  $("#skill-modal-rating").textContent = `⭐ ${skill.rating || "5.0"}`;
+  $("#skill-modal-version").textContent = `v${skill.version || "1.0"}`;
+
+  const badgeEl = $("#skill-modal-badge");
+  if (badgeEl) {
+    if (skill.badge) {
+      badgeEl.textContent = skill.badge;
+      badgeEl.style.display = "inline-block";
+    } else {
+      badgeEl.style.display = "none";
+    }
+  }
+
+  const avatar = skill.local_avatar || skill.avatar_url || "";
+  const avatarEl = $("#skill-modal-avatar");
+  if (avatarEl) {
+    avatarEl.src = avatar;
+    avatarEl.onerror = () => {
+      avatarEl.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100%25' height='100%25' fill='%23334155'/ %3E%3Ctext x='50%25' y='55%25' fill='%2394a3b8' font-size='36' text-anchor='middle'%3E⚡%3C/text%3E%3C/svg%3E";
+    };
+  }
+
+  $("#skill-modal-author").textContent = skill.author || "社区精选";
+  $("#skill-modal-risk").textContent = skill.risk_level || "低风险";
+  $("#skill-modal-date").textContent = `更新日期: ${skill.updated_at || "2026年"}`;
+
+  // 链接
+  const ghBtn = $("#skill-modal-github");
+  if (ghBtn) {
+    if (skill.github_url) {
+      ghBtn.href = skill.github_url;
+      ghBtn.style.display = "inline-flex";
+    } else {
+      ghBtn.style.display = "none";
+    }
+  }
+
+  const xhsBtn = $("#skill-modal-xhs");
+  if (xhsBtn) {
+    if (skill.author_profile) {
+      xhsBtn.href = skill.author_profile;
+      xhsBtn.style.display = "inline-flex";
+    } else {
+      xhsBtn.style.display = "none";
+    }
+  }
+
+  const beavBtn = $("#skill-modal-beav");
+  if (beavBtn) {
+    beavBtn.href = skill.source_url || `https://www.getbeav.com/skills/${skill.slug}`;
+  }
+
+  // 简介与标签
+  $("#skill-modal-summary").textContent = skill.summary || "暂无简介说明";
+
+  const tagsBox = $("#skill-modal-tags");
+  if (tagsBox) {
+    tagsBox.innerHTML = (skill.tags || []).map(tg =>
+      `<span class="repo-modal-tag" onclick="filterBySkillTag('${esc(tg)}'); closeSkillModal();">#${esc(tg)}</span>`
+    ).join("");
+  }
+
+  // 代码与字符数
+  const skillMd = skill.skill_md || "";
+  $("#skill-modal-chars").textContent = `${skillMd.length.toLocaleString()} 字符`;
+  $("#skill-modal-code").textContent = skillMd;
+
+  const modal = $("#skill-detail-modal");
+  if (modal) modal.classList.remove("hidden");
+}
+window.openSkillModal = openSkillModal;
+
+function closeSkillModal() {
+  const modal = $("#skill-detail-modal");
+  if (modal) modal.classList.add("hidden");
+}
+window.closeSkillModal = closeSkillModal;
+
+function copySkillPromptBySlug(slug) {
+  const item = (skillsRepoState.items || []).find(s => s.slug === slug);
+  if (!item || !item.skill_md) {
+    toast("暂无提示词可复制", false);
+    return;
+  }
+  let promptText = item.skill_md;
+  // 如果存在 YAML frontmatter，去除首部元数据提取纯 prompt
+  if (promptText.startsWith("---")) {
+    const parts = promptText.split("---");
+    if (parts.length >= 3) {
+      promptText = parts.slice(2).join("---").trim();
+    }
+  }
+
+  const onCopied = () => toast(`✅ 已复制【${item.title}】提示词！`);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(promptText).then(onCopied).catch(() => fallbackCopy(promptText, item.title));
+  } else {
+    fallbackCopy(promptText, item.title);
+  }
+}
+window.copySkillPromptBySlug = copySkillPromptBySlug;
+
+function copySkillPrompt() {
+  const item = skillsRepoState.selectedSkill;
+  if (!item || !item.skill_md) {
+    toast("暂无提示词可复制", false);
+    return;
+  }
+  let promptText = item.skill_md;
+  if (promptText.startsWith("---")) {
+    const parts = promptText.split("---");
+    if (parts.length >= 3) {
+      promptText = parts.slice(2).join("---").trim();
+    }
+  }
+
+  const btn = $("#btn-copy-skill-prompt");
+  const origText = btn ? btn.textContent : "";
+
+  const onCopied = () => {
+    toast(`✅ 纯提示词 Prompt 已成功复制到剪贴板！`);
+    if (btn) {
+      btn.textContent = "✅ 已复制 Prompt";
+      setTimeout(() => { if (btn) btn.textContent = origText; }, 2500);
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(promptText).then(onCopied).catch(() => fallbackCopy(promptText, item.title));
+  } else {
+    fallbackCopy(promptText, item.title);
+  }
+}
+window.copySkillPrompt = copySkillPrompt;
+
+function copySkillMd() {
+  const item = skillsRepoState.selectedSkill;
+  if (!item || !item.skill_md) {
+    toast("暂无 SKILL.md 可复制", false);
+    return;
+  }
+  const text = item.skill_md;
+  const btn = $("#btn-copy-skill-md");
+  const origText = btn ? btn.textContent : "";
+
+  const onCopied = () => {
+    toast(`✅ 完整 SKILL.md 文件内容已复制到剪贴板！`);
+    if (btn) {
+      btn.textContent = "✅ 已复制 SKILL.md";
+      setTimeout(() => { if (btn) btn.textContent = origText; }, 2500);
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(onCopied).catch(() => fallbackCopy(text, item.title));
+  } else {
+    fallbackCopy(text, item.title);
+  }
+}
+window.copySkillMd = copySkillMd;
+
+async function syncSkillsRepo() {
+  const btn = $("#btn-sync-skills");
+  await runWithSpin(btn, async () => {
+    try {
+      const res = await api("/api/skills-repo/sync", { method: "POST" });
+      if (res.ok) {
+        toast("🚀 Skills 技能库后台同步已启动，正在实时爬取！");
+        setTimeout(loadSkillsRepo, 3000);
+        setTimeout(loadSkillsRepo, 8000);
+      } else {
+        toast(res.message || "同步请求失败", false);
+      }
+    } catch (e) {
+      toast("同步异常: " + e.message, false);
+    }
+  });
+}
+window.syncSkillsRepo = syncSkillsRepo;
+
+// ==================== Agent 技能插槽与封面装配工坊 (Pipeline Slots Workshop) ====================
+let pipelineSlotsState = {
+  slots: {},
+  available_skills: [],
+  available_covers: [],
+  activeJobId: null,
+  is_job_custom: false,
+  pickerRoleKey: null,
+};
+
+let quickAdoptPreset = null;
+
+async function loadPipelineSlots(jobId) {
+  try {
+    const activeId = jobId || ($("#pipeline-job-select") ? $("#pipeline-job-select").value : "") || null;
+    pipelineSlotsState.activeJobId = activeId;
+    const url = "/api/pipeline/slots" + (activeId ? "?job_id=" + encodeURIComponent(activeId) : "");
+    const res = await api(url);
+    if (res.ok) {
+      pipelineSlotsState.slots = res.slots || {};
+      pipelineSlotsState.available_skills = res.available_skills || [];
+      pipelineSlotsState.available_covers = res.available_covers || [];
+      pipelineSlotsState.is_job_custom = !!res.is_job_custom;
+      renderPipelineSlots();
+    }
+  } catch (e) {
+    console.warn("loadPipelineSlots failed:", e);
+  }
+}
+window.loadPipelineSlots = loadPipelineSlots;
+
+function renderPipelineSlots() {
+  const container = $("#pipeline-slots-grid");
+  if (!container) return;
+
+  const slots = pipelineSlotsState.slots || {};
+  const isCustom = pipelineSlotsState.is_job_custom;
+  const jobId = pipelineSlotsState.activeJobId;
+
+  // 更新 Scope 标识
+  const scopeEl = $("#slots-scope-badge");
+  if (scopeEl) {
+    if (isCustom && jobId) {
+      scopeEl.textContent = `🏷️ 任务专属装配 (${jobId})`;
+      scopeEl.className = "badge success";
+    } else {
+      scopeEl.textContent = "🌐 全局默认装配";
+      scopeEl.className = "badge primary";
+    }
+  }
+
+  const updatedEl = $("#slots-updated-at");
+  if (updatedEl) {
+    updatedEl.textContent = pipelineSlotsState.slots.updated_at ? `更新于 ${pipelineSlotsState.slots.updated_at}` : "";
+  }
+
+  const slotRoles = [
+    { key: "researcher", icon: "🔍", name: "资深采编", stage: "Stage 1 materials", isCover: false },
+    { key: "xhs_editor", icon: "📕", name: "小红书主编", stage: "Stage 2a draft", isCover: false },
+    { key: "gzh_editor", icon: "🟢", name: "公众号主编", stage: "Stage 2b draft", isCover: false },
+    { key: "video_director", icon: "🎬", name: "短视频导演", stage: "Stage 2c draft", isCover: false },
+    { key: "cover_template", icon: "🎨", name: "视觉封面", stage: "Stage 2 visual", isCover: true },
+  ];
+
+  container.innerHTML = slotRoles.map((role) => {
+    const data = slots[role.key] || {};
+    const title = role.isCover ? (data.template_title || "未装配封面模板") : (data.skill_title || "未装配 Skill");
+    const desc = data.desc || (role.isCover ? "根据主题动态生成 3:4 AI 生图提示词与插画" : "遵循官方标准流水线指引");
+    const itemId = role.isCover ? (data.template_id || "") : (data.skill_slug || "");
+
+    return `
+      <div class="slot-card" data-role="${role.key}">
+        <div>
+          <div class="slot-card-head">
+            <span class="slot-role-pill"><span>${role.icon}</span> ${esc(role.name)}</span>
+            <span class="slot-stage-tag">${esc(role.stage)}</span>
+          </div>
+          <div class="slot-card-body">
+            <span class="slot-active-badge">${role.isCover ? "🎨 封面提示词模板" : "🧩 pristine SKILL"}</span>
+            <div class="slot-item-title" title="${esc(title)}">${esc(title)}</div>
+            <div class="slot-item-desc" title="${esc(desc)}">${esc(desc)}</div>
+          </div>
+        </div>
+        <div class="slot-card-actions">
+          <button class="btn tonal small" style="flex:1;" onclick="openSlotPicker('${role.key}')">🔄 更换</button>
+          ${itemId ? `<button class="btn small" style="padding:4px 8px;" onclick="${role.isCover ? `openCoverModal('${esc(itemId)}')` : `openSkillModal('${esc(itemId)}')`}" title="查看规则详情">👁️</button>` : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+window.renderPipelineSlots = renderPipelineSlots;
+
+// ---------- Slot Picker Modal ----------
+function openSlotPicker(roleKey) {
+  pipelineSlotsState.pickerRoleKey = roleKey;
+  const isCover = roleKey === "cover_template";
+  const roleNames = {
+    researcher: "🔍 资深采编",
+    xhs_editor: "📕 小红书主编",
+    gzh_editor: "🟢 公众号主编",
+    video_director: "🎬 短视频导演",
+    cover_template: "🎨 视觉封面",
+  };
+
+  const badgeEl = $("#picker-role-badge");
+  if (badgeEl) badgeEl.textContent = roleNames[roleKey] || roleKey;
+
+  const titleEl = $("#picker-modal-title");
+  if (titleEl) titleEl.textContent = isCover ? "选择要装配的封面生图模板" : "选择要挂载到岗位的 Skill";
+
+  const searchInput = $("#picker-search-input");
+  if (searchInput) {
+    searchInput.value = "";
+    searchInput.placeholder = isCover ? "🔍 搜索 31 个封面模板（如：自拍、物品贴纸、鱼眼、极简）..." : "🔍 搜索 36 个 pristine Skill（如：对标分析、爆款标题、活人感）...";
+  }
+
+  filterPickerItems("");
+  const modal = $("#modal-slot-picker");
+  if (modal) modal.classList.remove("hidden");
+}
+window.openSlotPicker = openSlotPicker;
+
+function closeSlotPickerModal() {
+  const modal = $("#modal-slot-picker");
+  if (modal) modal.classList.add("hidden");
+  pipelineSlotsState.pickerRoleKey = null;
+}
+window.closeSlotPickerModal = closeSlotPickerModal;
+
+function filterPickerItems(query) {
+  const roleKey = pipelineSlotsState.pickerRoleKey;
+  const isCover = roleKey === "cover_template";
+  const q = String(query || "").trim().toLowerCase();
+
+  const currentSlot = (pipelineSlotsState.slots || {})[roleKey] || {};
+  const currentId = isCover ? currentSlot.template_id : currentSlot.skill_slug;
+
+  const listEl = $("#picker-items-list");
+  if (!listEl) return;
+
+  if (isCover) {
+    const items = pipelineSlotsState.available_covers || [];
+    const filtered = items.filter(t => !q || (t.title && t.title.toLowerCase().includes(q)) || (t.category && t.category.toLowerCase().includes(q)) || (t.summary && t.summary.toLowerCase().includes(q)));
+    listEl.innerHTML = filtered.map(t => {
+      const isCur = t.id === currentId;
+      return `
+        <div class="slot-picker-item ${isCur ? 'active' : ''}" onclick="selectSlotItem('${t.id}')">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="badge tonal" style="font-size:11px;">${esc(t.category || "封面")}</span>
+              <span style="font-weight:700;font-size:14px;color:var(--on-surface);">${esc(t.title)}</span>
+              ${isCur ? '<span class="badge primary" style="font-size:11px;">当前使用中</span>' : ''}
+            </div>
+            <div class="muted" style="font-size:12px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;">${esc(t.summary || "")}</div>
+          </div>
+          <button class="btn small primary" style="margin-left:12px;white-space:nowrap;" onclick="event.stopPropagation(); selectSlotItem('${t.id}')">${isCur ? '已装配' : '装配此模板'}</button>
+        </div>
+      `;
+    }).join("") || '<div class="muted" style="text-align:center;padding:20px;">未找到匹配的封面模板</div>';
+  } else {
+    const items = pipelineSlotsState.available_skills || [];
+    const filtered = items.filter(s => !q || (s.title && s.title.toLowerCase().includes(q)) || (s.category && s.category.toLowerCase().includes(q)) || (s.summary && s.summary.toLowerCase().includes(q)) || (s.author && s.author.toLowerCase().includes(q)));
+    listEl.innerHTML = filtered.map(s => {
+      const isCur = s.slug === currentId;
+      return `
+        <div class="slot-picker-item ${isCur ? 'active' : ''}" onclick="selectSlotItem('${s.slug}')">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="badge tonal" style="font-size:11px;">${esc(s.category || "Skill")}</span>
+              <span style="font-weight:700;font-size:14px;color:var(--on-surface);">${esc(s.title)}</span>
+              <span class="muted" style="font-size:12px;">by ${esc(s.author || "社区")}</span>
+              ${isCur ? '<span class="badge primary" style="font-size:11px;">当前使用中</span>' : ''}
+            </div>
+            <div class="muted" style="font-size:12px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;">${esc(s.summary || "")}</div>
+          </div>
+          <button class="btn small primary" style="margin-left:12px;white-space:nowrap;" onclick="event.stopPropagation(); selectSlotItem('${s.slug}')">${isCur ? '已装配' : '装配此 Skill'}</button>
+        </div>
+      `;
+    }).join("") || '<div class="muted" style="text-align:center;padding:20px;">未找到匹配的 Skill</div>';
+  }
+}
+window.filterPickerItems = filterPickerItems;
+
+async function selectSlotItem(itemId) {
+  const roleKey = pipelineSlotsState.pickerRoleKey;
+  if (!roleKey || !itemId) return;
+
+  try {
+    const res = await api("/api/pipeline/slots", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role_key: roleKey,
+        item_id: itemId,
+        job_id: pipelineSlotsState.activeJobId || null,
+      }),
+    });
+    if (res.ok) {
+      toast("✅ 插槽已成功更新！");
+      closeSlotPickerModal();
+      loadPipelineSlots(pipelineSlotsState.activeJobId);
+    }
+  } catch (e) {
+    toast("插槽更新失败: " + e.message, false);
+  }
+}
+window.selectSlotItem = selectSlotItem;
+
+async function resetPipelineSlots() {
+  if (!confirm("确定将流水线角色插槽恢复为出厂默认配置吗？")) return;
+  const defaultSlots = [
+    { role_key: "researcher", item_id: "dbs-benchmark" },
+    { role_key: "xhs_editor", item_id: "atutun-xhs-cover" },
+    { role_key: "gzh_editor", item_id: "human-writing" },
+    { role_key: "video_director", item_id: "high-retention-video-script" },
+    { role_key: "cover_template", item_id: "selfie-bag-sticker-cover" },
+  ];
+
+  try {
+    for (const s of defaultSlots) {
+      await api("/api/pipeline/slots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(s),
+      });
+    }
+    toast("✅ 已恢复出厂推荐插槽装配！");
+    loadPipelineSlots();
+  } catch (e) {
+    toast("恢复失败: " + e.message, false);
+  }
+}
+window.resetPipelineSlots = resetPipelineSlots;
+
+// ---------- Skill 详情弹窗一键装配联动 ----------
+function openMountSkillModal() {
+  const skill = skillsRepoState.selectedSkill;
+  if (!skill) return toast("未选中 Skill", false);
+
+  const nameEl = $("#mount-slot-skill-name");
+  if (nameEl) nameEl.textContent = `${skill.title} (${skill.slug})`;
+
+  const cat = (skill.category || "").toLowerCase();
+  const slug = (skill.slug || "").toLowerCase();
+  let defaultRole = "xhs_editor";
+  if (slug.includes("video") || slug.includes("script") || slug.includes("tiktok") || slug.includes("分镜")) {
+    defaultRole = "video_director";
+  } else if (slug.includes("wechat") || slug.includes("gzh") || slug.includes("writing") || slug.includes("human")) {
+    defaultRole = "gzh_editor";
+  } else if (slug.includes("benchmark") || slug.includes("research") || slug.includes("learning") || slug.includes("deconstruct")) {
+    defaultRole = "researcher";
+  }
+
+  const radios = document.getElementsByName("mount-role-radio");
+  for (const r of radios) {
+    if (r.value === defaultRole) r.checked = true;
+  }
+
+  const modal = $("#modal-mount-slot");
+  if (modal) modal.classList.remove("hidden");
+}
+window.openMountSkillModal = openMountSkillModal;
+
+function closeMountSlotModal() {
+  const modal = $("#modal-mount-slot");
+  if (modal) modal.classList.add("hidden");
+}
+window.closeMountSlotModal = closeMountSlotModal;
+
+async function confirmMountSkillToSlot() {
+  const skill = skillsRepoState.selectedSkill;
+  if (!skill) return;
+
+  const radios = document.getElementsByName("mount-role-radio");
+  let chosenRole = "xhs_editor";
+  for (const r of radios) {
+    if (r.checked) chosenRole = r.value;
+  }
+
+  const isGlobal = $("#mount-slot-global") ? $("#mount-slot-global").checked : true;
+  const targetJobId = isGlobal ? null : (pipelineSlotsState.activeJobId || null);
+
+  const btn = $("#btn-confirm-mount-slot");
+  await runWithSpin(btn, async () => {
+    try {
+      const res = await api("/api/pipeline/slots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role_key: chosenRole,
+          item_id: skill.slug,
+          job_id: targetJobId,
+        }),
+      });
+      if (res.ok) {
+        toast(`✅ 已成功将【${skill.title}】装配到流水线角色插槽！`);
+        closeMountSlotModal();
+        closeSkillModal();
+        loadPipelineSlots(targetJobId);
+      }
+    } catch (e) {
+      toast("装配失败: " + e.message, false);
+    }
+  });
+}
+window.confirmMountSkillToSlot = confirmMountSkillToSlot;
+
+// ---------- 封面模板详情弹窗一键设为默认 ----------
+async function setDefaultCoverTemplate() {
+  const tpl = coverTemplatesState.selectedTemplate;
+  if (!tpl) return toast("未选中封面模板", false);
+
+  try {
+    const res = await api("/api/pipeline/slots", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role_key: "cover_template",
+        item_id: tpl.id,
+      }),
+    });
+    if (res.ok) {
+      toast(`🎨 已成功将【${tpl.title}】设为流水线默认封面！`);
+      closeCoverModal();
+      loadPipelineSlots();
+    }
+  } catch (e) {
+    toast("设置失败: " + e.message, false);
+  }
+}
+window.setDefaultCoverTemplate = setDefaultCoverTemplate;
+
+// ---------- 快速建任务弹窗联动 ----------
+function applyCoverTemplateToNewJob() {
+  const tpl = coverTemplatesState.selectedTemplate;
+  if (!tpl) return toast("未选中封面模板", false);
+
+  quickAdoptPreset = {
+    type: "cover",
+    cover_template_id: tpl.id,
+    title: tpl.title,
+  };
+
+  const pill = $("#quick-adopt-preset-pill");
+  if (pill) pill.textContent = `🎨 预设封面模板：${tpl.title}`;
+
+  const titleInput = $("#quick-adopt-title");
+  if (titleInput) titleInput.value = "";
+
+  const linkInput = $("#quick-adopt-link");
+  if (linkInput) linkInput.value = "";
+
+  populateQuickAdoptMatrixOptions();
+  const modal = $("#modal-quick-adopt");
+  if (modal) modal.classList.remove("hidden");
+}
+window.applyCoverTemplateToNewJob = applyCoverTemplateToNewJob;
+
+function applySkillToNewJob() {
+  const skill = skillsRepoState.selectedSkill;
+  if (!skill) return toast("未选中 Skill", false);
+
+  quickAdoptPreset = {
+    type: "skill",
+    skill_slug: skill.slug,
+    skill_title: skill.title,
+  };
+
+  const pill = $("#quick-adopt-preset-pill");
+  if (pill) pill.textContent = `🧩 预设专属 Skill：${skill.title}`;
+
+  const titleInput = $("#quick-adopt-title");
+  if (titleInput) titleInput.value = "";
+
+  const linkInput = $("#quick-adopt-link");
+  if (linkInput) linkInput.value = "";
+
+  populateQuickAdoptMatrixOptions();
+  const modal = $("#modal-quick-adopt");
+  if (modal) modal.classList.remove("hidden");
+}
+window.applySkillToNewJob = applySkillToNewJob;
+
+function closeQuickAdoptModal() {
+  const modal = $("#modal-quick-adopt");
+  if (modal) modal.classList.add("hidden");
+  quickAdoptPreset = null;
+}
+window.closeQuickAdoptModal = closeQuickAdoptModal;
+
+async function submitQuickAdopt() {
+  const title = String($("#quick-adopt-title").value || "").trim();
+  const link = String($("#quick-adopt-link").value || "").trim();
+  if (!title) return toast("请填写任务选题/标题", false);
+
+  const account_id = ($("#quick-adopt-account") && $("#quick-adopt-account").value) || "";
+  const offer_id = ($("#quick-adopt-offer") && $("#quick-adopt-offer").value) || "";
+  const payload = { title, link, account_id, offer_id };
+  if (quickAdoptPreset) {
+    if (quickAdoptPreset.cover_template_id) {
+      payload.cover_template_id = quickAdoptPreset.cover_template_id;
+    }
+    if (quickAdoptPreset.skill_slug) {
+      payload.slots = {
+        xhs_editor: { skill_slug: quickAdoptPreset.skill_slug, skill_title: quickAdoptPreset.skill_title },
+        gzh_editor: { skill_slug: quickAdoptPreset.skill_slug, skill_title: quickAdoptPreset.skill_title },
+      };
+    }
+  }
+
+  const btn = $("#btn-submit-quick-adopt");
+  await runWithSpin(btn, async () => {
+    try {
+      const d = await api("/api/topics/adopt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      toast(`🚀 任务建单成功并启动生产: ${d.job_id}`);
+      closeQuickAdoptModal();
+      closeCoverModal();
+      closeSkillModal();
+      switchView("pipeline");
+      loadPipeline();
+    } catch (e) {
+      toast("建任务失败: " + e.message, false);
+    }
+  });
+}
+window.submitQuickAdopt = submitQuickAdopt;
+
+// ==================== 矩阵与商业化中台 (Matrix & Commercial Operations) ====================
+let matrixOpsState = {
+  tab: "sla",
+  accounts: [],
+  offers: [],
+  sla: null,
+  commercial: null,
+};
+
+async function populateQuickAdoptMatrixOptions() {
+  try {
+    const [accRes, offRes] = await Promise.all([
+      api("/api/matrix/accounts"),
+      api("/api/commercial/offers"),
+    ]);
+    const accounts = accRes.accounts || [];
+    const offers = offRes.offers || [];
+    const accSel = $("#quick-adopt-account");
+    if (accSel) {
+      accSel.innerHTML = accounts.map((a) => `<option value="${esc(a.id)}">${esc(a.name)} (${esc(a.niche || "综合")})</option>`).join("");
+    }
+    const offSel = $("#quick-adopt-offer");
+    if (offSel) {
+      offSel.innerHTML = `<option value="">-- 跟随矩阵号默认 --</option>` +
+        offers.map((o) => `<option value="${esc(o.id)}">${esc(o.name)} (¥${Number(o.price_yuan || 0)})</option>`).join("");
+    }
+  } catch (_) { /* ignore */ }
+}
+
+function switchMatrixOpsTab(tab) {
+  matrixOpsState.tab = tab;
+  $$("#matrix-ops-tabs .tab").forEach((b) => b.classList.toggle("active", b.dataset.mtab === tab));
+  ["sla", "matrix", "commercial"].forEach((t) => {
+    const el = $("#matrix-tab-" + t);
+    if (el) el.classList.toggle("hidden", t !== tab);
+  });
+}
+window.switchMatrixOpsTab = switchMatrixOpsTab;
+
+async function loadMatrixOps() {
+  try {
+    const [accRes, slaRes, offRes, commRes, jobsRes] = await Promise.all([
+      api("/api/matrix/accounts"),
+      api("/api/ops/daily-sla"),
+      api("/api/commercial/offers"),
+      api("/api/commercial/overview"),
+      api("/api/jobs?include_archived=true"),
+    ]);
+    matrixOpsState.accounts = accRes.accounts || [];
+    matrixOpsState.sla = slaRes;
+    matrixOpsState.offers = offRes.offers || [];
+    matrixOpsState.commercial = commRes;
+
+    const dateInp = $("#sched-slot-date");
+    if (dateInp && !dateInp.value) dateInp.value = slaRes.today || new Date().toISOString().slice(0, 10);
+
+    renderMatrixOpsSelects(jobsRes.jobs || []);
+    renderDailySlaTab(slaRes);
+    renderMatrixAccountsTab(matrixOpsState.accounts);
+    renderCommercialTab(commRes, matrixOpsState.offers);
+  } catch (e) {
+    toast("加载矩阵与商业化大盘失败: " + e.message, false);
+  }
+}
+window.loadMatrixOps = loadMatrixOps;
+
+function renderMatrixOpsSelects(jobs) {
+  const accOpts = matrixOpsState.accounts.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join("");
+  const offerOptsWithDefault = `<option value="">-- 跟随账号默认组件 --</option>` +
+    matrixOpsState.offers.map((o) => `<option value="${esc(o.id)}">${esc(o.name)} (${esc(o.type_label || o.type)})</option>`).join("");
+  const offerOptsDirect = matrixOpsState.offers.map((o) => `<option value="${esc(o.id)}">${esc(o.name)} (¥${Number(o.price_yuan || 0)})</option>`).join("");
+
+  if ($("#sched-slot-account")) $("#sched-slot-account").innerHTML = accOpts;
+  if ($("#sched-slot-offer")) $("#sched-slot-offer").innerHTML = offerOptsWithDefault;
+  if ($("#dispatch-topic-offer")) $("#dispatch-topic-offer").innerHTML = offerOptsWithDefault;
+  if ($("#mat-acc-offer")) $("#mat-acc-offer").innerHTML = `<option value="">-- 不挂载默认组件 --</option>` + offerOptsDirect;
+  if ($("#comm-ledger-account")) $("#comm-ledger-account").innerHTML = accOpts;
+  if ($("#comm-ledger-offer")) $("#comm-ledger-offer").innerHTML = `<option value="">-- 不指定组件 --</option>` + offerOptsDirect;
+
+  if ($("#comm-ledger-job")) {
+    $("#comm-ledger-job").innerHTML = `<option value="">-- 日常私域/独立商单（不绑定单篇任务） --</option>` +
+      jobs.slice(0, 50).map((j) => `<option value="${esc(j.job_id)}">${esc(j.theme || j.job_id)} [${esc(j.account_name || j.job_id)}]</option>`).join("");
+  }
+
+  const checksWrap = $("#dispatch-accounts-checks");
+  if (checksWrap) {
+    checksWrap.innerHTML = matrixOpsState.accounts.map((a) => `
+      <label class="badge" style="cursor:pointer;padding:6px 12px;display:inline-flex;align-items:center;gap:6px;background:var(--surface-hover)">
+        <input type="checkbox" class="dispatch-acc-chk" value="${esc(a.id)}" ${a.enabled !== false ? "checked" : ""}>
+        <b>${esc(a.name)}</b>
+        <span class="muted" style="font-size:11px">(${esc((a.angle || a.niche || "").slice(0, 18))})</span>
+      </label>
+    `).join("");
+  }
+}
+
+function renderDailySlaTab(sla) {
+  const kpiEl = $("#sla-kpi-grid");
+  if (kpiEl) {
+    const pctNum = Math.round((sla.completion_rate || 0) * 100);
+    kpiEl.innerHTML = `
+      <div class="kpi"><div class="kpi-label">🔥 连续不断更 (Streak)</div><div class="kpi-val">${sla.streak_days || 0}<small> 天</small></div><div class="kpi-sub">断更自动预警守护中</div></div>
+      <div class="kpi"><div class="kpi-label">📅 今日日更达成率</div><div class="kpi-val">${pctNum}<small>%</small></div><div class="kpi-sub">今日已产 ${sla.today_produced || 0} / 目标 ${sla.daily_target_total || 1} 篇</div></div>
+      <div class="kpi"><div class="kpi-label">🚀 今日已发布</div><div class="kpi-val">${sla.today_published || 0}<small> 篇</small></div><div class="kpi-sub">${esc(sla.sla_label || "")}</div></div>
+      <div class="kpi"><div class="kpi-label">📆 近 30 天活跃日更</div><div class="kpi-val">${sla.active_days_30d || 0}<small> / 30 天</small></div><div class="kpi-sub">排期储备 ${(sla.schedule_slots || []).length} 项</div></div>
+    `;
+  }
+
+  const badgeEl = $("#sla-status-badge");
+  if (badgeEl) badgeEl.textContent = sla.sla_label || "";
+
+  const quotasEl = $("#sla-account-quotas");
+  if (quotasEl) {
+    quotasEl.innerHTML = (sla.account_quotas || []).map((q) => {
+      const ratio = Math.min(100, Math.round((q.today_produced / Math.max(1, q.daily_target)) * 100));
+      return `
+        <div style="padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-hover)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div><b>${esc(q.name)}</b> <span class="muted" style="font-size:12px">(${(q.platforms || []).map(esc).join(" / ")})</span></div>
+            <span class="badge ${q.met ? "success" : "primary"}">${q.met ? "✅ 已达标" : `待补 ${q.gap} 篇`} · ${q.today_produced}/${q.daily_target}</span>
+          </div>
+          <div style="height:6px;background:var(--border);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${ratio}%;background:${q.met ? "var(--success, #10b981)" : "var(--primary, #2563eb)"}"></div>
+          </div>
+        </div>
+      `;
+    }).join("") || `<div class="muted">暂无启用的矩阵号</div>`;
+  }
+
+  const heatEl = $("#sla-heatmap-30d");
+  if (heatEl) {
+    heatEl.innerHTML = (sla.calendar_30d || []).map((d) => {
+      const count = d.produced || 0;
+      const bg = count >= (sla.daily_target_total || 1)
+        ? "var(--success, #10b981)"
+        : count > 0
+          ? "var(--primary, #3b82f6)"
+          : "var(--surface-hover, rgba(148,163,184,0.18))";
+      const color = count > 0 ? "#fff" : "var(--text-muted)";
+      return `
+        <div title="${esc(d.date)}：产出 ${count} 篇，发布 ${d.published || 0} 篇" style="padding:6px 4px;border-radius:6px;text-align:center;background:${bg};color:${color};font-size:11px;border:1px solid var(--border)">
+          <div style="opacity:0.85">${esc(d.date.slice(5))}</div>
+          <div style="font-weight:700;margin-top:2px">${count}篇</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  const slotBody = $("#sched-slot-table");
+  if (slotBody) {
+    const slots = sla.schedule_slots || [];
+    slotBody.innerHTML = slots.length ? slots.map((s) => `
+      <tr>
+        <td><b>${esc(s.date)}</b> <span class="muted">${esc(s.time || "09:00")}</span></td>
+        <td><span class="badge">${esc(s.account_name || s.account_id)}</span></td>
+        <td>
+          <div><b>${esc(s.title)}</b></div>
+          <div class="muted" style="font-size:12px">${esc(s.platform || "小红书")}${s.job_id ? ` · 任务: ${esc(s.job_id)}` : ""}</div>
+        </td>
+        <td><span class="badge ${s.status === "queued" || s.status === "published" ? "success" : ""}">${s.status === "queued" ? "已投产" : s.status === "published" ? "已发布" : "待执行"}</span></td>
+        <td>
+          <div style="display:flex;gap:6px">
+            ${s.status === "planned" ? `<button class="btn small filled" onclick="runWithSpin(this, () => executeScheduleSlot('${esc(s.id)}'))">⚡ 立即投产</button>` : ""}
+            <button class="btn small tonal" onclick="deleteScheduleSlot('${esc(s.id)}')">删除</button>
+          </div>
+        </td>
+      </tr>
+    `).join("") : `<tr><td colspan="5" class="muted" style="text-align:center;padding:18px">暂无排期槽位，可在左侧提前规划未来 7 天日更主题</td></tr>`;
+  }
+}
+
+function renderMatrixAccountsTab(accounts) {
+  const countEl = $("#matrix-accounts-count");
+  if (countEl) countEl.textContent = `共 ${accounts.length} 个矩阵账号`;
+
+  const gridEl = $("#matrix-accounts-grid");
+  if (!gridEl) return;
+  gridEl.innerHTML = accounts.map((a) => {
+    const st = a.stats || {};
+    return `
+      <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;gap:10px;border:1px solid var(--border)">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div>
+              <h4 style="margin:0;font-size:16px">${esc(a.name)}</h4>
+              <div class="muted" style="font-size:12px">${esc(a.handle || a.id)} · ${esc(a.niche || "综合赛道")}</div>
+            </div>
+            <span class="badge ${a.enabled !== false ? "success" : ""}">${a.enabled !== false ? `日更 ${a.daily_target || 1} 篇/天` : "已暂停"}</span>
+          </div>
+          <div style="margin-top:10px;font-size:12px;line-height:1.6;color:var(--text-muted)">
+            <div>👤 <b>人设定位</b>：${esc(a.persona || "未设置")}</div>
+            <div>🎯 <b>差异化切角</b>：${esc(a.angle || "未设置")}</div>
+            <div>✍️ <b>文风预设</b>：<code>${esc(a.style_preset || "default")}</code></div>
+            <div>🔑 <b>公众号直推</b>：${a.gzh_configured ? "✅ 独立凭据已配" : "共用全局凭据"}</div>
+          </div>
+        </div>
+        <div style="border-top:1px dashed var(--border);padding-top:10px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);text-align:center;font-size:12px;margin-bottom:10px">
+            <div><div class="muted">今日产出</div><b>${st.today_jobs || 0}</b></div>
+            <div><div class="muted">累计任务</div><b>${st.total_jobs || 0}</b></div>
+            <div><div class="muted">私域线索</div><b>${st.leads || 0}</b></div>
+            <div><div class="muted">变现营收</div><b style="color:var(--primary)">¥${Number(st.revenue_yuan || 0).toFixed(0)}</b></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px">
+            <button class="btn small tonal" onclick="editMatrixAccount('${esc(a.id)}')">编辑配置</button>
+            ${accounts.length > 1 ? `<button class="btn small danger" onclick="deleteMatrixAccount('${esc(a.id)}')">删除</button>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderCommercialTab(comm, offers) {
+  if (!comm) return;
+  const k = comm.kpis || {};
+  const f = comm.funnel || {};
+
+  const kpiEl = $("#comm-kpi-grid");
+  if (kpiEl) {
+    kpiEl.innerHTML = `
+      <div class="kpi"><div class="kpi-label">💰 累计直接变现营收</div><div class="kpi-val">¥${Number(k.total_revenue_yuan || 0).toLocaleString("zh-CN")}</div><div class="kpi-sub">成交 ${k.total_conversions || 0} 单 · 转化率 ${pct(k.order_conversion_rate || 0)}</div></div>
+      <div class="kpi"><div class="kpi-label">🧲 累计私域引流线索</div><div class="kpi-val">${fmtNum(k.total_leads || 0)}<small> 人</small></div><div class="kpi-sub">管道潜在价值 ¥${Number(k.pipeline_value_yuan || 0).toLocaleString("zh-CN")}</div></div>
+      <div class="kpi"><div class="kpi-label">📈 千次阅读变现 (RPM)</div><div class="kpi-val">¥${Number(k.rpm_yuan || 0).toFixed(2)}</div><div class="kpi-sub">公域转私域率 ${pct(k.lead_conversion_rate || 0)}</div></div>
+      <div class="kpi"><div class="kpi-label">⚡ 算力成本 vs 净 ROI</div><div class="kpi-val">${Number(k.net_roi_multiple || 0)}<small>x</small></div><div class="kpi-sub">AI 算力成本 ¥${Number(k.token_cost_yuan || 0).toFixed(2)} (${fmtNum(k.total_tokens || 0)} Tokens)</div></div>
+    `;
+  }
+
+  const funnelEl = $("#comm-funnel-box");
+  if (funnelEl) {
+    const steps = [
+      { label: "1. 公域内容总阅读/播放", val: `${fmtNum(f.reads || 0)} 次`, width: "100%" },
+      { label: "2. 深度互动 (赞+藏+评)", val: `${fmtNum(f.engagements || 0)} 次`, width: "78%" },
+      { label: "3. 私域引流获客线索 (Leads)", val: `${fmtNum(f.leads || 0)} 人`, width: "56%" },
+      { label: "4. 商业化成交转化 (Orders)", val: `${fmtNum(f.conversions || 0)} 单`, width: "38%" },
+      { label: "5. 变现总营收 (Revenue)", val: `¥${Number(f.revenue_yuan || 0).toLocaleString("zh-CN")}`, width: "26%" },
+    ];
+    funnelEl.innerHTML = steps.map((s) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;background:var(--surface-hover);border-left:4px solid var(--primary)">
+        <span style="font-size:13px">${esc(s.label)}</span>
+        <b>${esc(s.val)}</b>
+      </div>
+    `).join("");
+  }
+
+  const byAccBody = $("#comm-by-account-table");
+  if (byAccBody) {
+    byAccBody.innerHTML = (comm.by_account || []).map((a) => `
+      <tr>
+        <td><b>${esc(a.name)}</b><div class="muted" style="font-size:11px">${esc(a.niche || "")}</div></td>
+        <td class="num">${fmtNum(a.leads || 0)}</td>
+        <td class="num">${fmtNum(a.conversions || 0)}</td>
+        <td class="num"><b>¥${Number(a.revenue_yuan || 0).toFixed(2)}</b></td>
+      </tr>
+    `).join("");
+  }
+
+  const offersEl = $("#comm-offers-list");
+  if (offersEl) {
+    offersEl.innerHTML = (offers || []).map((o) => `
+      <div style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-hover);font-size:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><b>${esc(o.name)}</b> <span class="badge">${esc(o.type_label || o.type)}</span> <span class="muted">客单价 ¥${Number(o.price_yuan || 0)}</span></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn small tonal" onclick="editCommercialOffer('${esc(o.id)}')">编辑</button>
+            ${offers.length > 1 ? `<button class="btn small tonal" onclick="deleteCommercialOffer('${esc(o.id)}')">删除</button>` : ""}
+          </div>
+        </div>
+        <div class="muted" style="margin-top:4px">📕 小红书钩子：${esc(o.cta_xhs || "无")}</div>
+        <div class="muted">🟢 公众号钩子：${esc(o.cta_gzh || "无")}</div>
+      </div>
+    `).join("");
+  }
+
+  const ledgerBody = $("#comm-ledger-table");
+  if (ledgerBody) {
+    const entries = comm.recent_entries || [];
+    ledgerBody.innerHTML = entries.length ? entries.map((e) => `
+      <tr>
+        <td class="muted" style="font-size:12px">${esc((e.recorded_at || "").slice(0, 16))}</td>
+        <td>
+          <div><b>${esc(e.title)}</b></div>
+          <div class="muted" style="font-size:11px">${esc(e.platform)} · ${esc(e.revenue_type_label || e.revenue_type)}${e.note ? ` · ${esc(e.note)}` : ""}</div>
+        </td>
+        <td><span class="badge">${esc(e.account_name || e.account_id)}</span></td>
+        <td class="num">${fmtNum(e.leads || 0)}</td>
+        <td class="num">${fmtNum(e.conversions || 0)}</td>
+        <td class="num"><b style="color:var(--primary)">¥${Number(e.revenue_yuan || 0).toFixed(2)}</b></td>
+        <td><button class="btn small tonal" onclick="deleteCommercialLedgerEntry('${esc(e.id)}')">删</button></td>
+      </tr>
+    `).join("") : `<tr><td colspan="7" class="muted" style="text-align:center;padding:16px">暂无变现流水，可在上方表单录入或随 48h 数据回填自动同步</td></tr>`;
+  }
+}
+
+async function triggerDailyAutopilot() {
+  try {
+    const r = await api("/api/ops/daily-autopilot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ max_jobs: 3 }),
+    });
+    toast(`⚡ 已自动补齐 ${r.created_count || 0} 个日更任务并启动流水线`);
+    await loadMatrixOps();
+  } catch (e) {
+    toast("日更自动补齐失败: " + e.message, false);
+  }
+}
+window.triggerDailyAutopilot = triggerDailyAutopilot;
+
+async function saveScheduleSlot() {
+  const title = ($("#sched-slot-title").value || "").trim();
+  if (!title) return toast("请填写排期选题标题", false);
+  const payload = {
+    date: $("#sched-slot-date").value,
+    time: $("#sched-slot-time").value || "09:00",
+    account_id: $("#sched-slot-account").value,
+    platform: $("#sched-slot-platform").value,
+    title,
+    offer_id: $("#sched-slot-offer").value,
+    notes: $("#sched-slot-notes").value,
+  };
+  try {
+    await api("/api/ops/schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    $("#sched-slot-title").value = "";
+    $("#sched-slot-notes").value = "";
+    toast("📅 已加入日更排期表");
+    await loadMatrixOps();
+  } catch (e) {
+    toast("保存排期失败: " + e.message, false);
+  }
+}
+window.saveScheduleSlot = saveScheduleSlot;
+
+async function executeScheduleSlot(slotId) {
+  try {
+    const r = await api(`/api/ops/schedule/${encodeURIComponent(slotId)}/execute`, { method: "POST" });
+    toast(`🚀 排期已转入生产任务: ${r.job && r.job.job_id}`);
+    await loadMatrixOps();
+  } catch (e) {
+    toast("执行排期失败: " + e.message, false);
+  }
+}
+window.executeScheduleSlot = executeScheduleSlot;
+
+async function deleteScheduleSlot(slotId) {
+  try {
+    await api(`/api/ops/schedule/${encodeURIComponent(slotId)}`, { method: "DELETE" });
+    toast("已删除排期项");
+    await loadMatrixOps();
+  } catch (e) {
+    toast("删除失败: " + e.message, false);
+  }
+}
+window.deleteScheduleSlot = deleteScheduleSlot;
+
+async function dispatchMatrixTopic() {
+  const title = ($("#dispatch-topic-title").value || "").trim();
+  if (!title) return toast("请输入裂变核心母题", false);
+  const checkedIds = $$(".dispatch-acc-chk:checked").map((c) => c.value);
+  if (!checkedIds.length) return toast("请至少勾选 1 个目标矩阵号", false);
+
+  try {
+    const r = await api("/api/matrix/dispatch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        link: ($("#dispatch-topic-link").value || "").trim(),
+        notes: ($("#dispatch-topic-notes").value || "").trim(),
+        offer_id: $("#dispatch-topic-offer").value || "",
+        account_ids: checkedIds,
+        auto_start: true,
+      }),
+    });
+    toast(`🔥 一鱼多吃成功裂变 ${r.dispatched_count} 个差异化任务并启动生产！`);
+    if ($("#dispatch-status-msg")) {
+      $("#dispatch-status-msg").textContent = `已生成任务：${(r.jobs || []).map((j) => j.job_id).join(", ")}`;
+    }
+    $("#dispatch-topic-title").value = "";
+    await loadMatrixOps();
+  } catch (e) {
+    toast("矩阵裂变分发失败: " + e.message, false);
+  }
+}
+window.dispatchMatrixTopic = dispatchMatrixTopic;
+
+function editMatrixAccount(accId) {
+  const a = matrixOpsState.accounts.find((x) => x.id === accId);
+  if (!a) return;
+  $("#mat-acc-id").value = a.id;
+  $("#mat-acc-name").value = a.name || "";
+  $("#mat-acc-handle").value = a.handle || "";
+  $("#mat-acc-niche").value = a.niche || "";
+  $("#mat-acc-target").value = a.daily_target != null ? a.daily_target : 1;
+  $("#mat-acc-persona").value = a.persona || "";
+  $("#mat-acc-audience").value = a.target_audience || "";
+  $("#mat-acc-angle").value = a.angle || "";
+  $("#mat-acc-style").value = a.style_preset || "xiaowuliao-style";
+  $("#mat-acc-offer").value = a.default_offer_id || "";
+  $("#mat-acc-gzh-id").value = a.gzh_app_id || "";
+  $("#mat-acc-gzh-secret").value = "";
+  $("#mat-acc-enabled").checked = a.enabled !== false;
+  if ($("#matrix-form-title")) $("#matrix-form-title").textContent = `✏️ 编辑矩阵账号：${a.name}`;
+}
+window.editMatrixAccount = editMatrixAccount;
+
+function resetMatrixAccountForm() {
+  $("#mat-acc-id").value = "";
+  $("#mat-acc-name").value = "";
+  $("#mat-acc-handle").value = "";
+  $("#mat-acc-niche").value = "";
+  $("#mat-acc-target").value = 1;
+  $("#mat-acc-persona").value = "";
+  $("#mat-acc-audience").value = "";
+  $("#mat-acc-angle").value = "";
+  $("#mat-acc-gzh-id").value = "";
+  $("#mat-acc-gzh-secret").value = "";
+  $("#mat-acc-enabled").checked = true;
+  if ($("#matrix-form-title")) $("#matrix-form-title").textContent = "➕ 新增 / 编辑矩阵账号";
+}
+window.resetMatrixAccountForm = resetMatrixAccountForm;
+
+async function saveMatrixAccount() {
+  const name = ($("#mat-acc-name").value || "").trim();
+  if (!name) return toast("账号名称不能为空", false);
+  const accId = ($("#mat-acc-id").value || "").trim();
+  const existingAcc = matrixOpsState.accounts.find((x) => x.id === accId);
+  const parsedTarget = parseInt($("#mat-acc-target").value, 10);
+  const dailyTarget = Number.isNaN(parsedTarget) ? 1 : parsedTarget;
+  const payload = {
+    id: accId,
+    name,
+    handle: ($("#mat-acc-handle").value || "").trim(),
+    niche: ($("#mat-acc-niche").value || "").trim(),
+    daily_target: dailyTarget,
+    persona: ($("#mat-acc-persona").value || "").trim(),
+    target_audience: ($("#mat-acc-audience").value || "").trim(),
+    angle: ($("#mat-acc-angle").value || "").trim(),
+    style_preset: $("#mat-acc-style").value || "xiaowuliao-style",
+    default_offer_id: $("#mat-acc-offer").value || "",
+    gzh_app_id: ($("#mat-acc-gzh-id").value || "").trim(),
+    gzh_app_secret: ($("#mat-acc-gzh-secret").value || "").trim(),
+    platforms: existingAcc && Array.isArray(existingAcc.platforms) && existingAcc.platforms.length
+      ? existingAcc.platforms
+      : ["小红书", "公众号", "短视频"],
+    enabled: $("#mat-acc-enabled").checked,
+  };
+  try {
+    await api("/api/matrix/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    toast("💾 矩阵账号已保存");
+    resetMatrixAccountForm();
+    await loadMatrixOps();
+  } catch (e) {
+    toast("保存矩阵账号失败: " + e.message, false);
+  }
+}
+window.saveMatrixAccount = saveMatrixAccount;
+
+async function deleteMatrixAccount(accId) {
+  try {
+    await api(`/api/matrix/accounts/${encodeURIComponent(accId)}`, { method: "DELETE" });
+    toast("已删除矩阵账号");
+    await loadMatrixOps();
+  } catch (e) {
+    toast("删除失败: " + e.message, false);
+  }
+}
+window.deleteMatrixAccount = deleteMatrixAccount;
+
+function editCommercialOffer(offerId) {
+  const o = matrixOpsState.offers.find((x) => x.id === offerId);
+  if (!o) return;
+  const detailsEl = $("#offer-form-name") && $("#offer-form-name").closest("details");
+  if (detailsEl) detailsEl.open = true;
+  $("#offer-form-id").value = o.id;
+  $("#offer-form-name").value = o.name || "";
+  $("#offer-form-type").value = o.type || "lead_magnet";
+  if (!$("#offer-form-type").value) $("#offer-form-type").value = "lead_magnet";
+  $("#offer-form-price").value = o.price_yuan != null ? o.price_yuan : 0;
+  $("#offer-form-keyword").value = o.keyword || "";
+  $("#offer-form-cta-xhs").value = o.cta_xhs || "";
+  $("#offer-form-cta-gzh").value = o.cta_gzh || "";
+  $("#offer-form-cta-video").value = o.cta_video || "";
+}
+window.editCommercialOffer = editCommercialOffer;
+
+async function saveCommercialOffer() {
+  const name = ($("#offer-form-name").value || "").trim();
+  if (!name) return toast("请填写商业化组件名称", false);
+  const offerId = ($("#offer-form-id").value || "").trim();
+  const existingOffer = matrixOpsState.offers.find((x) => x.id === offerId);
+  const parsedPrice = parseFloat($("#offer-form-price").value);
+  const payload = {
+    id: offerId,
+    name,
+    type: $("#offer-form-type").value || (existingOffer && existingOffer.type) || "lead_magnet",
+    price_yuan: Number.isNaN(parsedPrice) ? 0 : parsedPrice,
+    lead_value_yuan: existingOffer && existingOffer.lead_value_yuan != null ? Number(existingOffer.lead_value_yuan) : 15.0,
+    keyword: ($("#offer-form-keyword").value || "").trim(),
+    cta_xhs: ($("#offer-form-cta-xhs").value || "").trim(),
+    cta_gzh: ($("#offer-form-cta-gzh").value || "").trim(),
+    cta_video: ($("#offer-form-cta-video").value || "").trim(),
+    enabled: existingOffer && existingOffer.enabled != null ? Boolean(existingOffer.enabled) : true,
+  };
+  try {
+    await api("/api/commercial/offers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    $("#offer-form-id").value = "";
+    $("#offer-form-name").value = "";
+    $("#offer-form-keyword").value = "";
+    $("#offer-form-cta-xhs").value = "";
+    $("#offer-form-cta-gzh").value = "";
+    $("#offer-form-cta-video").value = "";
+    toast("🧩 商业化组件已保存");
+    await loadMatrixOps();
+  } catch (e) {
+    toast("保存组件失败: " + e.message, false);
+  }
+}
+window.saveCommercialOffer = saveCommercialOffer;
+
+async function deleteCommercialOffer(offerId) {
+  try {
+    await api(`/api/commercial/offers/${encodeURIComponent(offerId)}`, { method: "DELETE" });
+    toast("已删除商业化组件");
+    await loadMatrixOps();
+  } catch (e) {
+    toast("删除组件失败: " + e.message, false);
+  }
+}
+window.deleteCommercialOffer = deleteCommercialOffer;
+
+async function saveCommercialLedgerEntry() {
+  const payload = {
+    job_id: $("#comm-ledger-job").value || "",
+    account_id: $("#comm-ledger-account").value || "",
+    platform: $("#comm-ledger-platform").value || "小红书",
+    offer_id: $("#comm-ledger-offer").value || "",
+    revenue_type: $("#comm-ledger-type").value || "lead_magnet",
+    reads: parseInt($("#comm-ledger-reads").value, 10) || 0,
+    leads: parseInt($("#comm-ledger-leads").value, 10) || 0,
+    conversions: parseInt($("#comm-ledger-conversions").value, 10) || 0,
+    revenue_yuan: parseFloat($("#comm-ledger-revenue").value) || 0,
+    note: ($("#comm-ledger-note").value || "").trim(),
+  };
+  try {
+    const r = await api("/api/commercial/ledger", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    toast(`💰 已记入台账：营收 ¥${Number(r.entry && r.entry.revenue_yuan || 0).toFixed(2)}，线索 +${r.entry && r.entry.leads || 0}`);
+    $("#comm-ledger-leads").value = 0;
+    $("#comm-ledger-conversions").value = 0;
+    $("#comm-ledger-revenue").value = 0;
+    $("#comm-ledger-note").value = "";
+    await loadMatrixOps();
+  } catch (e) {
+    toast("记账失败: " + e.message, false);
+  }
+}
+window.saveCommercialLedgerEntry = saveCommercialLedgerEntry;
+
+async function deleteCommercialLedgerEntry(entryId) {
+  try {
+    await api(`/api/commercial/ledger/${encodeURIComponent(entryId)}`, { method: "DELETE" });
+    toast("已删除台账记录");
+    await loadMatrixOps();
+  } catch (e) {
+    toast("删除失败: " + e.message, false);
+  }
+}
+window.deleteCommercialLedgerEntry = deleteCommercialLedgerEntry;
 

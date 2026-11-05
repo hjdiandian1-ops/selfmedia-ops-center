@@ -28,7 +28,7 @@
     }
   })();
 </script>
-    <link rel="stylesheet" href="/static/style.css?v=3.92">
+    <link rel="stylesheet" href="/static/style.css?v=3.93">
 </head>
 <body>
 <div class="app">
@@ -64,6 +64,18 @@
       <button class="nav-item" data-view="outputs">
         <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4"/></svg>
         成品库
+      </button>
+      <button class="nav-item" data-view="cover-templates">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        封面提示词
+      </button>
+      <button class="nav-item" data-view="skills-repo">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Skills 技能库
+      </button>
+      <button class="nav-item" data-view="matrix-ops">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9zm6 12v-7h6v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        矩阵与商业化
       </button>
       <button class="nav-item" data-view="data">
         <svg viewBox="0 0 24 24"><path d="M4 20h16M7 20v-6M12 20v-10M17 20v-8"/></svg>
@@ -118,6 +130,28 @@
           <button class="btn small tonal" onclick="openPlatformPrefs()" title="选择要统计显示的平台">平台管理</button>
         </div>
         <div class="kpi-grid" id="kpi-cards"></div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:12px; margin-bottom:16px;">
+          <div class="card" style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:linear-gradient(90deg, rgba(56,189,248,0.12), rgba(168,85,247,0.12)); border:1px solid rgba(56,189,248,0.3); border-radius:12px; cursor:pointer;" onclick="switchView('cover-templates')">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="font-size:26px;">🎨</div>
+              <div>
+                <div style="font-weight:700; font-size:14px; color:var(--on-surface);">Beav 爆款封面提示词库</div>
+                <div style="font-size:12px; color:var(--on-surface-variant); margin-top:2px;">31 套精选爆款封面模板与生图提示词</div>
+              </div>
+            </div>
+            <button class="btn primary small" onclick="event.stopPropagation(); switchView('cover-templates')">查看封面 →</button>
+          </div>
+          <div class="card" style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:linear-gradient(90deg, rgba(16,185,129,0.12), rgba(56,189,248,0.12)); border:1px solid rgba(16,185,129,0.3); border-radius:12px; cursor:pointer;" onclick="switchView('skills-repo')">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="font-size:26px;">🧠</div>
+              <div>
+                <div style="font-weight:700; font-size:14px; color:var(--on-surface);">Beav AI Skills 技能知识库</div>
+                <div style="font-size:12px; color:var(--on-surface-variant); margin-top:2px;">36 个爆款创作与商业诊断原生 Skills</div>
+              </div>
+            </div>
+            <button class="btn primary small" onclick="event.stopPropagation(); switchView('skills-repo')">查看 Skills →</button>
+          </div>
+        </div>
         <div id="ov-overview" class="ov-pane"></div>
         <div id="ov-platform" class="ov-pane hidden"></div>
       </section>
@@ -128,12 +162,83 @@
           <button class="btn tonal" id="btn-fetch-topics" onclick="fetchHotTopics(this)" title="抓取多个信息源热点 → 清洗评分 → 生成日/周选题推荐">热点采集</button>
           <button class="btn" id="btn-refresh-topics" title="重新读取已生成的选题推荐文件（不重新采集）">刷新列表</button>
           <button class="btn tonal" id="btn-prefs" onclick="openPrefModal()" title="选择平台赛道，热点采集与选题推荐将按偏好过滤">偏好设置</button>
+          <button class="btn tonal" id="btn-open-kol-modal" onclick="openKolModal()" title="添加新的 X/Twitter 大V监控博主">＋ 关注大V</button>
+          <button class="btn tonal" id="btn-sync-kols" onclick="fetchKolFeed(this)" title="即时抓取大V最新推文并重新评分">🔄 刷新大V动态</button>
+          <span class="muted" id="kol-chip" style="font-size:12px;display:inline-flex;align-items:center;padding:2px 8px;background:rgba(56,189,248,0.1);color:#38bdf8;border-radius:12px;border:1px solid rgba(56,189,248,0.25);">大V监控：加载中…</span>
           <span class="muted" id="pref-chip"></span>
         </div>
         <div id="topics-progress" class="topics-progress hidden">
           <span class="tp-spinner"></span>
           <span id="topics-progress-text">准备采集…</span>
         </div>
+
+        <!-- 𝕏 大V雷达监控看板 (PrismFlow 架构) -->
+        <div class="card" id="card-kol-radar" style="margin-bottom: 20px;">
+          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <h3 style="display:flex;align-items:center;gap:6px;margin:0;"><span style="color:#38bdf8;">𝕏</span> 大V雷达监控</h3>
+              <span class="muted" id="kol-stat-text" style="font-size:12px;">正在加载关注博主与高热推文…</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn small tonal" onclick="openKolModal()">＋ 添加关注大V</button>
+              <button class="btn small tonal" id="btn-fetch-kols" onclick="fetchKolFeed(this)">🔄 即时抓取动态</button>
+            </div>
+          </div>
+          
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:12px;">
+            <!-- 大V管理 Chips 列表 -->
+            <div id="kol-list" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;"></div>
+            
+            <!-- 最新关注大V推文与流速预览流 -->
+            <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;">
+              <div style="font-size:12px;font-weight:600;opacity:0.8;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                <span>📡 关注博主最新高热动态（流速监控 & 观点精选）</span>
+                <span class="muted" style="font-size:11px;">点击「一键采纳」可直接发起流水线生产</span>
+              </div>
+              <div id="kol-feed-container" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:12px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🌐 全球前沿科技热点雷达 (多源分类聚合) -->
+        <div class="card" id="card-overseas-categories" style="margin-bottom: 20px;">
+          <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <h3 style="display:flex;align-items:center;gap:6px;margin:0;"><span>🌐</span> 全球前沿科技热点雷达</h3>
+              <span class="badge primary" style="font-size:11px;">多源并行 · 零封禁方案</span>
+              <span class="muted" id="cat-stat-text" style="font-size:12px;">已聚合 𝕏 / Google Trends / HN / GitHub / ProductHunt / Reddit</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn small primary" id="btn-fetch-all-overseas" onclick="fetchAllOverseasHotspots(this)">🔄 立即探测全网热点</button>
+            </div>
+          </div>
+          
+          <!-- 分区 Tab 选项卡导航 -->
+          <div class="category-tabs" style="display:flex;gap:8px;margin-top:12px;border-bottom:1px solid var(--outline-variant, rgba(255,255,255,0.08));padding-bottom:10px;overflow-x:auto;">
+            <button class="cat-tab-btn active" onclick="switchTopicCategory('x_trends')" data-cat="x_trends">
+              <span>𝕏 大V与热点</span>
+              <span class="cat-badge" id="cat-badge-x_trends">0</span>
+            </button>
+            <button class="cat-tab-btn" onclick="switchTopicCategory('google_trends')" data-cat="google_trends">
+              <span>🔥 谷歌趋势</span>
+              <span class="cat-badge" id="cat-badge-google_trends">0</span>
+            </button>
+            <button class="cat-tab-btn" onclick="switchTopicCategory('geek_dev')" data-cat="geek_dev">
+              <span>💻 极客开发 (HN+GitHub)</span>
+              <span class="cat-badge" id="cat-badge-geek_dev">0</span>
+            </button>
+            <button class="cat-tab-btn" onclick="switchTopicCategory('product_community')" data-cat="product_community">
+              <span>🚀 新产品与社区 (PH+Reddit)</span>
+              <span class="cat-badge" id="cat-badge-product_community">0</span>
+            </button>
+          </div>
+
+          <!-- 分区热点卡片网格 -->
+          <div id="topic-cat-content" style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:12px;">
+            <div class="muted" style="grid-column: 1/-1; text-align: center; padding: 20px;">正在加载前沿热点…</div>
+          </div>
+        </div>
+
         <div class="topics-layout">
           <div class="card">
             <div class="card-head"><h3>选题推荐</h3><span class="muted" id="suggest-path"></span></div>
@@ -177,7 +282,7 @@
           <div id="radar-list" class="stack"></div>
         </div>
         <div class="card">
-          <div class="card-head"><h3>信息源状态</h3><span class="muted">新增：今日热榜AI / 推楼1号（X 中文区）/ hex2077 AI 日报</span></div>
+          <div class="card-head"><h3>信息源状态</h3><span class="muted">聚焦海外主力源：𝕏 关注大V / 𝕏 全网热点 / Google Trends / Hacker News / GitHub Trending / Product Hunt / Reddit</span></div>
           <div id="source-status" class="source-grid"></div>
         </div>
       </section>
@@ -362,6 +467,26 @@
           <label class="field-label" style="margin:0"><input type="checkbox" onchange="setShowArchived(this.checked)"> 含已归档</label>
           <button class="btn" id="btn-refresh-pipeline" onclick="runWithSpin(this, loadPipeline)">刷新</button>
         </div>
+        <!-- 角色技能与视觉封面插槽装配工坊 -->
+        <div class="card pipeline-slots-card" id="pipeline-slots-card">
+          <div class="card-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <h3 style="margin:0;display:inline-flex;align-items:center;gap:6px;">
+                <span>🛠️ Agent 技能插槽与视觉封面装配工坊</span>
+              </h3>
+              <span class="badge primary" id="slots-scope-badge">全局默认装配</span>
+              <span class="muted" style="font-size:12px;" id="slots-updated-at">更新于 2026-09-20</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button class="btn tonal small" onclick="switchView('skills-repo')">📚 浏览全部 Skills (36)</button>
+              <button class="btn tonal small" onclick="switchView('cover-templates')">🎨 浏览封面库 (31)</button>
+              <button class="btn tonal small" id="btn-reset-slots" onclick="resetPipelineSlots()" title="恢复出厂推荐插槽配置">🔄 恢复默认</button>
+            </div>
+          </div>
+          <div id="pipeline-slots-grid" class="slots-grid">
+            <!-- 动态渲染 4 角色插槽 + 1 封面模板插槽 -->
+          </div>
+        </div>
         <div class="card">
           <div class="card-head"><h3>生产状态机</h3><span class="muted" id="pipeline-job-meta"></span></div>
           <div id="state-stepper" class="stepper"></div>
@@ -427,6 +552,64 @@
         </div>
       </section>
 
+      <!-- 封面提示词库 -->
+      <section id="view-cover-templates" class="view">
+        <div class="card" style="margin-bottom:16px;padding:14px 18px;">
+          <div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:260px;">
+              <input type="text" id="cover-search-input" class="field" placeholder="🔍 搜索封面风格、行业、关键词或提示词..." style="flex:1;" oninput="filterCoverTemplates()">
+              <button class="btn tonal small" onclick="clearCoverFilters()">清空</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span id="cover-count-badge" class="badge" style="font-size:12px;padding:4px 10px;background:var(--card-bg, #1e293b);">共 0 个模板</span>
+              <button class="btn tonal small" id="btn-sync-covers" onclick="syncCoverTemplates()">🔄 同步提示词库</button>
+            </div>
+          </div>
+          <div class="cover-categories" id="cover-category-bar" style="margin-top:12px;display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;flex-wrap:wrap;">
+            <!-- 分类选项卡 -->
+          </div>
+        </div>
+
+        <div id="cover-templates-grid" class="cover-cards-grid">
+          <!-- 封面卡片 -->
+        </div>
+
+        <div id="cover-empty-state" class="card hidden" style="text-align:center;padding:48px 20px;margin-top:20px;">
+          <div style="font-size:40px;margin-bottom:12px;">🎨</div>
+          <p style="font-size:15px;color:var(--text-muted);margin:0 0 12px 0;">未找到符合条件的封面模板</p>
+          <button class="btn tonal small" onclick="clearCoverFilters()">重置筛选条件</button>
+        </div>
+      </section>
+
+      <!-- Skills 技能库 -->
+      <section id="view-skills-repo" class="view">
+        <div class="card" style="margin-bottom:16px;padding:14px 18px;">
+          <div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:260px;">
+              <input type="text" id="skills-search-input" class="field" placeholder="🔍 搜索技能名称、Slug、作者、功能或标签..." style="flex:1;" oninput="filterSkillsRepo()">
+              <button class="btn tonal small" onclick="clearSkillsFilters()">清空</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span id="skills-count-badge" class="badge" style="font-size:12px;padding:4px 10px;background:var(--card-bg, #1e293b);">共 0 个技能</span>
+              <button class="btn tonal small" id="btn-sync-skills" onclick="syncSkillsRepo()">🔄 同步 Skills 库</button>
+            </div>
+          </div>
+          <div class="skills-categories" id="skills-category-bar" style="margin-top:12px;display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;flex-wrap:wrap;">
+            <!-- 分类选项卡 -->
+          </div>
+        </div>
+
+        <div id="skills-repo-grid" class="skills-cards-grid">
+          <!-- Skills 卡片列表 -->
+        </div>
+
+        <div id="skills-empty-state" class="card hidden" style="text-align:center;padding:48px 20px;margin-top:20px;">
+          <div style="font-size:40px;margin-bottom:12px;">🧠</div>
+          <p style="font-size:15px;color:var(--text-muted);margin:0 0 12px 0;">未找到符合条件的 AI Skill</p>
+          <button class="btn tonal small" onclick="clearSkillsFilters()">重置筛选条件</button>
+        </div>
+      </section>
+
       <!-- 数据 -->
       <section id="view-data" class="view">
         <div class="tabs" id="data-view-tabs" style="margin-bottom:16px">
@@ -462,6 +645,11 @@
                   <div><label class="field-label">点赞</label><input id="bf-likes" type="number" min="0" value="0"></div>
                   <div><label class="field-label">收藏</label><input id="bf-collects" type="number" min="0" value="0"></div>
                   <div><label class="field-label">评论</label><input id="bf-comments" type="number" min="0" value="0"></div>
+                </div>
+                <div class="form-grid" style="margin-top:6px">
+                  <div><label class="field-label">私域引流线索</label><input id="bf-leads" type="number" min="0" value="0"></div>
+                  <div><label class="field-label">成交转化单数</label><input id="bf-conversions" type="number" min="0" value="0"></div>
+                  <div><label class="field-label">变现营收 (¥)</label><input id="bf-revenue" type="number" min="0" step="0.01" value="0"></div>
                 </div>
                 <label class="field-label">作品链接（可选）</label>
                 <input id="bf-url" type="url" placeholder="https://…">
@@ -598,6 +786,310 @@
           </div>
           <div class="card">
             <div id="topic-feedback-content" class="markdown-body" style="padding:16px"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 矩阵与商业化中台（日更 SLA / 矩阵号一鱼多吃 / 商业化闭环 ROI） -->
+      <section id="view-matrix-ops" class="view">
+        <div class="tabs" id="matrix-ops-tabs" style="margin-bottom:16px">
+          <button class="tab active" data-mtab="sla" onclick="switchMatrixOpsTab('sla')">📅 日更排期与 SLA</button>
+          <button class="tab" data-mtab="matrix" onclick="switchMatrixOpsTab('matrix')">🏢 矩阵号与一鱼多吃</button>
+          <button class="tab" data-mtab="commercial" onclick="switchMatrixOpsTab('commercial')">💰 商业化闭环与 ROI</button>
+        </div>
+
+        <!-- Tab 1: 日更排期与 SLA -->
+        <div id="matrix-tab-sla">
+          <div class="card set-card" style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+              <div class="stack" style="font-size:13px;color:var(--text-muted)">
+                <div>📅 <b>工业级日更 SLA 监控</b>：实时追踪各矩阵号今日生产/发布配额缺口、连续不断更天数（Streak）与近 30 天内容日历热力图。</div>
+                <div>⚡ 当今日配额存在缺口时，点击右侧「一键无人值守补齐日更」，系统将自动从高分选题池匹配未发主题，按各号人设入队投产。</div>
+              </div>
+              <div class="toolbar" style="margin:0">
+                <button class="btn filled" onclick="runWithSpin(this, triggerDailyAutopilot)">⚡ 一键无人值守补齐日更</button>
+                <button class="btn tonal" onclick="runWithSpin(this, loadMatrixOps)">🔄 刷新大盘</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-grid" id="sla-kpi-grid"></div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <h3>🏢 各矩阵号今日日更配额进度</h3>
+                <span class="muted" id="sla-status-badge">加载中…</span>
+              </div>
+              <div id="sla-account-quotas" class="stack"></div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <h3>🔥 近 30 天日更热力日历</h3>
+                <span class="muted">深色=已达标 · 浅色=有产出</span>
+              </div>
+              <div id="sla-heatmap-30d" style="display:grid;grid-template-columns:repeat(10,1fr);gap:6px;padding:6px 0"></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <h3>➕ 新增日更排期槽位</h3>
+                <span class="muted">提前锁死未来 7 天选题，支持一键转投产</span>
+              </div>
+              <div class="form">
+                <div class="form-grid">
+                  <div><label class="field-label">排期日期</label><input id="sched-slot-date" type="date"></div>
+                  <div><label class="field-label">计划时间</label><input id="sched-slot-time" type="time" value="09:00"></div>
+                  <div><label class="field-label">归属矩阵号</label><select id="sched-slot-account" class="select"></select></div>
+                  <div><label class="field-label">首发平台</label><select id="sched-slot-platform" class="select"><option>小红书</option><option>公众号</option><option>短视频</option></select></div>
+                </div>
+                <label class="field-label">排期选题标题 <span style="color:var(--primary)">*</span></label>
+                <input id="sched-slot-title" placeholder="例如：DeepSeek 本地私有化部署与企业知识库实测对比">
+                <div class="form-grid">
+                  <div><label class="field-label">挂载商业化组件</label><select id="sched-slot-offer" class="select"></select></div>
+                  <div><label class="field-label">备注 / 切入角度</label><input id="sched-slot-notes" placeholder="可选：补充切入点或参考资料"></div>
+                </div>
+                <div class="toolbar" style="margin-top:8px">
+                  <button class="btn filled" onclick="runWithSpin(this, saveScheduleSlot)">📅 加入日更排期表</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>📋 日更排期计划表</h3>
+                <span class="muted">点击「立即投产」直接转入 9-Agent 流水线</span>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr><th>日期时间</th><th>矩阵号</th><th>排期主题</th><th>状态</th><th>操作</th></tr>
+                  </thead>
+                  <tbody id="sched-slot-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: 矩阵号与一鱼多吃 -->
+        <div id="matrix-tab-matrix" class="hidden">
+          <div class="card set-card" style="margin-bottom:12px">
+            <div class="stack" style="font-size:13px;color:var(--text-muted)">
+              <div>🏢 <b>矩阵号管理与「一鱼多吃」裂变引擎</b>：每个矩阵号拥有独立的<b>人设定位、差异化切入角、专属文风预设、默认商业化钩子与公众号凭据</b>。</div>
+              <div>🔥 输入 1 个核心母题，点击「一键裂变分发」，系统将按各矩阵号的差异化视角自动拆解出多套不重样的生产任务并入队投产（例如：主号做硬核架构拆解、副号做小白避坑清单、行业号做 ROI 成本测算）。</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-head">
+              <h3>🔥 一鱼多吃 · 矩阵裂变分发台</h3>
+              <span class="muted">1 个母题 ➔ N 个矩阵号差异化视角同步投产</span>
+            </div>
+            <div class="form">
+              <div class="form-grid">
+                <div style="grid-column:span 2">
+                  <label class="field-label">裂变核心母题 <span style="color:var(--primary)">*</span></label>
+                  <input id="dispatch-topic-title" placeholder="输入核心母题，如：2026 一人公司如何用 AI Agent 矩阵实现日更与私域自动变现">
+                </div>
+                <div>
+                  <label class="field-label">参考原文链接（可选，自动抓取 Grounding）</label>
+                  <input id="dispatch-topic-link" placeholder="https://...">
+                </div>
+                <div>
+                  <label class="field-label">统一覆盖变现组件（留空则按各号默认组件）</label>
+                  <select id="dispatch-topic-offer" class="select"></select>
+                </div>
+              </div>
+              <label class="field-label" style="margin-top:8px">选择参与裂变的目标矩阵号（多选）</label>
+              <div id="dispatch-accounts-checks" style="display:flex;gap:12px;flex-wrap:wrap;padding:6px 0"></div>
+              <label class="field-label">补充采编指令（可选）</label>
+              <input id="dispatch-topic-notes" placeholder="例如：重点对比传统人工团队与 Agent 流水线的单篇成本差异">
+              <div class="toolbar" style="margin-top:10px">
+                <button class="btn filled" onclick="runWithSpin(this, dispatchMatrixTopic)">🚀 一键裂变分发并启动流水线</button>
+                <span class="muted" id="dispatch-status-msg"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-head">
+              <h3>🏢 矩阵账号工作台</h3>
+              <span class="muted" id="matrix-accounts-count">加载中…</span>
+            </div>
+            <div id="matrix-accounts-grid" class="grid-3"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3 id="matrix-form-title">➕ 新增 / 编辑矩阵账号</h3>
+              <button class="btn small tonal" onclick="resetMatrixAccountForm()">清空重置</button>
+            </div>
+            <div class="form">
+              <input type="hidden" id="mat-acc-id">
+              <div class="form-grid">
+                <div><label class="field-label">账号名称 <span style="color:var(--primary)">*</span></label><input id="mat-acc-name" placeholder="例如：小吴聊AI · 极客主号"></div>
+                <div><label class="field-label">账号 Handle / 标识</label><input id="mat-acc-handle" placeholder="@xiaowuliao_ai"></div>
+                <div><label class="field-label">垂直赛道</label><input id="mat-acc-niche" placeholder="AI大模型与工程实战"></div>
+                <div><label class="field-label">每日日更目标（篇/天）</label><input id="mat-acc-target" type="number" min="0" max="20" value="1"></div>
+              </div>
+              <div class="form-grid">
+                <div><label class="field-label">人设定位（Stage 2 写作自动注入）</label><input id="mat-acc-persona" placeholder="例如：硬核AI全栈工程师+内容操盘手"></div>
+                <div><label class="field-label">目标受众</label><input id="mat-acc-audience" placeholder="例如：开发者、独立创作者、技术管理者"></div>
+                <div><label class="field-label">矩阵差异化切入角（一鱼多吃视角）</label><input id="mat-acc-angle" placeholder="例如：深度架构拆解 + 真实跑分对比 + 一手源码实测"></div>
+                <div><label class="field-label">绑定文风预设</label>
+                  <select id="mat-acc-style" class="select">
+                    <option value="xiaowuliao-style">👑 小吴聊专属风 (xiaowuliao-style)</option>
+                    <option value="tech-hands-on">💻 科技实战风 (tech-hands-on)</option>
+                    <option value="business-deep-dive">💼 深度商业风 (business-deep-dive)</option>
+                    <option value="xhs-lifestyle">🛍️ 小红书轻快风 (xhs-lifestyle)</option>
+                    <option value="career-growth">📈 职场认知风 (career-growth)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-grid">
+                <div><label class="field-label">默认挂载商业化组件</label><select id="mat-acc-offer" class="select"></select></div>
+                <div><label class="field-label">独立公众号 AppID（可选）</label><input id="mat-acc-gzh-id" placeholder="wx...（留空则共用全局设置）"></div>
+                <div><label class="field-label">独立公众号 AppSecret（可选）</label><input id="mat-acc-gzh-secret" type="password" placeholder="留空不修改"></div>
+                <div style="display:flex;align-items:flex-end;gap:12px">
+                  <label class="field-label" style="margin:0"><input type="checkbox" id="mat-acc-enabled" checked> 启用日更与矩阵分发</label>
+                </div>
+              </div>
+              <div class="toolbar" style="margin-top:10px">
+                <button class="btn filled" onclick="runWithSpin(this, saveMatrixAccount)">💾 保存矩阵账号</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: 商业化闭环与 ROI -->
+        <div id="matrix-tab-commercial" class="hidden">
+          <div class="card set-card" style="margin-bottom:12px">
+            <div class="stack" style="font-size:13px;color:var(--text-muted)">
+              <div>💰 <b>商业化变现全链路闭环</b>：打通「公域内容曝光 ➔ 评论/私信钩子 (CTA) ➔ 私域引流线索 (Leads) ➔ 课程/社群/商单成交 (Conversions) ➔ 净变现 ROI 核算 ➔ 反哺选题飞轮」。</div>
+              <div>🎯 在下方配置好「商业化挂载组件」后，Stage 2 写作 Agent 会在小红书、公众号与短视频脚本末尾自动植入合规不违规的自然引导钩子，并在数据飞轮中自动加权高变现母题。</div>
+            </div>
+          </div>
+
+          <div class="kpi-grid" id="comm-kpi-grid"></div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <h3>🌪️ 公域 ➔ 私域 ➔ 变现转化漏斗</h3>
+                <span class="muted">全链路转化效率监控</span>
+              </div>
+              <div id="comm-funnel-box" class="stack"></div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <h3>🏢 各矩阵号变现贡献排行</h3>
+                <span class="muted">按累计变现营收排序</span>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr><th>矩阵号</th><th class="num">引流线索</th><th class="num">成交单数</th><th class="num">累计营收</th></tr>
+                  </thead>
+                  <tbody id="comm-by-account-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <h3>🧩 商业化挂载组件库（CTA 钩子与变现产品）</h3>
+                <span class="muted">写作流水线自动注入尾段</span>
+              </div>
+              <div id="comm-offers-list" class="stack" style="margin-bottom:14px"></div>
+              <details class="card set-card">
+                <summary style="cursor:pointer;font-weight:600">➕ 新增 / 更新商业化组件</summary>
+                <div class="form" style="margin-top:10px">
+                  <input type="hidden" id="offer-form-id">
+                  <div class="form-grid">
+                    <div><label class="field-label">组件名称 <span style="color:var(--primary)">*</span></label><input id="offer-form-name" placeholder="例如：AI 自动化实战训练营"></div>
+                    <div><label class="field-label">变现模式</label>
+                      <select id="offer-form-type" class="select">
+                        <option value="lead_magnet">🧲 私域引流钩子（领资料/加微）</option>
+                        <option value="course_community">🎓 付费社群 / 训练营 / 专栏</option>
+                        <option value="course">🎓 社群 / 知识付费 (course)</option>
+                        <option value="affiliate_saas">🛒 工具带货 / CPS 佣金 / SaaS</option>
+                        <option value="product">🛒 SaaS / 电商产品 (product)</option>
+                        <option value="brand_sponsor">🤝 品牌商单 / 软文合作</option>
+                        <option value="sponsor">🤝 品牌商单 (sponsor)</option>
+                        <option value="consulting">💼 1v1 咨询 / 企业内训定制</option>
+                        <option value="ad_share">📢 平台流量主分成</option>
+                      </select>
+                    </div>
+                    <div><label class="field-label">成交客单价 (¥)</label><input id="offer-form-price" type="number" min="0" step="0.01" value="299"></div>
+                    <div><label class="field-label">触发关键词</label><input id="offer-form-keyword" placeholder="例如：蓝图 / 源码 / 实战"></div>
+                  </div>
+                  <label class="field-label">📕 小红书合规引导钩子（自动防平台敏感词）</label>
+                  <input id="offer-form-cta-xhs" placeholder="例如：整理的完整配置清单和避坑表放置顶评论/合集啦，需要的朋友自取～">
+                  <label class="field-label">🟢 公众号文末转化引导</label>
+                  <input id="offer-form-cta-gzh" placeholder="例如：在公众号后台回复【蓝图】，自动获取完整配置模板与实操手册。">
+                  <label class="field-label">🎬 短视频口播转化钩子</label>
+                  <input id="offer-form-cta-video" placeholder="例如：把完整流程图整理在评论区置顶了，记得先收藏免得找不着！">
+                  <div class="toolbar" style="margin-top:8px">
+                    <button class="btn filled small" onclick="runWithSpin(this, saveCommercialOffer)">保存组件</button>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>📝 录入变现转化与商单台账</h3>
+                <span class="muted">自动归因到任务与矩阵号，反哺选题权重</span>
+              </div>
+              <div class="form">
+                <div class="form-grid">
+                  <div><label class="field-label">关联生产任务（可选）</label><select id="comm-ledger-job" class="select"></select></div>
+                  <div><label class="field-label">归属矩阵号</label><select id="comm-ledger-account" class="select"></select></div>
+                  <div><label class="field-label">来源平台</label><select id="comm-ledger-platform" class="select"><option>小红书</option><option>公众号</option><option>短视频</option></select></div>
+                  <div><label class="field-label">挂载组件</label><select id="comm-ledger-offer" class="select"></select></div>
+                </div>
+                <div class="form-grid">
+                  <div><label class="field-label">营收类型</label>
+                    <select id="comm-ledger-type" class="select">
+                      <option value="lead_magnet">🧲 私域引流钩子</option>
+                      <option value="course_community">🎓 付费社群/课程</option>
+                      <option value="course">🎓 知识付费专栏</option>
+                      <option value="affiliate_saas">🛒 工具带货/SaaS</option>
+                      <option value="product">🛒 自研产品订阅</option>
+                      <option value="brand_sponsor">🤝 品牌商单合作</option>
+                      <option value="sponsor">🤝 品牌商单</option>
+                      <option value="consulting">💼 企业咨询定制</option>
+                      <option value="ad_share">📢 流量主分成</option>
+                    </select>
+                  </div>
+                  <div><label class="field-label">阅读/播放量</label><input id="comm-ledger-reads" type="number" min="0" value="0"></div>
+                  <div><label class="field-label">新增私域线索 (人)</label><input id="comm-ledger-leads" type="number" min="0" value="0"></div>
+                  <div><label class="field-label">成交转化 (单)</label><input id="comm-ledger-conversions" type="number" min="0" value="0"></div>
+                </div>
+                <div class="form-grid">
+                  <div><label class="field-label">实际变现金额 (¥，留0可按组件客单价自动核算)</label><input id="comm-ledger-revenue" type="number" min="0" step="0.01" value="0"></div>
+                  <div><label class="field-label">归因说明 / 客户备注</label><input id="comm-ledger-note" placeholder="例如：来自公众号长文引导成交 2 单年度会员"></div>
+                </div>
+                <div class="toolbar" style="margin-top:8px">
+                  <button class="btn filled" onclick="runWithSpin(this, saveCommercialLedgerEntry)">💰 记入变现台账</button>
+                </div>
+              </div>
+
+              <h3 style="margin-top:18px;font-size:15px">📜 最近商业化转化流水</h3>
+              <div class="table-wrap" style="margin-top:8px">
+                <table class="table">
+                  <thead>
+                    <tr><th>时间</th><th>主题/说明</th><th>矩阵号</th><th class="num">线索</th><th class="num">成交</th><th class="num">营收(¥)</th><th></th></tr>
+                  </thead>
+                  <tbody id="comm-ledger-table"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1129,7 +1621,271 @@
   </div>
 </div>
 
+<!-- 封面提示词详情模态弹窗 -->
+<div id="cover-detail-modal" class="modal hidden" onclick="if(event.target===this)closeCoverModal()">
+  <div class="modal-box repo-modal-box cover-modal-box" style="max-width:920px; width:94%; max-height:90vh;">
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="badge primary" id="cover-modal-category">分类</span>
+        <h3 id="cover-modal-title" style="margin:0;font-size:17px;font-weight:700;color:var(--on-surface);">封面模板详情</h3>
+      </div>
+      <button class="btn small tonal" onclick="closeCoverModal()">关闭</button>
+    </div>
+    <div class="modal-body cover-modal-body" style="display:flex;gap:20px;padding:18px 20px;flex-direction:row;flex-wrap:wrap;overflow-y:auto;">
+      <div class="cover-modal-preview" style="flex:0 0 280px;max-width:320px;text-align:center;">
+        <div class="cover-modal-img-wrap" style="background:var(--surface-dim);border-radius:10px;overflow:hidden;border:1px solid var(--outline-variant);box-shadow:var(--shadow-1);">
+          <img id="cover-modal-img" src="" alt="封面预览" style="width:100%;height:auto;display:block;max-height:420px;object-fit:contain;">
+        </div>
+        <div id="cover-modal-specs" class="cover-modal-specs" style="margin-top:12px;text-align:left;display:flex;flex-direction:column;gap:6px;font-size:13px;">
+          <!-- 规格参数 -->
+        </div>
+      </div>
+      <div class="cover-modal-content" style="flex:1;min-width:320px;display:flex;flex-direction:column;gap:12px;">
+        <div id="cover-modal-summary" class="repo-modal-summary-box"></div>
+        <div id="cover-modal-tags" class="repo-modal-tags-box"></div>
+        <div class="repo-code-container" style="flex:1;display:flex;flex-direction:column;">
+          <div class="repo-code-header">
+            <div class="repo-code-title">
+              <span>🎯 AI 生图完整提示词</span>
+            </div>
+            <button class="btn tonal small" id="btn-copy-modal-prompt" onclick="copyModalPrompt()">📋 一键复制提示词</button>
+          </div>
+          <pre id="cover-modal-prompt" class="repo-code-body" style="flex:1;min-height:220px;max-height:360px;"></pre>
+        </div>
+      </div>
+    </div>
+    <div class="repo-modal-actions-bar" style="display:flex;gap:10px;align-items:center;padding:12px 20px;background:var(--surface-dim);border-top:1px solid var(--outline-variant);justify-content:flex-end;">
+      <button class="btn tonal small" id="btn-cover-set-default" onclick="setDefaultCoverTemplate()">🎨 设为流水线默认封面</button>
+      <button class="btn primary small" id="btn-cover-quick-adopt" onclick="applyCoverTemplateToNewJob()">⚡ 套用模板建任务</button>
+    </div>
+  </div>
+</div>
+
+<!-- Skills 详情模态弹窗 -->
+<div id="skill-detail-modal" class="modal hidden" onclick="if(event.target===this)closeSkillModal()">
+  <div class="modal-box repo-modal-box skill-modal-box" style="max-width:960px; width:95%; max-height:90vh; display:flex; flex-direction:column;">
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="badge primary" id="skill-modal-category">分类</span>
+        <span class="badge" id="skill-modal-badge" style="background:rgba(255,36,66,0.12);color:#e11d48;border:1px solid rgba(255,36,66,0.25);display:none;">RED skill</span>
+        <span id="skill-modal-rating" style="font-size:13px;font-weight:700;color:#f59e0b;display:inline-flex;align-items:center;gap:3px;">⭐ 5.0</span>
+        <span class="badge" id="skill-modal-version" style="font-size:12px;opacity:0.85;background:var(--surface-dim);color:var(--on-surface-variant);border:1px solid var(--outline-variant);">v1.0.0</span>
+        <h3 id="skill-modal-title" style="margin:0;font-size:17px;font-weight:700;color:var(--on-surface);">Skill 详情</h3>
+      </div>
+      <button class="btn small tonal" onclick="closeSkillModal()">关闭</button>
+    </div>
+    <div class="modal-body skill-modal-body" style="overflow-y:auto; flex:1; padding:18px 20px; display:flex; flex-direction:column; gap:14px;">
+      <!-- 作者与元信息条 -->
+      <div class="repo-modal-author-bar">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <img id="skill-modal-avatar" src="" style="width:40px; height:40px; border-radius:10px; border:1px solid var(--outline-variant); object-fit:cover; background:var(--surface-dim);">
+          <div>
+            <div class="repo-modal-author-name">
+              <span id="skill-modal-author">作者</span>
+              <span id="skill-modal-risk" class="repo-modal-risk-pill">低风险</span>
+            </div>
+            <div class="repo-modal-meta-text" id="skill-modal-date">更新于 2026年</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <a id="skill-modal-github" href="#" target="_blank" class="btn small tonal" style="text-decoration:none; display:none; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            GitHub 源码
+          </a>
+          <a id="skill-modal-xhs" href="#" target="_blank" class="btn small tonal" style="text-decoration:none; display:none; color:#e11d48; border-color:rgba(255,36,66,0.3);">
+            📕 小红书主页
+          </a>
+          <a id="skill-modal-beav" href="#" target="_blank" class="btn small tonal" style="text-decoration:none;">
+            🔗 Beav 原站
+          </a>
+        </div>
+      </div>
+
+      <!-- 简介 -->
+      <div id="skill-modal-summary" class="repo-modal-summary-box"></div>
+
+      <!-- 标签 -->
+      <div id="skill-modal-tags" class="repo-modal-tags-box"></div>
+
+      <!-- SKILL.md 代码与操作容器 -->
+      <div class="repo-code-container">
+        <div class="repo-code-header">
+          <div class="repo-code-title">
+            <span>📜 pristine SKILL.md 规则正文</span>
+            <span id="skill-modal-chars" class="repo-code-chars">0 字符</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn tonal small" id="btn-copy-skill-prompt" onclick="copySkillPrompt()">📋 复制纯提示词 Prompt</button>
+            <button class="btn primary small" id="btn-copy-skill-md" onclick="copySkillMd()">📄 复制完整 SKILL.md</button>
+          </div>
+        </div>
+        <pre id="skill-modal-code" class="repo-code-body"></pre>
+      </div>
+    </div>
+    <div class="repo-modal-actions-bar" style="display:flex;gap:10px;align-items:center;padding:12px 20px;background:var(--surface-dim);border-top:1px solid var(--outline-variant);justify-content:flex-end;">
+      <button class="btn tonal small" id="btn-skill-apply-job" onclick="applySkillToNewJob()">⚡ 以此 Skill 建任务</button>
+      <button class="btn primary small" id="btn-skill-mount-slot" onclick="openMountSkillModal()">🧩 挂载到流水线插槽</button>
+    </div>
+  </div>
+</div>
+
+<!-- 挂载 Skill 到流水线插槽弹窗 -->
+<div id="modal-mount-slot" class="modal hidden" onclick="if(event.target===this)closeMountSlotModal()">
+  <div class="modal-box" style="max-width:560px;width:92%;">
+    <div class="modal-head">
+      <h3 style="margin:0;font-size:16px;">🧩 挂载 Skill 到流水线角色插槽</h3>
+      <button class="btn small tonal" onclick="closeMountSlotModal()">关闭</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <span class="muted" style="font-size:12px;">待装配技能：</span>
+        <div id="mount-slot-skill-name" style="font-size:15px;font-weight:700;color:var(--primary);margin-top:2px;"></div>
+      </div>
+      <div>
+        <label class="field-label" style="margin-bottom:8px;">选择目标角色插槽：</label>
+        <div class="stack" style="gap:8px;">
+          <label class="slot-radio-option" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface-hover);border:1px solid var(--outline-variant);border-radius:8px;cursor:pointer;">
+            <input type="radio" name="mount-role-radio" value="xhs_editor" checked style="margin-top:3px;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">📕 小红书主编 (Stage 2a draft)</div>
+              <div class="muted" style="font-size:12px;">注入爆款大字标题、痛点留人钩子与视觉卡片文案规范</div>
+            </div>
+          </label>
+          <label class="slot-radio-option" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface-hover);border:1px solid var(--outline-variant);border-radius:8px;cursor:pointer;">
+            <input type="radio" name="mount-role-radio" value="gzh_editor" style="margin-top:3px;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">🟢 公众号主编 (Stage 2b draft)</div>
+              <div class="muted" style="font-size:12px;">注入长文深度剖析、商业洞察与极客活人感行文规范</div>
+            </div>
+          </label>
+          <label class="slot-radio-option" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface-hover);border:1px solid var(--outline-variant);border-radius:8px;cursor:pointer;">
+            <input type="radio" name="mount-role-radio" value="video_director" style="margin-top:3px;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">🎬 短视频导演 (Stage 2c draft)</div>
+              <div class="muted" style="font-size:12px;">注入120秒五段式分镜节奏、情绪节拍与高留存脚本</div>
+            </div>
+          </label>
+          <label class="slot-radio-option" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface-hover);border:1px solid var(--outline-variant);border-radius:8px;cursor:pointer;">
+            <input type="radio" name="mount-role-radio" value="researcher" style="margin-top:3px;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">🔍 资深采编 (Stage 1 materials)</div>
+              <div class="muted" style="font-size:12px;">注入行业研报深度调研、对标案例拆解与数据指标挖掘</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--outline-variant);">
+        <input type="checkbox" id="mount-slot-global" checked>
+        <label for="mount-slot-global" style="font-size:13px;cursor:pointer;">设为流水线全局默认配置（后续所有新任务均生效）</label>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;">
+        <button class="btn tonal" onclick="closeMountSlotModal()">取消</button>
+        <button class="btn primary" id="btn-confirm-mount-slot" onclick="confirmMountSkillToSlot()">确认装配</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 岗位插槽快捷选择弹窗 -->
+<div id="modal-slot-picker" class="modal hidden" onclick="if(event.target===this)closeSlotPickerModal()">
+  <div class="modal-box" style="max-width:680px;width:94%;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="badge primary" id="picker-role-badge">岗位</span>
+        <h3 id="picker-modal-title" style="margin:0;font-size:16px;">选择绑定的技能/模板</h3>
+      </div>
+      <button class="btn small tonal" onclick="closeSlotPickerModal()">关闭</button>
+    </div>
+    <div style="padding:10px 16px;border-bottom:1px solid var(--outline-variant);background:var(--surface-hover);">
+      <input type="text" id="picker-search-input" class="input" placeholder="🔍 快速搜索技能或模板名称/标签..." oninput="filterPickerItems(this.value)" style="width:100%;">
+    </div>
+    <div class="modal-body" id="picker-items-list" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
+      <!-- 动态候选卡片 -->
+    </div>
+  </div>
+</div>
+
+<!-- 快速建任务弹窗 -->
+<div id="modal-quick-adopt" class="modal hidden" onclick="if(event.target===this)closeQuickAdoptModal()">
+  <div class="modal-box" style="max-width:540px;width:92%;">
+    <div class="modal-head">
+      <h3 style="margin:0;font-size:16px;">⚡ 快速建立生产任务</h3>
+      <button class="btn small tonal" onclick="closeQuickAdoptModal()">关闭</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
+      <div id="quick-adopt-preset-pill" class="badge primary" style="align-self:flex-start;padding:4px 10px;font-size:12px;"></div>
+      <div class="form">
+        <label class="field-label" for="quick-adopt-title">选题主题 / 标题 <span style="color:var(--primary)">*</span></label>
+        <input type="text" id="quick-adopt-title" class="input" placeholder="例如：Claude 3.7 Sonnet 混合推理实操深度拆解" style="width:100%;">
+      </div>
+      <div class="form">
+        <label class="field-label" for="quick-adopt-link">参考链接 (可选，将自动抓取原文做真实 Grounding)</label>
+        <input type="text" id="quick-adopt-link" class="input" placeholder="https://..." style="width:100%;">
+      </div>
+      <div class="form-grid">
+        <div>
+          <label class="field-label" for="quick-adopt-account">归属矩阵号</label>
+          <select id="quick-adopt-account" class="select" style="width:100%;"><option value="">默认主号</option></select>
+        </div>
+        <div>
+          <label class="field-label" for="quick-adopt-offer">商业化挂载组件</label>
+          <select id="quick-adopt-offer" class="select" style="width:100%;"><option value="">跟随矩阵号默认</option></select>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px;">
+        <button class="btn tonal" onclick="closeQuickAdoptModal()">取消</button>
+        <button class="btn primary" id="btn-submit-quick-adopt" onclick="submitQuickAdopt()">立即建任务并生产</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 添加关注大V弹窗 (KOL Modal) -->
+<div id="kol-modal" class="modal hidden" onclick="if(event.target===this)closeKolModal()">
+  <div class="modal-box" style="max-width:500px;">
+    <div class="modal-head">
+      <h3 style="display:flex;align-items:center;gap:6px;margin:0;"><span style="color:#38bdf8;">𝕏</span> 添加关注大V (KOL Radar)</h3>
+      <button class="btn small tonal" onclick="closeKolModal()">关闭</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:16px 0;">
+      <div>
+        <label class="field-label" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">X 用户名 / Handle <span style="color:#ef4444;">*</span></label>
+        <div style="display:flex;align-items:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:0 10px;">
+          <span style="opacity:0.6;font-size:14px;margin-right:4px;">@</span>
+          <input type="text" id="kol-input-handle" placeholder="sama" style="flex:1;background:transparent;border:none;color:inherit;padding:8px 0;outline:none;">
+        </div>
+        <span style="font-size:11px;opacity:0.6;margin-top:4px;display:block;">输入 Twitter 用户名，例如 sama、karpathy、dotey、AnthropicAI</span>
+      </div>
+      <div>
+        <label class="field-label" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">显示昵称 / 中文标签</label>
+        <input type="text" id="kol-input-name" placeholder="Sam Altman" class="input" style="width:100%;">
+      </div>
+      <div>
+        <label class="field-label" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">赛道分类</label>
+        <select id="kol-input-category" class="select" style="width:100%;">
+          <option value="AI大模型">AI大模型</option>
+          <option value="AI与教育">AI与教育</option>
+          <option value="AI Agent">AI Agent</option>
+          <option value="AI实战落地">AI实战落地</option>
+          <option value="开源与算力">开源与算力</option>
+          <option value="商业认知">商业认知</option>
+          <option value="出海独立开发">出海独立开发</option>
+          <option value="科技综合">科技综合</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">关注理由 / 监控侧重</label>
+        <textarea id="kol-input-note" rows="2" class="input" placeholder="例如：关注其大模型发布一手信号与开发者观点" style="width:100%;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions" style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;">
+      <button class="btn tonal" onclick="closeKolModal()">取消</button>
+      <button class="btn primary" id="btn-submit-kol" onclick="submitAddKol()">确认添加</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast hidden"></div>
-    <script src="/static/app.js?v=3.92"></script>
+    <script src="/static/app.js?v=3.96"></script>
 </body>
 </html>

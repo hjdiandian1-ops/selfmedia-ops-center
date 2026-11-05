@@ -53,8 +53,10 @@ def test_logs_and_platform_days_and_videos(tmp_path):
     open(fresh_log, "w").write("x")
     _old(old_log)
 
+    mid_day = (now - timedelta(days=15)).strftime("%Y-%m-%d")
+    fresh_day = (now - timedelta(days=3)).strftime("%Y-%m-%d")
     _w(root, "data/flywheel/platform_virals.json", {
-        "days": {"2026-01-01": {}, "2026-08-01": {}, (now - timedelta(days=3)).strftime("%Y-%m-%d"): {}},
+        "days": {"2026-01-01": {}, mid_day: {}, fresh_day: {}},
     })
     vv_path = os.path.join(root, "data/flywheel/viral_videos.json")
     _w(root, "data/flywheel/viral_videos.json", {"videos": [
@@ -66,7 +68,7 @@ def test_logs_and_platform_days_and_videos(tmp_path):
     assert old_log in result["plan"]["logs"]
     assert fresh_log not in result["plan"]["logs"]
     assert "2026-01-01" in result["plan"]["platform_days"]
-    assert "2026-08-01" not in result["plan"]["platform_days"]
+    assert mid_day not in result["plan"]["platform_days"]
     assert result["plan"]["stale_videos"] == ["v_stale"]
 
     RT.apply_plan(result, root)

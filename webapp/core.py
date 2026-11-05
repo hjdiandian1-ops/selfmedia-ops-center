@@ -20,6 +20,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException, Request
 
+sys.modules["core"] = sys.modules[__name__]
+sys.modules["webapp.core"] = sys.modules[__name__]
+
 logger = logging.getLogger("selfmedia")
 
 # ---------- 路径常量 ----------
@@ -50,6 +53,26 @@ RETENTION_LOG = os.path.join(ROOT, "data", "retention_log.json")
 TOPICS_DIR = os.path.join(ROOT, "data", "topics")
 TEMPLATES_FILE = os.path.join(ROOT, "data", "templates.json")
 USER_PREFS_FILE = os.path.join(ROOT, "data", "user_prefs.json")
+COVER_TEMPLATES_DIR = os.path.join(ROOT, "data", "cover_templates")
+COVER_TEMPLATES_FILE = os.path.join(COVER_TEMPLATES_DIR, "templates.json")
+COVER_TEMPLATES_IMAGES = os.path.join(COVER_TEMPLATES_DIR, "images")
+CRAWL_COVER_TEMPLATES_SCRIPT = os.path.join(SCRIPTS, "crawl_getbeav_templates.py")
+
+SKILLS_REPO_DIR = os.path.join(ROOT, "data", "skills_repo")
+SKILLS_REPO_FILE = os.path.join(SKILLS_REPO_DIR, "skills.json")
+SKILLS_REPO_AVATARS = os.path.join(SKILLS_REPO_DIR, "avatars")
+CRAWL_SKILLS_REPO_SCRIPT = os.path.join(SCRIPTS, "crawl_getbeav_skills.py")
+
+PIPELINE_SLOTS_FILE = os.path.join(ROOT, "data", "pipeline_slots.json")
+
+MATRIX_DIR = os.path.join(ROOT, "data", "matrix")
+MATRIX_ACCOUNTS_FILE = os.path.join(MATRIX_DIR, "accounts.json")
+DAILY_SCHEDULE_FILE = os.path.join(MATRIX_DIR, "schedule.json")
+
+COMMERCIAL_DIR = os.path.join(ROOT, "data", "commercial")
+COMMERCIAL_OFFERS_FILE = os.path.join(COMMERCIAL_DIR, "offers.json")
+COMMERCIAL_LEDGER_FILE = os.path.join(COMMERCIAL_DIR, "ledger.json")
+
 
 STYLE_DOCS = [
     ("skills/personal-style-guide.md", "个人文风指南"),
@@ -338,11 +361,18 @@ def _mask(value):
 
 
 # ---------- 子进程与文件工具 ----------
-def run_script(args: List[str], timeout: int = 60) -> dict:
-    """白名单脚本执行封装：返回结构化结果。"""
+def run_script(args: List[str], timeout: int = 60, extra_env: Optional[Dict[str, str]] = None) -> dict:
+    """白名单脚本执行封装：返回结构化结果（支持子进程隔离环境变量 extra_env，避免污染全局 os.environ）。"""
     cmd = [sys.executable, os.path.join(SCRIPTS, args[0])] + args[1:]
+    env = dict(os.environ)
+    env["SELFMEDIA_JOBS_DIR"] = JOBS_DIR
+    env["JOBS_DIR"] = JOBS_DIR
+    if extra_env:
+        for k, v in extra_env.items():
+            if v is not None:
+                env[str(k)] = str(v)
     try:
-        r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=timeout, env=env)
         return {"ok": r.returncode == 0, "exit": r.returncode,
                 "stdout": r.stdout[-4000:], "stderr": r.stderr[-2000:]}
     except subprocess.TimeoutExpired:
@@ -384,21 +414,25 @@ def _load_flywheel(path: str, default: dict) -> dict:
     return read_json(path) or default
 
 
+def _atomic_write_json(path: str, data: dict) -> None:
+    """并发安全的原子写 JSON：使用带随机后缀的独立临时文件再 os.replace，避免多线程并发写同一 .tmp 冲突。"""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = f"{path}.{os.getpid()}.{os.urandom(4).hex()}.tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+
+
 def _save_flywheel(path: str, data: dict) -> None:
     """原子写 JSON（先落临时文件再替换），避免半截文件。"""
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, path)
-
-
-def _atomic_write_json(path: str, data: dict) -> None:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, path)
+    _atomic_write_json(path, data)
 
 
 # ---------- 生产队列支持函数 ----------
@@ -596,6 +630,16 @@ def _build_feedback_md() -> str:
     formula_lines = "\n".join(
         f"- {f} × {n} 条跟踪案例" for f, n in formula_cnt.most_common(8)) or "- 暂无爆款公式"
 
+    ledger_entries = _load_commercial_ledger().get("entries", [])
+    total_rev = sum(float(e.get("revenue_yuan") or 0.0) for e in ledger_entries)
+    total_leads = sum(int(e.get("leads") or 0) for e in ledger_entries)
+    total_convs = sum(int(e.get("conversions") or 0) for e in ledger_entries)
+    top_comm = sorted(ledger_entries, key=lambda x: (float(x.get("revenue_yuan") or 0.0), int(x.get("leads") or 0)), reverse=True)[:3]
+    comm_lines = "\n".join(
+        f"  - {c.get('title') or c.get('job_id')}（账号:{c.get('account_name') or '默认'}）线索 {c.get('leads', 0)} ｜ 转化 {c.get('conversions', 0)} ｜ 变现 ¥{float(c.get('revenue_yuan') or 0):.0f}"
+        for c in top_comm
+    ) or "  - 暂无商业化转化记录（建议在创作时挂载私域钩子/转化组件并回填线索与营收）"
+
     return "\n".join([
         "# 数据飞轮 · 流水线反哺指令包",
         f"> 生成时间：{_now_str()}",
@@ -622,7 +666,161 @@ def _build_feedback_md() -> str:
         "1. 先读「已沉淀经验」，命中适用场景的必须执行，不得与既有结论冲突。",
         "2. 标题与结构优先复用「爆款公式参考」中验证过的公式。",
         "3. 完成后在汇报里注明：本次应用了哪条经验/公式；效果回填后再更新飞轮。",
+        "",
+        "## 六、商业化闭环与矩阵变现反馈",
+        f"- 累计变现营收：¥{total_rev:.2f} ｜ 累计私域线索：{total_leads} 条 ｜ 成交转化：{total_convs} 单",
+        "- 高变现内容 TOP3：",
+        comm_lines,
+        "- 商业化写稿准则：拒绝无转化的自嗨流量，文末或卡片尾页自然嵌入利他型行动召唤（评论区关键词领 SOP / 关注公众号领工具包），严守平台合规红线（禁止硬留微信号与绝对化收益承诺）。",
     ])
+
+
+def _default_matrix_accounts() -> list:
+    return [
+        {
+            "id": "acc_main",
+            "name": "小吴聊AI（主号·深度旗舰）",
+            "handle": "@xiaowuliao",
+            "platforms": ["公众号", "小红书", "短视频"],
+            "niche": "AI大模型与一人公司实战",
+            "persona": "极客技术+内容操盘手，擅长把前沿模型、Agent工作流和商业账本拆解得通透接地气",
+            "angle_hint": "深度商业洞察 + 架构实操拆解 + 真实成本收益账本",
+            "style_preset": "xiaowuliao-style",
+            "daily_target": 1,
+            "default_offer_id": "offer_pro_workbench",
+            "gzh_app_id": "",
+            "gzh_app_secret": "",
+            "enabled": True,
+            "created_at": "2026-08-01 08:00:00",
+        },
+        {
+            "id": "acc_side_hustle",
+            "name": "AI副业拆解局（副号·搞钱实操）",
+            "handle": "@ai_side_hustle",
+            "platforms": ["小红书", "短视频"],
+            "niche": "AI副业变现与轻资产创业",
+            "persona": "实战派搞钱课代表，只讲普通人能抄作业的低成本AI变现路径与避坑指南",
+            "angle_hint": "普通人零门槛实操 + 投入产出比对比 + 变现路径拆解",
+            "style_preset": "business-deep-dive",
+            "daily_target": 1,
+            "default_offer_id": "offer_private_community",
+            "gzh_app_id": "",
+            "gzh_app_secret": "",
+            "enabled": True,
+            "created_at": "2026-08-01 08:00:00",
+        },
+        {
+            "id": "acc_geek_tools",
+            "name": "极客效率工具控（垂直号·工具评测）",
+            "handle": "@geek_tools_lab",
+            "platforms": ["小红书", "公众号"],
+            "niche": "开源项目与AI生产力工具实测",
+            "persona": "硬核工具测评员，每天实测最新GitHub开源项目与效率神器，给出一针见血的红黑榜",
+            "angle_hint": "一手实测对比 + 核心参数横评 + 保姆级配置避坑清单",
+            "style_preset": "tech-hands-on",
+            "daily_target": 1,
+            "default_offer_id": "offer_lead_magnet",
+            "gzh_app_id": "",
+            "gzh_app_secret": "",
+            "enabled": True,
+            "created_at": "2026-08-01 08:00:00",
+        },
+    ]
+
+
+def _load_matrix_accounts() -> list:
+    data = read_json(MATRIX_ACCOUNTS_FILE)
+    if isinstance(data, dict) and isinstance(data.get("accounts"), list) and data["accounts"]:
+        return data["accounts"]
+    defaults = _default_matrix_accounts()
+    _save_matrix_accounts(defaults)
+    return defaults
+
+
+def _save_matrix_accounts(accounts: list) -> None:
+    _atomic_write_json(MATRIX_ACCOUNTS_FILE, {"accounts": accounts, "updated_at": _now_str()})
+
+
+def _default_commercial_offers() -> list:
+    return [
+        {
+            "id": "offer_lead_magnet",
+            "name": "🎁 私域引流钩子 · AI自动化SOP蓝图包",
+            "type": "lead_magnet",
+            "type_label": "私域引流",
+            "price_yuan": 0.0,
+            "lead_value_yuan": 15.0,
+            "keyword": "SOP",
+            "cta_xhs": "想要我整理的《AI内容工厂全自动SOP+提示词库》？评论区聊聊「SOP」或看主页置顶直接领！",
+            "cta_gzh": "📦 读者福利：在公众号后台回复关键词【SOP】，免费获取本文配套的《AI自动化工作流蓝图与完整配置包》。",
+            "cta_video": "想要同款自动化配置模板的朋友，评论区打个「SOP」，我把全套流程图和资料包发你！",
+            "enabled": True,
+        },
+        {
+            "id": "offer_pro_workbench",
+            "name": "👑 自媒体运营中台 Pro 旗舰版订阅",
+            "type": "product",
+            "type_label": "SaaS产品",
+            "price_yuan": 199.0,
+            "lead_value_yuan": 25.0,
+            "keyword": "工作台",
+            "cta_xhs": "这套9大Agent全自动自媒体运营中台已开放体验，评论区聊聊「工作台」或看置顶笔记解锁 Pro 旗舰版！",
+            "cta_gzh": "🚀 本文由「自媒体运营中台 Pro」9大Agent流水线协同生成。点击阅读原文或后台回复【工作台】获取同款工业级内容工厂。",
+            "cta_video": "一个人活成一个内容团队，秘密就在这套开源运营工作台，看主页置顶一键部署！",
+            "enabled": True,
+        },
+        {
+            "id": "offer_private_community",
+            "name": "🚀 一人公司AI实战陪伴社群",
+            "type": "course",
+            "type_label": "社群专栏",
+            "price_yuan": 299.0,
+            "lead_value_yuan": 35.0,
+            "keyword": "一人公司",
+            "cta_xhs": "每天拆解1个跑通闭环的AI搞钱案例，评论区聊聊「一人公司」领取近30个高毛利AI副业拆解合集！",
+            "cta_gzh": "💡 欢迎加入「小吴聊·一人公司AI实战营」，与500+实战操盘手一起跑通从选题、矩阵日更到商业变现的完整闭环。",
+            "cta_video": "想系统跑通一人公司AI商业闭环？评论区回复「一人公司」，进实战交流群一起拿结果！",
+            "enabled": True,
+        },
+        {
+            "id": "offer_brand_sponsor",
+            "name": "💼 科技品牌商单软广合作组件",
+            "type": "sponsor",
+            "type_label": "品牌商单",
+            "price_yuan": 3000.0,
+            "lead_value_yuan": 50.0,
+            "keyword": "实测",
+            "cta_xhs": "本期硬核实测工具入口及专属福利已整理在评论区置顶，建议先收藏再实操！",
+            "cta_gzh": "📌 声明：本文基于真实环境独立实测，配套测试脚本与体验福利见文末置顶留言。",
+            "cta_video": "实测参数和免费体验入口我放在评论区置顶了，大家按需自取！",
+            "enabled": True,
+        },
+    ]
+
+
+def _load_commercial_offers() -> list:
+    data = read_json(COMMERCIAL_OFFERS_FILE)
+    if isinstance(data, dict) and isinstance(data.get("offers"), list) and data["offers"]:
+        return data["offers"]
+    defaults = _default_commercial_offers()
+    _save_commercial_offers(defaults)
+    return defaults
+
+
+def _save_commercial_offers(offers: list) -> None:
+    _atomic_write_json(COMMERCIAL_OFFERS_FILE, {"offers": offers, "updated_at": _now_str()})
+
+
+def _load_commercial_ledger() -> dict:
+    data = read_json(COMMERCIAL_LEDGER_FILE)
+    if isinstance(data, dict) and isinstance(data.get("entries"), list):
+        return data
+    return {"entries": [], "updated_at": ""}
+
+
+def _save_commercial_ledger(entries: list) -> None:
+    _atomic_write_json(COMMERCIAL_LEDGER_FILE, {"entries": entries, "updated_at": _now_str()})
+
 
 
 def fmt(n):
@@ -751,7 +949,7 @@ def _backup_style_doc(p: str) -> None:
 
 
 def _gzh_artifacts(job_id):
-    """返回该任务公众号排版 HTML 与封面图片路径（无则 None）。"""
+    """返回该任务公众号排版 HTML 与封面图片路径（优先取公众号目录封面，再回退小红书目录封面）。"""
     gzh_dir = os.path.join(OUTPUTS_DIR, job_id, "公众号")
     html, preview = None, None
     if os.path.isdir(gzh_dir):
@@ -763,14 +961,23 @@ def _gzh_artifacts(job_id):
                     html = os.path.join(gzh_dir, n)
     cover = None
     xhs_dir = os.path.join(OUTPUTS_DIR, job_id, "小红书")
-    if os.path.isdir(xhs_dir):
-        for n in sorted(os.listdir(xhs_dir)):
-            if n.lower().startswith("封面") and n.lower().endswith((".png", ".jpg", ".jpeg")):
-                cover = os.path.join(xhs_dir, n)
+    for search_dir in (gzh_dir, xhs_dir):
+        if not os.path.isdir(search_dir):
+            continue
+        for n in sorted(os.listdir(search_dir)):
+            if n.lower().startswith(("封面", "cover")) and n.lower().endswith((".png", ".jpg", ".jpeg")):
+                cover = os.path.join(search_dir, n)
                 break
-        if cover is None:
-            for n in sorted(os.listdir(xhs_dir)):
-                if n.lower().endswith(".png"):
-                    cover = os.path.join(xhs_dir, n)
+        if cover:
+            break
+    if cover is None:
+        for search_dir in (gzh_dir, xhs_dir):
+            if not os.path.isdir(search_dir):
+                continue
+            for n in sorted(os.listdir(search_dir)):
+                if n.lower().endswith((".png", ".jpg", ".jpeg")) and "mobile_check" not in n.lower():
+                    cover = os.path.join(search_dir, n)
                     break
+            if cover:
+                break
     return html or preview, cover

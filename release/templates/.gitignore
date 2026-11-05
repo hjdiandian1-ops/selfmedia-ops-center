@@ -49,6 +49,9 @@ data/compliance/words/*
 !data/compliance/words/.gitkeep
 data/topics/preferences.json
 data/topics/lexicon.json
+data/topics/*_cache.json
+data/topics/google_trends.json
+data/topics/kol_*.json
 data/user_prefs.json
 data/style_backups/
 nas-n8n/

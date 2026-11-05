@@ -19,7 +19,8 @@ import zipfile
 
 # 允许中英文、数字、下划线、连字符、点、空格（真实任务名含 1.2 万亿、Grok 4.6 等）
 JOB_ID_RE = re.compile(r"^[A-Za-z0-9_\-. \u4e00-\u9fa5]{1,80}$")
-THEME_RE = re.compile(r"^[\u4e00-\u9fa5A-Za-z0-9_\-.,/+%~*&|#，。、：:；;！!？?（）()「」【】《》“”‘’\"\'\s·—]{1,200}$")
+# 允许中英文、数字、各类标点、符号（含@、[]、{}、<>、=、\、代码/货币符号、表情符号），拒绝不可见控制字符与换行
+THEME_RE = re.compile(r"^[^\x00-\x1f\x7f-\x9f\r\n]{1,300}$")
 
 # 默认限制：单文件 50MB、条目数 300、单成员解压 200MB、总解压 600MB、压缩比 1000:1
 XLSX_MAX_FILE_BYTES = 50 * 1024 * 1024
@@ -45,7 +46,7 @@ def require_theme(theme, label="theme"):
     if not theme:
         return theme
     if not THEME_RE.fullmatch(theme):
-        raise ValueError(f"{label} 含非法字符: {theme!r}")
+        raise ValueError(f"{label} 含非法字符（如换行或控制字符）: {theme!r}")
     return theme
 
 

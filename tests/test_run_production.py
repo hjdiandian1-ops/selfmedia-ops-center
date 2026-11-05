@@ -152,9 +152,66 @@ def test_four_stage_decoupled_pipeline(tmp_path, monkeypatch):
 
     slides_html = list((outputs_dir / "小红书").glob("rednote_*_slides.html"))
     assert len(slides_html) >= 1
+    slides_content = slides_html[0].read_text(encoding="utf-8")
+    assert "实测数据提升 80% 以上" in slides_content
+
     gzh_html = list((outputs_dir / "公众号").glob("gzh_*_排版_*.html"))
     assert len(gzh_html) >= 1
+    gzh_content = gzh_html[0].read_text(encoding="utf-8")
+    assert "01 / 解耦的核心价值" in gzh_content
+    assert "单步单责消除素材衰减" in gzh_content
 
     # 3. 校验 Stage 3 & 4 最终状态已推进
     final_state = json.loads(state_file.read_text(encoding="utf-8"))
     assert final_state["state"] in ("review", "archive")
+
+
+def test_normalize_materials_and_polish_draft_regressions(tmp_path, monkeypatch):
+    """回归测试：素材包 URL 不粘连中文括号、二元对比不产生双逗号或断句、幂等润色不重复追加 CTA、小红书标签不被误判为标题。"""
+    import validate_materials_contract as VMC
+
+    raw_mat = (
+        "# 测试素材包\n"
+        "- M1｜核心突破：结构化 XML 比自然语言更可靠，配套 12 个模版 来源：https://x.com/dotey/123（source_type: 真实数据 | priority: 核心）\n"
+        "- M2｜架构演进：标签化结构约束模型行为 来源：https://github.com/trending（source_type: 真实数据 | priority: 核心）\n"
+        "- M3｜量化基准：日选题总分 15.6，是当日唯一同时进榜候选 来源：https://github.com/trending（source_type: 真实数据 | priority: 核心）\n"
+        "- M4｜落地场景：上下文削减 98%（source_type: 真实数据 | priority: 核心） 来源：https://github.com/mksglu/context-mode\n"
+    )
+    norm_mat = rp._normalize_materials_contract(raw_mat, "提示词工程实战", "")
+    assert "唯一" not in norm_mat
+    items, ok = VMC.parse_materials(norm_mat)
+    assert ok is True
+    for it in items:
+        assert it["url"] and "（" not in it["url"] and "x.com" not in it["url"]
+
+    monkeypatch.setattr(rp, "OUTPUTS_DIR", str(tmp_path / "outputs"))
+    raw_gzh = (
+        "---\ntitle: 我把提示词从散文改成XML，6组实测效率涨了30\nplatform: 公众号\n---\n"
+        "# 我把提示词从散文改成XML，6组实测效率涨了30%\n\n"
+        "我用 Claude 实测了 6 组样本，效率提升 30%！他们的痛点不是不会用工具，工具满地都是。这不是巧合。它是必然趋势。不是把需求说清楚，而是把边界约束死。\n"
+    )
+    p1 = rp._polish_draft_for_qa(raw_gzh, "公众号", "2026-11-02_test", "提示词工程", norm_mat)
+    p2 = rp._polish_draft_for_qa(p1, "公众号", "2026-11-02_test", "提示词工程", norm_mat)
+    assert "，，" not in p2
+    assert "。，" not in p2
+    assert "工具满地都是。" in p2
+    assert "title: 我把提示词从散文改成XML，6组实测效率涨了30%" in p2
+    assert p2.count("### 核心实测数据对照") == 1
+
+    raw_xhs = (
+        "---\ntitle: 实测6组数据：大模型落地业务的提示词工\nplatform: 小红书\n---\n"
+        "我用 FastAPI 与 Claude 跑了 6 组实验，效率提升 30%！\n\n"
+        "#AI工具 #效率神器 #自媒体运营 #生产力工具 #个人IP\n"
+    )
+    x1 = rp._polish_draft_for_qa(
+        raw_xhs, "小红书", "2026-11-02_test", "大模型落地业务的提示词工程", norm_mat,
+        default_cta="这套工作台已开放，评论区扣「工作台」解锁！",
+    )
+    x2 = rp._polish_draft_for_qa(x1, "小红书", "2026-11-02_test", "大模型落地业务的提示词工程", norm_mat)
+    assert "评论区扣" not in x2
+    assert "提示词工\n" not in x2
+    slides_html = rp._compile_xhs_slides_from_md(x2, "大模型落地业务的提示词工程", "实测6组数据")
+    assert "▍AI工具" not in slides_html
+    assert "#AI工具" in slides_html
+    assert "&gt; 注：" not in slides_html
+

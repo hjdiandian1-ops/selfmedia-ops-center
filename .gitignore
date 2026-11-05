@@ -37,6 +37,9 @@ data/user_prefs.json
 data/style_backups/
 data/topics/preferences.json
 data/topics/lexicon.json
+data/topics/*_cache.json
+data/topics/google_trends.json
+data/topics/kol_*.json
 skills/personal-style-guide.md
 
 # 个人/业务数据与运行日志（禁止入库）

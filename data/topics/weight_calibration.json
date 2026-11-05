@@ -1,8 +1,8 @@
 {
   "calibrated": false,
-  "sample_count": 3,
+  "sample_count": 4,
   "min_required": 10,
-  "message": "有效互动样本不足（当前 3/10 条），维持基准默认权重",
+  "message": "有效互动样本不足（当前 4/10 条），维持基准默认权重",
   "weights": {
     "daily": {
       "fresh_w": 1.2,
@@ -21,5 +21,5 @@
     "quality": 0.0,
     "ip": 0.0
   },
-  "updated_at": "2026-08-22 18:00:21"
+  "updated_at": "2026-11-06 01:18:04"
 }

@@ -128,6 +128,42 @@ def replace_viz_with_images(content, uploader):
     return content, len(blocks)
 
 
+def replace_base64_images(content, uploader):
+    """
+    把正文中 <img src="data:image/...;base64,..."> 解码为临时图片文件并调用 uploader(tmp_path, index) 上传为微信 CDN URL。
+    解决微信公众号草稿箱 API 过滤/拒绝大体积 base64 内联图片的问题。
+    返回 (new_content, replaced_count)。
+    """
+    import base64
+    import shutil
+    import tempfile
+
+    b64_tmp = tempfile.mkdtemp(prefix="gzh_b64_")
+    count = 0
+    pattern = re.compile(r'(<img\b[^>]*\bsrc=")(data:image/([a-zA-Z0-9+]+);base64,([^"]+))(")')
+
+    def _repl(m):
+        nonlocal count
+        count += 1
+        ext = m.group(3).lower()
+        if ext == "jpeg":
+            ext = "jpg"
+        elif ext not in ("png", "jpg", "gif", "webp"):
+            ext = "png"
+        raw_b64 = m.group(4)
+        tmp_path = os.path.join(b64_tmp, f"inline_{count}.{ext}")
+        with open(tmp_path, "wb") as bf:
+            bf.write(base64.b64decode(raw_b64))
+        wx_url = uploader(tmp_path, count)
+        return m.group(1) + wx_url + m.group(5)
+
+    try:
+        new_content = pattern.sub(_repl, content)
+    finally:
+        shutil.rmtree(b64_tmp, ignore_errors=True)
+    return new_content, count
+
+
 def write_publish_log(job_id, title, media_id, detail):
     if not job_id:
         return None
@@ -218,7 +254,15 @@ def main():
             f'<img src="{img_url}" style="max-width:100%;border-radius:8px;'
             'display:block;margin:16px auto;" />',
         )
-    # ②.6 自动识别正文中本地 <img src="...">（相对 HTML 文件目录），上传为微信图 URL
+    # ②.6 自动识别正文中 data:image/...;base64 内联图片并上传为微信 CDN URL
+    content, b64_count = replace_base64_images(
+        content,
+        lambda p, idx: (print(f"   上传 Base64 内联图 #{idx}：{p}") or upload_image_url(token, p)),
+    )
+    if b64_count:
+        print(f"   （{b64_count} 张 Base64 内联图片已上传为微信图 URL）")
+
+    # ②.7 自动识别正文中本地 <img src="...">（相对 HTML 文件目录），上传为微信图 URL
     html_dir = os.path.dirname(os.path.abspath(args.content_file))
 
     def _local_img_src(m):

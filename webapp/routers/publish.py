@@ -19,18 +19,33 @@ class GzhDraftRequest(BaseModel):
     job_id: str
     title: str = ""
     digest: str = ""
+    account_id: str = ""
 
 
 @router.post("/api/publish/gzh-draft")
 def api_gzh_draft(payload: GzhDraftRequest):
-    """把公众号排版 HTML 推送到已认证公众号的草稿箱（需配置 AppID/Secret）。"""
+    """把公众号排版 HTML 推送到已认证公众号的草稿箱（优先读取矩阵号专属凭据，回退全局 .env 配置）。"""
     core._license_guard("gzh_push")
     job_id = core._require_job_id(payload.job_id)
     env = core._read_env()
-    if not env.get("GZH_APP_ID", "").strip() or not env.get("GZH_APP_SECRET", "").strip():
+    app_id = env.get("GZH_APP_ID", "").strip()
+    app_secret = env.get("GZH_APP_SECRET", "").strip()
+
+    # 优先检查任务绑定的矩阵号专属公众号凭据
+    pcfg = core.read_json(os.path.join(core.JOBS_DIR, job_id, "pipeline_config.json")) or {}
+    acc_id = (payload.account_id or pcfg.get("account_id") or "").strip()
+    if acc_id:
+        for acc in core._load_matrix_accounts():
+            if acc.get("id") == acc_id:
+                if (acc.get("gzh_app_id") or "").strip() and (acc.get("gzh_app_secret") or "").strip():
+                    app_id = acc["gzh_app_id"].strip()
+                    app_secret = acc["gzh_app_secret"].strip()
+                break
+
+    if not app_id or not app_secret:
         raise HTTPException(
             status_code=400,
-            detail="未配置公众号 AppID/Secret：请先在左下角 ⚙ 设置 中填写（需要已认证的公众号，个人订阅号暂不支持 API；获取与 IP 白名单步骤见成品库『发布指引』）",
+            detail="未配置公众号 AppID/Secret：请先在左下角 ⚙ 设置 或矩阵号配置中填写（需要已认证的公众号，个人订阅号暂不支持 API；获取与 IP 白名单步骤见成品库『发布指引』）",
         )
     html, cover = core._gzh_artifacts(job_id)
     if not html:
@@ -44,10 +59,15 @@ def api_gzh_draft(payload: GzhDraftRequest):
         args += ["--cover", cover]
     if payload.digest.strip():
         args += ["--digest", payload.digest.strip()[:120]]
-    r = core.run_script(args, timeout=180)
+    extra_env = {"GZH_APP_ID": app_id, "GZH_APP_SECRET": app_secret}
+    try:
+        r = core.run_script(args, timeout=180, extra_env=extra_env)
+    except TypeError:
+        r = core.run_script(args, timeout=180)
     if not r["ok"]:
         raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False)[:1000])
-    return {"ok": True, "job_id": job_id, "output": r.get("stdout", "")[-500:]}
+    return {"ok": True, "job_id": job_id, "account_id": acc_id, "output": r.get("stdout", "")[-500:]}
+
 
 
 @router.get("/api/docs/publish-guide")
@@ -116,6 +136,12 @@ class StatsBackfill(BaseModel):
     collects: int = 0
     comments: int = 0
     url: str = ""
+    leads: int = 0
+    conversions: int = 0
+    revenue_yuan: float = 0.0
+    account_id: str = ""
+    offer_id: str = ""
+    revenue_type: str = "lead_magnet"
 
 
 class AccountSnapshot(BaseModel):
@@ -167,21 +193,31 @@ def api_publish_manual(payload: ManualPublishRequest):
     r = core.run_script(args, timeout=30)
     if not r["ok"]:
         raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False))
+    st_file = os.path.join(core.JOBS_DIR, job_id, "state.json")
+    st_data = core.read_json(st_file)
+    if isinstance(st_data, dict) and st_data.get("state") in ("archive", "review"):
+        st_data["state"] = "publish"
+        st_data["updated_at"] = core._now_str()
+        st_data.setdefault("history", []).append({"state": "publish", "at": core._now_str(), "note": f"{payload.platform}已发布登记"})
+        core._atomic_write_json(st_file, st_data)
     return r
 
 
 @router.post("/api/stats/backfill")
 def api_stats_backfill(payload: StatsBackfill):
-    """平台数据回填：校验后调用 collect_post_stats.py 落盘 publish_log.json。"""
+    """平台数据回填：校验后调用 collect_post_stats.py 落盘 publish_log.json，若附带私域/营收数据则同步写入商业化台账。"""
     job_id = core._require_job_id(payload.job_id)
     if not os.path.isdir(os.path.join(core.JOBS_DIR, job_id)):
         raise HTTPException(status_code=404, detail=f"任务不存在: {job_id}")
     if payload.platform not in ("小红书", "公众号", "短视频"):
         raise HTTPException(status_code=400, detail=f"平台不合法: {payload.platform}")
     for name, val in (("reads", payload.reads), ("likes", payload.likes),
-                      ("collects", payload.collects), ("comments", payload.comments)):
+                      ("collects", payload.collects), ("comments", payload.comments),
+                      ("leads", payload.leads), ("conversions", payload.conversions)):
         if not isinstance(val, int) or val < 0:
             raise HTTPException(status_code=400, detail=f"{name} 必须是非负整数")
+    if payload.revenue_yuan < 0:
+        raise HTTPException(status_code=400, detail="revenue_yuan 不能为负数")
     if len(payload.url) > 500:
         raise HTTPException(status_code=400, detail="url 过长（≤500 字符）")
 
@@ -195,6 +231,32 @@ def api_stats_backfill(payload: StatsBackfill):
     r = core.run_script(args, timeout=30)
     if not r["ok"]:
         raise HTTPException(status_code=500, detail=json.dumps(r, ensure_ascii=False))
+
+    st_file = os.path.join(core.JOBS_DIR, job_id, "state.json")
+    st_data = core.read_json(st_file)
+    if isinstance(st_data, dict) and st_data.get("state") in ("archive", "publish", "review"):
+        st_data["state"] = "recycle"
+        st_data["updated_at"] = core._now_str()
+        st_data.setdefault("history", []).append({"state": "recycle", "at": core._now_str(), "note": f"{payload.platform} 48h数据回收完成"})
+        core._atomic_write_json(st_file, st_data)
+
+    if payload.leads > 0 or payload.conversions > 0 or payload.revenue_yuan > 0:
+        from webapp.routers import matrix_commercial
+        comm_entry = matrix_commercial.record_commercial_entry(
+            matrix_commercial.CommercialLedgerPayload(
+                job_id=job_id,
+                account_id=payload.account_id,
+                platform=payload.platform,
+                offer_id=payload.offer_id,
+                revenue_type=payload.revenue_type or "lead_magnet",
+                reads=payload.reads,
+                leads=payload.leads,
+                conversions=payload.conversions,
+                revenue_yuan=payload.revenue_yuan,
+                note=f"来自 48h 数据回填 ({payload.platform})",
+            )
+        )
+        r = dict(r, commercial_entry=comm_entry)
     return r
 
 

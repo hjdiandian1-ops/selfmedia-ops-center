@@ -72,3 +72,22 @@ def test_safe_xlsx_accepts_normal(tmp_path):
     zf2 = SU.safe_xlsx_zip(str(path))
     assert zf2.namelist()
     zf2.close()
+
+
+def test_require_theme():
+    # 正常支持各类社交平台选题、大V推文、括号与表情
+    assert SU.require_theme("@dotey (宝玉): 提示词工程反直觉经验")
+    assert SU.require_theme("@AnthropicAI: Threat Intelligence Report")
+    assert SU.require_theme("🔥 谷歌暴增: austin metcalf [1000+]")
+    assert SU.require_theme("GPT-4o vs Claude 3.5: <SOTA> & $NVDA 落地测评")
+    assert SU.require_theme("") == ""
+    assert SU.require_theme(None) is None
+
+    # 拒绝换行与控制字符
+    with pytest.raises(ValueError):
+        SU.require_theme("主题含有\n换行符")
+    with pytest.raises(ValueError):
+        SU.require_theme("主题含有\x00空字节")
+    with pytest.raises(ValueError):
+        SU.require_theme("a" * 301)
+

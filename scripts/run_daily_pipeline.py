@@ -27,6 +27,8 @@ from datetime import datetime, timedelta
 SCRIPTS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__))))
 ROOT = os.path.normpath(os.path.join(SCRIPTS, ".."))
 JOBS_DIR = os.path.join(ROOT, "jobs")
+MATERIALS_DIR = os.path.join(ROOT, "materials")
+PRODUCTION_FILE = os.path.join(ROOT, "data", "production", "queue.json")
 STATE_ARTIFACT_48H = 48  # 小时
 
 
@@ -82,24 +84,50 @@ def cmd_topics(args):
         run([sys.executable, os.path.join(SCRIPTS, "aggregate_viral_lessons.py"), "--json"],
             "周一爆款周经验包聚合（写经验库 + 升级 Agent SOP）")
     if getattr(args, "auto_select", False):
-        # 读最新选题推荐，取热度第 1 建 Job（对齐"30 分钟未回复自动选第 1"）
+        # 读最新选题推荐，取未采纳的热度最高候选建 Job 并自动入队
         import glob
-        cands = sorted(glob.glob(os.path.join(ROOT, "materials", "*", "*_选题推荐.md")))
+        import re
+        cands = sorted(glob.glob(os.path.join(MATERIALS_DIR, "*", "*_选题推荐.md")))
         if not cands:
             print("❌ 未找到选题推荐文件，无法自动建 Job")
             return False
         latest = cands[-1]
-        topic_line = next((l for l in open(latest, encoding="utf-8") if l.startswith("- 主题方向")), "")
-        if not topic_line:
+        lines = [l for l in open(latest, encoding="utf-8") if l.startswith("- 主题方向")]
+        if not lines:
             print("⚠️ 选题推荐无候选，跳过自动建 Job")
             return True
-        title = topic_line.split("：", 1)[1].strip() if "：" in topic_line else topic_line.split(":", 1)[1].strip()
+        raw_title = lines[0].split("：", 1)[1].strip() if "：" in lines[0] else lines[0].split(":", 1)[1].strip()
+        raw_title = re.sub(r"^\s*\*+\s*|\s*\*+\s*$|^【[^】]+】\s*", "", raw_title).strip()[:60]
+        safe_slug = re.sub(r"[^A-Za-z0-9_\-\u4e00-\u9fa5]", "", raw_title[:12]) or "每日自动选题"
         today = datetime.now().strftime("%Y-%m-%d")
-        job_id = f"{today}_{title[:12]}"
+        base_id = f"{today}_{safe_slug[:12]}"
+        job_id = base_id
+        counter = 1
+        while os.path.exists(os.path.join(JOBS_DIR, job_id)):
+            job_id = f"{base_id}_{counter}"
+            counter += 1
         r = run([sys.executable, os.path.join(SCRIPTS, "job_state.py"),
-                 "init", job_id, "--theme", title], f"自动创建 Job（决策超时默认项）: {title}")
+                 "init", job_id, "--theme", raw_title], f"自动创建 Job（日更无人值守）: {raw_title}")
+        if r:
+            jdir = os.path.join(JOBS_DIR, job_id)
+            os.makedirs(jdir, exist_ok=True)
+            with open(os.path.join(jdir, "brief.md"), "w", encoding="utf-8") as f:
+                f.write(f"# 生产简报\n- Job：{job_id}\n- 主题：{raw_title}\n- 采纳来源：日更无人值守自动选题\n")
+            qfile = PRODUCTION_FILE
+            qdata = read_json(qfile) or {"items": []}
+            items = qdata.get("items", [])
+            if not any(it.get("job_id") == job_id for it in items):
+                now_s = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                items.append({
+                    "job_id": job_id, "status": "queued", "created_at": now_s,
+                    "started_at": "", "finished_at": "", "pid": None, "error": "",
+                })
+                os.makedirs(os.path.dirname(qfile), exist_ok=True)
+                with open(qfile, "w", encoding="utf-8") as f:
+                    json.dump({"items": items, "updated_at": now_s}, f, ensure_ascii=False, indent=2)
         return r
     return True
+
 
 
 def cmd_qa(args):

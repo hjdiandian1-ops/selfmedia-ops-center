@@ -23,7 +23,11 @@ import os
 import sys
 from datetime import datetime
 
-JOBS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "jobs"))
+JOBS_DIR = (
+    os.environ.get("SELFMEDIA_JOBS_DIR")
+    or os.environ.get("JOBS_DIR")
+    or os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "jobs"))
+)
 
 
 def log_path(job_id):

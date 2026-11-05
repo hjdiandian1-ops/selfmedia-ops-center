@@ -77,6 +77,9 @@ WHITELIST = {
     "webapp/routers/publish.py": "webapp/routers/publish.py",
     "webapp/routers/outputs.py": "webapp/routers/outputs.py",
     "webapp/routers/scheduler.py": "webapp/routers/scheduler.py",
+    "webapp/routers/cover_templates.py": "webapp/routers/cover_templates.py",
+    "webapp/routers/skills_repo.py": "webapp/routers/skills_repo.py",
+    "webapp/routers/matrix_commercial.py": "webapp/routers/matrix_commercial.py",
     "webapp/static/index.html": "webapp/static/index.html",
     "webapp/static/app.js": "webapp/static/app.js",
     "webapp/static/style.css": "webapp/static/style.css",
@@ -92,6 +95,8 @@ WHITELIST = {
     "webapp/static/themes/lv-monogram.svg": "webapp/static/themes/lv-monogram.svg",
     # 数据模板与偏好配置
     "data/templates.json": "data/templates.json",
+    "data/cover_templates/templates.json": "data/cover_templates/templates.json",
+    "data/skills_repo/skills.json": "data/skills_repo/skills.json",
     "data/topics/niches.json": "data/topics/niches.json",
     "data/templates/style_docs/personal-style-guide.template.md": "data/templates/style_docs/personal-style-guide.template.md",
     "data/templates/style_docs/tech-hands-on.template.md": "data/templates/style_docs/tech-hands-on.template.md",

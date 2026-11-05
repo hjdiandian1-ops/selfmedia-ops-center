@@ -20,7 +20,11 @@ def capture_all():
     print(f"🚀 开始通过 Playwright 捕获工作台真实截图：{BASE_URL}")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        chrome_bin = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        launch_kwargs = {"headless": True}
+        if os.path.exists(chrome_bin):
+            launch_kwargs["executable_path"] = chrome_bin
+        browser = p.chromium.launch(**launch_kwargs)
         
         # 1. 截取 00-onboarding-demo.png (1280x720, 2x scale)
         ctx00 = browser.new_context(viewport={"width": 1280, "height": 720}, device_scale_factor=2)

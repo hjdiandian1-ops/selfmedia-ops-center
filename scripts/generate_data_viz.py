@@ -219,11 +219,64 @@ def render_complex_png(spec, out_path):
     print(f"🖼 复杂图 PNG 已生成：{out_path}")
 
 
+def _render_html_block_pil_fallback(html_block, out_path, width=680):
+    """当环境未安装 Playwright Chromium 时的 PIL 2x 矢量图卡兜底渲染器。"""
+    import re
+    import html as _html
+    from PIL import Image, ImageDraw, ImageFont
+
+    text = re.sub(r"<(tr|/p|/div|/h\d|/section|br\s*/?)>", "\n", html_block, flags=re.I)
+    text = re.sub(r"<t[dh][^>]*>", "  |  ", text, flags=re.I)
+    text = _html.unescape(re.sub(r"<[^>]+>", "", text))
+    lines = [re.sub(r"\s+", " ", ln).strip(" |") for ln in text.splitlines() if ln.strip(" |")]
+    if not lines:
+        lines = ["📊 核心数据可视化视图"]
+
+    scale = 2
+    img_w = width * scale
+    line_h = 46
+    pad = 40
+    wrapped = []
+    for ln in lines[:16]:
+        for i in range(0, len(ln), 34):
+            wrapped.append(ln[i : i + 34])
+    img_h = max(240, pad * 2 + 60 + len(wrapped) * line_h)
+
+    img = Image.new("RGB", (img_w, img_h), (255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle([12, 12, img_w - 12, img_h - 12], radius=20, fill=(254, 242, 242), outline=(254, 202, 202), width=3)
+
+    font_paths = [
+        "/System/Library/Fonts/PingFang.ttc",
+        "/System/Library/Fonts/STHeiti Medium.ttc",
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+    ]
+    def _font(sz):
+        for fp in font_paths:
+            if os.path.exists(fp):
+                try:
+                    return ImageFont.truetype(fp, sz)
+                except Exception:
+                    continue
+        return ImageFont.load_default()
+
+    f_head = _font(30)
+    f_body = _font(26)
+    y = pad
+    for idx, wln in enumerate(wrapped):
+        color = (220, 38, 38) if idx == 0 else (31, 41, 55)
+        draw.text((pad + 12, y), wln, fill=color, font=f_head if idx == 0 else f_body)
+        y += line_h + (10 if idx == 0 else 0)
+
+    os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
+    img.save(out_path, format="PNG")
+
+
 def render_html_block_to_png(html_block, out_path, width=680):
     """
     把单个 data-viz 组件 HTML 渲染为 2x PNG 图卡（微信推送用）。
     微信对自定义 HTML 的还原不可靠（实测多次错乱），图卡可 100% 还原设计稿。
-    采用元素截图（body > div），不会产生视口空白。
+    采用元素截图（body > div），不会产生视口空白；若未下载 Playwright Chromium 则自动降级使用本机 Chrome 或 PIL 图卡渲染。
     """
     page = (
         '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><style>'
@@ -235,16 +288,21 @@ def render_html_block_to_png(html_block, out_path, width=680):
     )
     tmp_html = pathlib.Path(out_path).with_suffix(".html")
     tmp_html.write_text(page, encoding="utf-8")
-    from playwright.sync_api import sync_playwright
     try:
+        from playwright.sync_api import sync_playwright
         with sync_playwright() as p:
-            browser = p.chromium.launch()
+            try:
+                browser = p.chromium.launch()
+            except Exception:
+                browser = p.chromium.launch(channel="chrome")
             pg = browser.new_page(viewport={"width": width + 40, "height": 900},
                                   device_scale_factor=2)
             pg.goto(tmp_html.resolve().as_uri())
             pg.wait_for_timeout(400)
             pg.locator("body > div").screenshot(path=out_path)
             browser.close()
+    except Exception:
+        _render_html_block_pil_fallback(html_block, out_path, width=width)
     finally:
         if tmp_html.exists():
             tmp_html.unlink()

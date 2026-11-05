@@ -7,6 +7,8 @@ import re
 import shutil
 import signal
 from datetime import datetime, timedelta
+from typing import Optional, Dict, Any, List
+import json
 
 from fastapi import APIRouter, HTTPException
 
@@ -25,6 +27,7 @@ def api_jobs():
         if not data:
             continue
         lg = core.read_json(os.path.join(core.JOBS_DIR, d, "publish_log.json")) or {}
+        pcfg = core.read_json(os.path.join(core.JOBS_DIR, d, "pipeline_config.json")) or {}
         published = bool(lg.get("publish")) or data.get("state") in ("publish", "recycle")
         published_at = lg.get("published_at") or ""
         if not published_at and published:
@@ -41,6 +44,10 @@ def api_jobs():
             "published_at": published_at,
             "month": published_at[:7] if published_at else "",
             "archived": os.path.exists(os.path.join(core.JOBS_DIR, d, ".archived")),
+            "account_id": pcfg.get("account_id", ""),
+            "account_name": pcfg.get("account_name", ""),
+            "offer_id": pcfg.get("offer_id", ""),
+            "offer_name": pcfg.get("offer_name", ""),
         })
     # 最新更新在前（配合流水线/成品库「最新生产放前面」的诉求）
     rows.sort(key=lambda r: _ts(r.get("updated_at") or ""), reverse=True)
@@ -55,12 +62,14 @@ def api_job(job_id: str):
         raise HTTPException(status_code=404, detail=f"任务不存在: {job_id}")
     return {
         "state": core.read_json(os.path.join(jdir, "state.json")),
+        "pipeline_config": core.read_json(os.path.join(jdir, "pipeline_config.json")),
         "validate_report": core.read_json(os.path.join(core.OUTPUTS_DIR, job_id, "validate_report.json")),
         "harsh_report": core.read_json(os.path.join(core.OUTPUTS_DIR, job_id, "harsh_report.json")),
         "ai_flavor_report": core.read_json(os.path.join(core.OUTPUTS_DIR, job_id, "ai_flavor_report.json")),
         "compliance_report": core.read_json(os.path.join(core.OUTPUTS_DIR, job_id, "compliance_report.json")),
         "publish_log": core.read_json(os.path.join(jdir, "publish_log.json")),
     }
+
 
 
 def _ts(s):
@@ -331,4 +340,137 @@ def api_qa_history():
         "top_issues": top_issues,
         "milestones": milestones,
     }
+
+
+# =========================================================================
+# 流水线角色插槽与装配工坊 (/api/pipeline/slots)
+# =========================================================================
+class SlotUpdatePayload(core.BaseModel if hasattr(core, "BaseModel") else object):
+    pass
+
+from pydantic import BaseModel
+
+class SlotUpdateReq(BaseModel):
+    role_key: str  # researcher, xhs_editor, gzh_editor, video_director, cover_template
+    item_id: str   # skill slug or template id
+    custom_desc: str = ""
+    job_id: Optional[str] = None
+
+
+@router.get("/api/pipeline/slots")
+def api_pipeline_slots(job_id: Optional[str] = None):
+    """获取流水线当前角色插槽配置与可选的技能/封面模板候选列表"""
+    data = core.read_json(core.PIPELINE_SLOTS_FILE) or {"slots": {}}
+    slots = dict(data.get("slots", {}))
+    is_job_custom = False
+
+    if job_id:
+        job_cfg_path = os.path.join(core.JOBS_DIR, job_id, "pipeline_config.json")
+        job_cfg = core.read_json(job_cfg_path)
+        if job_cfg and job_cfg.get("slots"):
+            slots.update(job_cfg.get("slots"))
+            is_job_custom = True
+
+    # 加载全部 36 个 Skills
+    skills_data = core.read_json(core.SKILLS_REPO_FILE) or {}
+    all_skills = [
+        {
+            "slug": s.get("slug"),
+            "title": s.get("title"),
+            "category": s.get("category"),
+            "author": s.get("author"),
+            "summary": s.get("summary"),
+            "rating": s.get("rating"),
+        }
+        for s in skills_data.get("skills", [])
+    ]
+
+    # 加载全部封面模板
+    covers_data = core.read_json(core.COVER_TEMPLATES_FILE) or {}
+    all_covers = [
+        {
+            "id": t.get("id"),
+            "title": t.get("title"),
+            "category": t.get("category"),
+            "aspect_ratio": t.get("aspect_ratio", "3:4"),
+            "summary": t.get("summary"),
+        }
+        for t in covers_data.get("templates", [])
+    ]
+
+    return {
+        "ok": True,
+        "updated_at": data.get("updated_at"),
+        "slots": slots,
+        "is_job_custom": is_job_custom,
+        "job_id": job_id,
+        "available_skills": all_skills,
+        "available_covers": all_covers,
+    }
+
+
+@router.post("/api/pipeline/slots")
+def api_pipeline_slots_update(req: SlotUpdateReq):
+    """更新某个岗位绑定的 Skill 或封面模板（支持全局默认或单任务独立配置）"""
+    data = core.read_json(core.PIPELINE_SLOTS_FILE) or {"slots": {}}
+    slots = data.setdefault("slots", {})
+
+    role = req.role_key.strip()
+    item_id = req.item_id.strip()
+
+    updated_slot_val = None
+    if role == "cover_template":
+        # 查找对应封面模板
+        covers_data = core.read_json(core.COVER_TEMPLATES_FILE) or {}
+        tpl = next((t for t in covers_data.get("templates", []) if t.get("id") == item_id), None)
+        if not tpl:
+            raise HTTPException(status_code=404, detail=f"未找到封面模板: {item_id}")
+        updated_slot_val = {
+            "template_id": tpl.get("id"),
+            "template_title": tpl.get("title"),
+            "aspect_ratio": tpl.get("aspect_ratio", "3:4"),
+            "desc": req.custom_desc or tpl.get("summary", ""),
+        }
+    else:
+        # 查找对应 Skill
+        skills_data = core.read_json(core.SKILLS_REPO_FILE) or {}
+        sk = next((s for s in skills_data.get("skills", []) if s.get("slug") == item_id or s.get("id") == item_id), None)
+        if not sk:
+            raise HTTPException(status_code=404, detail=f"未找到 Skill: {item_id}")
+
+        role_names = {
+            "researcher": "资深采编",
+            "xhs_editor": "小红书主编",
+            "gzh_editor": "公众号主编",
+            "video_director": "短视频导演",
+        }
+        updated_slot_val = {
+            "role_name": role_names.get(role, role),
+            "skill_slug": sk.get("slug"),
+            "skill_title": sk.get("title"),
+            "desc": req.custom_desc or sk.get("summary", ""),
+        }
+
+    if req.job_id:
+        job_cfg_path = os.path.join(core.JOBS_DIR, req.job_id, "pipeline_config.json")
+        job_cfg = core.read_json(job_cfg_path) or {}
+        job_slots = job_cfg.setdefault("slots", dict(slots))
+        job_slots[role] = updated_slot_val
+        if role == "cover_template":
+            job_cfg["cover_template_id"] = updated_slot_val.get("template_id")
+        job_cfg["updated_at"] = core._now_str()
+        os.makedirs(os.path.dirname(job_cfg_path), exist_ok=True)
+        with open(job_cfg_path, "w", encoding="utf-8") as f:
+            json.dump(job_cfg, f, ensure_ascii=False, indent=2)
+        return {"ok": True, "job_id": req.job_id, "slots": job_slots, "updated_at": job_cfg["updated_at"]}
+
+    # 全局默认保存
+    slots[role] = updated_slot_val
+    data["updated_at"] = core._now_str()
+    os.makedirs(os.path.dirname(core.PIPELINE_SLOTS_FILE), exist_ok=True)
+    with open(core.PIPELINE_SLOTS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    return {"ok": True, "slots": slots, "updated_at": data["updated_at"]}
+
 

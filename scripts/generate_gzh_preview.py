@@ -54,17 +54,36 @@ TEMPLATE = """<!DOCTYPE html>
     clearTimeout(t._timer);
     t._timer=setTimeout(function(){{t.classList.remove('show');}},2800);
   }}
-  function gzhCopy(){{
+  async function gzhCopy(){{
     var el=document.getElementById('gzh-content');
-    var range=document.createRange();
-    range.selectNodeContents(el);
-    var sel=window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    var ok=false;
-    try{{ok=document.execCommand('copy');}}catch(e){{ok=false;}}
-    sel.removeAllRanges();
     var btn=document.getElementById('gzhCopyBtn');
+    var ok=false;
+    
+    // 优先使用 Clipboard API 写入纯净 HTML，避免浏览器 DOM Selection 自动注入 text-align: start
+    if (navigator.clipboard && window.ClipboardItem) {{
+      try {{
+        var htmlBlob = new Blob([el.innerHTML], {{ type: 'text/html' }});
+        var textBlob = new Blob([el.innerText], {{ type: 'text/plain' }});
+        await navigator.clipboard.write([new ClipboardItem({{
+          'text/html': htmlBlob,
+          'text/plain': textBlob
+        }})]);
+        ok = true;
+      }} catch(err) {{
+        ok = false;
+      }}
+    }}
+    
+    if (!ok) {{
+      var range=document.createRange();
+      range.selectNodeContents(el);
+      var sel=window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      try{{ok=document.execCommand('copy');}}catch(e){{ok=false;}}
+      sel.removeAllRanges();
+    }}
+
     if(ok){{
       gzhShowToast('✅ 已复制！去公众号编辑器按 Ctrl/⌘+V 粘贴即可');
       var old=btn.textContent;btn.textContent='✅ 已复制';

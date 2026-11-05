@@ -148,6 +148,7 @@ FORMULA_TAGS = {
 
 # 雷达行尾热度：`（9）`（推楼）/ `（500+）`（谷歌趋势）/ `（100.2万热度）`（今日热榜）
 HEAT_SUFFIX_RE = re.compile(r"\s*（\s*([\d.]+)(万)?(\+)?(?:热度|浏览|阅读)?\s*）\s*$")
+HEAT_CODE_SUFFIX_RE = re.compile(r"\s*`\[([^\]]+)\]`\s*$")
 
 
 def normalize_title(t):
@@ -162,10 +163,31 @@ def normalize_title(t):
 
 
 def extract_heat(title):
-    """提取行尾 `（数字[万][+][热度]）` 为热度值；返回 (干净标题, 原始标注, 数值|None)。
+    """提取行尾 `（数字[万][+][热度]）` 或 ` `[热度值]` ` 为热度值；返回 (干净标题, 原始标注, 数值|None)。
 
     仅允许裸数字 ≤2 位（如推楼 `（9）`），4 位年份不会误判；带 `万/+`/单位任意数字均可。
     """
+    # 优先匹配 Markdown 代码标签形式的热度，如 `[420000 阅 / 8500 赞]` 或 `[Breakout (+650%)]`
+    cm = HEAT_CODE_SUFFIX_RE.search(title)
+    if cm:
+        raw_val = cm.group(1).strip()
+        clean_title = title[: cm.start()].strip()
+        m_num = re.search(r"(\d+(?:\.\d+)?)\s*(?:万|K)?(?:\+)?\s*(?:阅|浏览|播放|赞|速)?", raw_val)
+        val = None
+        if m_num:
+            try:
+                base = float(m_num.group(1))
+                if "万" in raw_val:
+                    base *= 10000
+                elif "K" in raw_val:
+                    base *= 1000
+                val = base
+            except ValueError:
+                pass
+        elif "Breakout" in raw_val or "暴增" in raw_val:
+            val = 99999.0
+        return clean_title, cm.group(0).strip(), val
+
     m = HEAT_SUFFIX_RE.search(title)
     if not m:
         return title.strip(), "", None
@@ -191,6 +213,14 @@ def parse_radar(path):
                 file_collect_time = m_time.group(1).strip()
         if ln.startswith("## "):
             source = ln[3:].strip()
+            continue
+        # 兼容条目下方紧随的 Markdown 引用摘要 `   > 摘要内容`
+        if (ln.startswith("   > ") or ln.startswith("> ")) and rows:
+            prev = list(rows[-1])
+            quote_text = ln.lstrip(" >").strip()
+            if quote_text:
+                prev[6] = (prev[6] + " " + quote_text).strip() if prev[6] else quote_text
+                rows[-1] = tuple(prev)
             continue
         m = re.match(
             r"\s*(\d+)[\.、．]\s*(.+?)(?:（\[链接\]\((.*?)\)）)?"
@@ -345,13 +375,57 @@ def score_rows(rows):
         fresh = fresh_info(pub)
         formulas = suggest_formulas(t)
         full_text = t + (" " + summary if summary else "")
+        dims = score_dimensions(full_text)
+
+        # 识别海外、关注大V与飙升标签并赋能评分
+        badge = ""
+        is_kol = False
+        kol_handle = ""
+        kol_name = ""
+        if s == "X关注大V" or t.startswith("@"):
+            badge = "𝕏 大V精选"
+            is_kol = True
+            m_author = re.match(r"^@([A-Za-z0-9_]+)(?:（([^）]+)）)?", t)
+            if m_author:
+                kol_handle = m_author.group(1)
+                kol_name = m_author.group(2) or kol_handle
+            # PrismFlow 启发：大V权威视角与前沿分享增益独特与表达
+            dims["unique"] = min(MAX_DIM, round(dims["unique"] + 2.0, 1))
+            dims["impact"] = min(MAX_DIM, round(dims["impact"] + 1.0, 1))
+        elif s == "谷歌趋势":
+            badge = "🔥 谷歌暴增"
+            # PrismFlow 启发：全网搜索飙升赋能搜索与热点势能
+            dims["search"] = min(MAX_DIM, round(dims["search"] + 2.5, 1))
+            dims["impact"] = min(MAX_DIM, round(dims["impact"] + 1.0, 1))
+        elif s in ("X热点", "推楼1号小时热点"):
+            badge = "𝕏 热搜"
+            dims["impact"] = min(MAX_DIM, round(dims["impact"] + 1.0, 1))
+        elif s == "HackerNews":
+            badge = "🟧 HackerNews"
+            dims["unique"] = min(MAX_DIM, round(dims["unique"] + 1.5, 1))
+            dims["impact"] = min(MAX_DIM, round(dims["impact"] + 1.0, 1))
+        elif s == "GitHubTrending":
+            badge = "🐙 GitHubTrending"
+            dims["durable"] = min(MAX_DIM, round(dims["durable"] + 2.0, 1))
+            dims["search"] = min(MAX_DIM, round(dims["search"] + 1.5, 1))
+        elif s == "ProductHunt":
+            badge = "🚀 ProductHunt"
+            dims["unique"] = min(MAX_DIM, round(dims["unique"] + 1.5, 1))
+            dims["search"] = min(MAX_DIM, round(dims["search"] + 1.5, 1))
+        elif s == "RedditAI":
+            badge = "🤖 Reddit AI"
+            dims["unique"] = min(MAX_DIM, round(dims["unique"] + 1.5, 1))
+            dims["impact"] = min(MAX_DIM, round(dims["impact"] + 1.0, 1))
+
         scored.append({
             "title": normalize_title(t), "source": s, "link": l, "rank": r,
             "heat": heat, "heat_raw": heat if heat is not None else "",
             "summary": summary, "fresh": fresh, "published_at": pub,
-            "dims": score_dimensions(full_text),
+            "dims": dims,
             "view": suggest_view(t), "formulas": formulas,
             "formula_detail": suggest_formula_detail(t, formulas),
+            "badge": badge, "is_kol": is_kol,
+            "kol_handle": kol_handle, "kol_name": kol_name,
             "compliance": "海外源·需人工复核（国内可发布性）"
                           if any(ov in s for ov in OVERSEAS_SOURCES) else "",
         })
@@ -364,14 +438,17 @@ def score_rows(rows):
                 continue
             heat_norm01 = (it["heat"] / mx) if (mx and it["heat"] is not None) else 0.0
             it["heat_norm01"] = round(min(1.0, heat_norm01), 2)
-            it["heat_score"] = round(min(HEAT_MAX, (11 - it["rank"]) + it["heat_norm01"]), 1)
+            base_heat = round(min(HEAT_MAX, (11 - it["rank"]) + it["heat_norm01"]), 1)
+            # 大V推文或谷歌趋势提供热度流速加分
+            if it.get("is_kol") or it.get("badge") == "🔥 谷歌暴增":
+                base_heat = round(min(HEAT_MAX, base_heat + 1.5), 1)
+            it["heat_score"] = base_heat
     for it in scored:
         finalize_score(it)
     return scored
 
 
 def load_calibrated_weights():
-
     """读取 data/topics/weight_calibration.json 中经过历史数据反馈校准的权重，缺失或异常时回退到默认常量。"""
     defaults = {
         "daily": {"fresh_w": DAILY_FRESH_W, "heat_w": DAILY_HEAT_W, "quality_w": DAILY_QUALITY_W},
@@ -419,7 +496,7 @@ def finalize_score(it, cross_bonus=0, source_count=1, weights=None):
     it["source_count"] = source_count
     it["score"] = round(sum(bd.values()), 1)  # 展示用原始合计
     it["quality"] = round(d["impact"] + d["search"] + d["durable"] + d["unique"] + cross_bonus, 1)
-    
+
     dw = weights.get("daily", {})
     ww = weights.get("weekly", {})
     it["daily_score"] = round(
@@ -431,10 +508,10 @@ def finalize_score(it, cross_bonus=0, source_count=1, weights=None):
     return it
 
 
-
 def _dedupe_key(title):
-    """跨源去重 key：去掉资讯后缀、冒号补充说明与常见发布动词，取核心实体词。"""
-    t = re.sub(r"（[^）]*资讯）", "", title)
+    """跨源去重 key：去掉大V前缀、资讯后缀、冒号补充说明与常见发布动词，取核心实体词。"""
+    t = re.sub(r"^@[A-Za-z0-9_]+(?:（[^）]+）)?\s*[：:]\s*", "", title)
+    t = re.sub(r"（[^）]*资讯）", "", t)
     t = re.sub(r"[：:].*$", "", t)
     t = re.sub(r"发布|上线|宣布|正式|推出|亮相|更新|新增|公布|来袭", "", t)
     t = re.sub(r"[\s：:，。、\-—（）()]+", "", t).lower()
@@ -491,10 +568,12 @@ def _candidate_lines(pool_name, picks, score_key, score_label, formula_note):
                      f"｜搜索 {b['search']}｜持久 {b['durable']}｜独特 {b['unique']}"
                      f"｜跨源 +{b['cross_source']}｜合计 {it['score']}")
         heat_desc = f"（原始热度 {it['heat_raw']}）" if it.get("heat_raw") else ""
+        badge_tag = f" [{it['badge']}]" if it.get("badge") else ""
+        kol_line = f"- 关注大V：@{it['kol_handle']}（{it.get('kol_name', '')}）\n" if it.get("is_kol") and it.get("kol_handle") else ""
         lines += [
-            f"### 候选 {i} ⭐{score_label} {it[score_key]:.1f}",
+            f"### 候选 {i} ⭐{score_label} {it[score_key]:.1f}{badge_tag}",
             f"- 主题方向：{it['title']}",
-            f"- 命中热点：{it['source']}（rank {it['rank']}，{it['source_count']} 源印证）",
+            f"- 命中热点：{it['source']}（rank {it['rank']}，{it['source_count']} 源印证）{badge_tag}",
             f"- 命中赛道：{'、'.join(it.get('niches') or []) or '默认推荐（未设置偏好）'}",
             f"- 热度：{it['heat_score']:.1f}/10{heat_desc}",
             f"- 评分构成：{breakdown}",
@@ -508,6 +587,8 @@ def _candidate_lines(pool_name, picks, score_key, score_label, formula_note):
             f"- 原文链接：{it['link'] or '无'}",
             "",
         ]
+        if kol_line:
+            lines.insert(-2, kol_line.strip())
     return lines
 
 

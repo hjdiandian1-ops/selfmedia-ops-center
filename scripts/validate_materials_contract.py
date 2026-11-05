@@ -39,7 +39,7 @@ GREASY_PHRASES = [
 NUMBER_TOKEN = re.compile(r"\d+(?:\.\d+)?\s*(?:元|%|％|倍|万|亿|单|条|款|秒|分钟|小时|天|周|篇|张|套|次|人|家|台|个|块|GB|MB|TB|token|Token)", re.I)
 
 # 来源链接强制（P0：真实数据必须可溯源）
-URL_RE = re.compile(r"https?://[^\s)）>]+")
+URL_RE = re.compile(r"https?://[^\s)）>（(]+")
 PLACEHOLDER_SOURCE = re.compile(r"(链接|来源|出处|URL|url)?\s*(待补|稍后补|稍后添加|稍后更新|TODO|TBD)", re.I)
 FIELD_SOURCE = re.compile(r"(?:source|url|链接)\s*[:：]\s*(\S+)")
 
@@ -101,6 +101,7 @@ def parse_materials(text):
         if not m:
             continue
         body = SCHEMA_ITEM.sub("", ln).lstrip("-*0123456789.、 ").strip()
+        body = re.sub(r"\s*(?:来源|source|url|链接)\s*[:：]\s*https?://[^\s)）>（(]+", "", body, flags=re.I).strip()
         # 显式编号优先（如 "M1｜…" / "M3: …"）；无显式编号的条目用 A 前缀自动编号，避免撞号
         explicit = re.search(r"\bM(\d+)\s*[｜|:：]", body)
         if explicit:
@@ -125,6 +126,7 @@ def parse_materials(text):
         kw = normalize(title_seg)
         items.append({
             "id": item_id, "text": body[:60],
+            "full_text": re.sub(r"^M\d+\s*[｜|:：]\s*", "", body).strip(),
             "source_type": m.group(1), "priority": m.group(2),
             "tokens": tokens, "norm": normalize(body), "kw": kw,
             "url": (url_m.group(1) if url_m and url_m.re.groups else (url_m.group(0) if url_m else None)),

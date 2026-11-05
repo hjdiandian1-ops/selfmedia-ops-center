@@ -59,7 +59,7 @@ def _merged_severity(rule, count):
 
 # 一、句式壳（结构级；计数规则通过 severity_fn 分级）
 
-BINARY_SHELL = re.compile(r"不是.{0,24}?(?:而是|是)|与其说.{0,24}?(?:不如说|倒不如说)")
+BINARY_SHELL = re.compile(r"(?<!是)不是.{1,24}?(?:而是|是)|与其说.{1,24}?(?:不如说|倒不如说)")
 STAGE_SEQUENCE = re.compile(r"首先.{0,80}其次.{0,80}最后")
 ESSENCE_CLAIM = re.compile(r"本质上|真正重要的是|核心在于|底层逻辑(?:是|在于|就是)?")
 ASSISTANT_MARKER = re.compile(r"值得注意的是|不可否认的是|我们可以看到|总的来说|说白了|划重点")
@@ -98,13 +98,14 @@ def _snippet(text, match, width=42):
 
 def _parallel_run(text):
     """连续 ≥4 行以同一 2 字前缀开头 → 排比结构；返回最长连续行数。
-    Markdown 结构化行（列表/表格/引用/标题）不属于正文排比，跳过。"""
+    Markdown 结构化行（列表/表格/引用/标题/分镜秒数）不属于正文排比，跳过。"""
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     lines = [
         ln for ln in lines
         if not (
-            ln.startswith(("- ", "* ", "+ ", "| ", "> ", "#", "```"))
+            ln.startswith(("- ", "* ", "+ ", "| ", "> ", "#", "```", "**", "---"))
             or (len(ln) >= 3 and ln[0].isdigit() and ln[1] in ".、)）")
+            or re.match(r"^第\s*\d+\s*[-~至到]\s*\d+\s*秒", ln)
         )
     ]
     best, run, prev = 0, 0, None
@@ -124,8 +125,24 @@ def _strip_frontmatter(text):
 
 
 def _platform_texts(output_dir):
-    """复用 compliance 的三平台收集逻辑，返回 {平台: 去 frontmatter 的拼接正文}。"""
+    """收集各平台待检正文（若平台子目录已存在 .md 文案则优先只读 .md，避免与编译后 .html/_预览.html 重复累加计数）。"""
+    import glob
     out = {}
+    if os.path.isdir(output_dir):
+        for plat in ("小红书", "公众号", "短视频", "抖音"):
+            md_files = sorted(glob.glob(os.path.join(output_dir, plat, "*.md")))
+            if md_files:
+                texts = []
+                for p in md_files:
+                    try:
+                        with open(p, encoding="utf-8") as f:
+                            texts.append(_strip_frontmatter(f.read()))
+                    except OSError:
+                        continue
+                if texts:
+                    out[plat] = "\n".join(texts)
+        if out:
+            return out
     for plat, text in CC.platform_files(output_dir).items():
         out[plat] = _strip_frontmatter(text)
     return out

@@ -26,17 +26,31 @@ ENV_FILE = os.path.join(ROOT, ".env")
 USAGE_FILE = os.path.join(ROOT, "data", "llm_usage.json")
 
 
-def load_env():
-    """读取项目根 .env（不覆盖已存在的环境变量）。"""
+_ENV_MTIME = 0.0
+
+
+def load_env(override: bool = False):
+    """读取项目根 .env（默认不覆盖已存在的环境变量；当 .env 文件在运行期被修改时自动热加载）。"""
+    global _ENV_MTIME
     if not os.path.isfile(ENV_FILE):
         return
+    try:
+        mtime = os.path.getmtime(ENV_FILE)
+    except OSError:
+        mtime = 0.0
+    should_override = override or (_ENV_MTIME > 0 and mtime > _ENV_MTIME)
+    _ENV_MTIME = mtime
     with open(ENV_FILE, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
             k, v = line.split("=", 1)
-            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            if should_override:
+                os.environ[k] = v
+            else:
+                os.environ.setdefault(k, v)
 
 
 load_env()
@@ -48,12 +62,14 @@ TIMEOUT = int(os.environ.get("LLM_TIMEOUT", "120"))
 
 def engine_mode():
     """当前引擎接入模式：api（直接接大模型）/ codex（Codex CLI）/ workbuddy（WorkBuddy 等 Agent）。"""
+    load_env()
     mode = os.environ.get("LLM_ENGINE_MODE", "auto").strip().lower()
     return mode if mode in ("api", "codex", "workbuddy") else "auto"
 
 
 def engine_status():
     """返回 (ok: bool, reason: str, config: dict)。"""
+    load_env()
     key = os.environ.get("LLM_API_KEY", "").strip()
     base = os.environ.get("LLM_BASE_URL", DEFAULT_BASE_URL).strip()
     model = os.environ.get("LLM_MODEL", DEFAULT_MODEL).strip()
